@@ -7,8 +7,6 @@ import yaml
 from flask import json
 from parameterized import parameterized
 
-from rest.api.definitions import env_vars
-
 
 class FlaskServerTestCase(unittest.TestCase):
     # server = "http://localhost:5000"
@@ -17,7 +15,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_env_endpoint(self):
         response = json.loads(requests.get(self.server + "/env").text)
-        self.assertEqual(len(response.get('message')), len(env_vars))
+        self.assertEqual(len(response.get('message')), 7)
         self.assertEqual(response.get('message')["VARS_DIR"], "/variables")
         self.assertEqual(response.get('message')["TEMPLATES_DIR"], "/data")
 
