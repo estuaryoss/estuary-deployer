@@ -1,0 +1,51 @@
+language: python
+
+python:
+  - "3.6"
+
+services:
+  - docker
+
+env:
+  #scripts dir host and docker
+  SCRIPTS_DIR: tests/
+  DOCKER_SCRIPTS_DIR: /home/dev/scripts
+
+  #server on host
+  SERVER: "http://127.0.0.1:5000"
+
+  # unit tests env vars
+  TEMPLATES_DIR: inputs/templates
+  VARS_DIR: inputs/variables
+
+before_install:
+  - docker build -t dinutac/estuary-deployer:latest .
+  - docker-compose up -d
+  - sleep 10
+
+install:
+  - pip install -r requirements.txt
+
+before_script:
+  - py.test $SCRIPTS_DIR/render_test.py --cov=entities
+
+script:
+  - python3 -m unittest discover $SCRIPTS_DIR "*_test.py"
+  - docker exec jinja2docker python3 -m unittest discover $DOCKER_SCRIPTS_DIR "render_test.py"
+  - docker-compose down -v
+
+  - docker run -i
+    -v $TRAVIS_BUILD_DIR/inputs/templates:/data
+    -v $TRAVIS_BUILD_DIR/inputs/variables:/variables  -e TEMPLATE=standalone.j2
+    -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest dinutac/estuary-deployer:latest
+
+  - docker run --entrypoint jinja2
+    -v $TRAVIS_BUILD_DIR/inputs/templates:/data
+    -v $TRAVIS_BUILD_DIR/inputs/variables:/variables
+    dinutac/estuary-deployer:latest
+    /data/json.j2 /variables/json.json --format=json
+
+after_success:
+  - coveralls
+
+
