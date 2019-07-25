@@ -8,7 +8,7 @@ services:
 
 env:
   #scripts dir host and docker
-  SCRIPTS_DIR: tests/
+  SCRIPTS_DIR: tests/rest/
   DOCKER_SCRIPTS_DIR: /home/dev/scripts
 
   #server on host
@@ -36,7 +36,7 @@ script:
 
   - docker run -i
     -v $TRAVIS_BUILD_DIR/inputs/templates:/data
-    -v $TRAVIS_BUILD_DIR/inputs/variables:/variables  -e TEMPLATE=standalone.j2
+    -v $TRAVIS_BUILD_DIR/inputs/variables:/variables  -e TEMPLATE=standalone.yml
     -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest dinutac/estuary-deployer:latest
 
   - docker run --entrypoint jinja2

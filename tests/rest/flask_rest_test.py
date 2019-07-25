@@ -12,6 +12,7 @@ from rest.api.definitions import env_vars
 
 class FlaskServerTestCase(unittest.TestCase):
     # server = "http://localhost:5000"
+
     server = os.environ.get('SERVER')
 
     def test_env_endpoint(self):
