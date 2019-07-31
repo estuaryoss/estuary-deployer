@@ -1,42 +1,63 @@
 "swagger": '2.0'
 info:
   description: |
-    This is Jinja2 with Docker.
-  version: "1.0.1"
-  title: Jinja2Docker
+    This is estuary-deployer with Docker.
+  version: "1.0.0"
+  title: estuary-deployer
   termsOfService: http://swagger.io/terms/
   contact:
-    email: apiteam@swagger.io
+    email: constantin.dinuta@gmail.com
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-host: localhost:5000
+host: localhost:8080
 basePath: /
 tags:
-  - name: Jinja2
-    description: Rend templates with Jinja2 and Docker
+  - name: estuary-deployer
+    description: Estuary-deployer service which deploys docker containers using docker-compose templates
     externalDocs:
-      description: Find out more about our store
-      url: http://swagger.io
+      description: Find out more on github
+      url: https://github.com/dinuta/estuary-deployer-service
 schemes:
   - http
 paths:
   /env:
     get:
       tags:
-        - jinja2
+        - estuary-deployer
       summary: Print env vars
       produces:
         - application/json
       responses:
         200:
           description: List of env vars in key value pairs
+  /ping:
+    get:
+      tags:
+        - estuary-deployer
+      summary: Ping endpoint which replies with pong
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Ping endpoint which replies with pong. Useful for situations where checking the alive status of
+            the service is needed.
+  /about:
+    get:
+      tags:
+        - estuary-deployer
+      summary: Information about the application.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Prints the name, version of the estuary-deployer application.
   /rend/{template}/{variables}:
     get:
       tags:
-        - jinja2
-      summary: Jinja2 rend output
-      description: Gets the rendered output from template and variable files with Jinja2
+        - estuary-deployer
+      summary: estuary-deployer render wo env vars
+      description: Gets the rendered output from template and variable files with estuary-deployer
       produces:
         - application/json
       parameters:
@@ -52,12 +73,14 @@ paths:
           type: string
       responses:
         200:
-          description: Jinja2 rendered template or the exception which occured.
+          description: estuary-deployer rendered template with jinja2
+        404:
+          description: estuary-deployer failure to rend the template
   /rendwithenv/{template}/{variables}:
     post:
       tags:
-        - jinja2
-      summary: Jinja2 render with inserted env vars
+        - estuary-deployer
+      summary: estuary-deployer render with inserted env vars
       consumes:
         - application/json
         - application/x-www-form-urlencoded
@@ -76,21 +99,311 @@ paths:
           type: string
         - name: EnvVars
           in: body
-          description: E.g. {"envvar1":"value1", "envvar2":"value2"}
+          description: List of env vars by key-value pair
           required: false
           schema:
-            $ref: '#/components/schemas/EnvVar'
+            $ref: '#/components/schemas/envvar'
       responses:
         200:
-          description: Jinja2 rendered template or the exception which occured.
+          description: estuary-deployer rendered template with jinja2
+        404:
+          description: estuary-deployer failure to rend the template
+  /deploystart:
+    post:
+      tags:
+        - estuary-deployer
+      summary: starts the docker-compose template
+      consumes:
+        - text/plain
+      produces:
+        - application/json
+      parameters:
+        - name: docker-compose template
+          in: body
+          description: 'version:'
+          required: true
+          schema:
+            $ref: '#/components/schemas/template'
+      responses:
+        200:
+          description: deploy success
+        404:
+          description: deploy failure
+  /deploystartenv/{template}/{variables}:
+    post:
+      tags:
+        - estuary-deployer
+      summary: starts the docker-compose template with the template and the variables from the container
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: template
+          in: path
+          description: Template file mounted in docker
+          required: true
+          type: string
+        - name: variables
+          in: path
+          description: Variables file mounted in docker
+          required: true
+          type: string
+        - name: EnvVars
+          in: body
+          description: List of env vars by key-value pair
+          required: false
+          schema:
+            $ref: '#/components/schemas/envvar'
+      responses:
+        200:
+          description: deploy success
+        404:
+          description: deploy failure
+  /deploystart/{template}/{variables}:
+    get:
+      tags:
+        - estuary-deployer
+      summary: starts the docker-compose template with the template and the variables from the container
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: template
+          in: path
+          description: Template file mounted in docker
+          required: true
+          type: string
+        - name: variables
+          in: path
+          description: Variables file mounted in docker
+          required: true
+          type: string
+      responses:
+        200:
+          description: deploy success
+        404:
+          description: deploy failure
+  /deploystatus/{compose_id}:
+    get:
+      tags:
+        - estuary-deployer
+      summary: gets the running containers for a specific docker-compose environment after it was deployed
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: compose_id
+          in: path
+          description: docker-compose environment id returned by the deploystart action.
+          required: true
+          type: string
+      responses:
+        200:
+          description: get deploy status success
+        404:
+          description: get deploy status failure
+  /teststart/{compose_id}/{framework_service_name}:
+    post:
+      tags:
+        - estuary-deployer
+      summary: starts the tests inside the framework container. The framework container name is the docker-compose service name.
+      consumes:
+        - text/plain
+      produces:
+        - application/json
+      parameters:
+        - name: compose_id
+          in: path
+          description: docker-compose environment id returned by the deploystart action.
+          required: true
+          type: string
+        - name: framework_service_name
+          in: path
+          description: framework container name is the docker-compose service name.
+          required: true
+          type: string
+        - name: test_file_content
+          in: body
+          description: Content of the shell script test file. The container only supports sh
+          required: true
+          schema:
+            $ref: '#/components/schemas/test_file_content'
+      responses:
+        200:
+          description: test start success
+        404:
+          description: test start failure
+  /istestfinished/{compose_id}/{framework_service_name}/{keyword}:
+    get:
+      tags:
+        - estuary-deployer
+      summary: verifies if the keyword is present on the framework container in the default location
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: compose_id
+          in: path
+          description: docker-compose environment id returned by the deploystart action.
+          required: true
+          type: string
+        - name: framework_service_name
+          in: path
+          description: framework container name is the docker-compose service name.
+          required: true
+          type: string
+        - name: keyword
+          in: path
+          description: keyword to search for in the default location of the framework container
+          required: true
+          type: string
+      responses:
+        200:
+          description: istestfinished get status success. It can return True/False
+        404:
+          description: istestfinished failure in situations where the framework container name / compose_id is wrong.
+    post:
+      tags:
+        - estuary-deployer
+      summary: verifies if the keyword is present on the framework container in the location asked through post body
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: compose_id
+          in: path
+          description: docker-compose environment id returned by the deploystart action.
+          required: true
+          type: string
+        - name: framework_service_name
+          in: path
+          description: framework container name is the docker-compose service name.
+          required: true
+          type: string
+        - name: keyword
+          in: path
+          description: keyword to search for in the default location of the framework container
+          required: true
+          type: string
+        - name: file
+          in: body
+          description: File path on the disk
+          required: false
+          schema:
+            $ref: '#/components/schemas/istestfinishedfile'
+      responses:
+        200:
+          description: istestfinished get status success. It can return True/False
+        404:
+          description: istestfinished failure in situations where the framework container name / compose_id is wrong.
+  /deploystop/{compose_id}:
+    get:
+      tags:
+        - estuary-deployer
+      summary: stops the running containers for a specific docker-compose environment after it was deployed
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: compose_id
+          in: path
+          description: docker-compose environment id returned by the deploystart action.
+          required: true
+          type: string
+      responses:
+        200:
+          description: deploy stop success
+        404:
+          description: deploy stop failure
+  /deployreplay/{compose_id}:
+    get:
+      tags:
+        - estuary-deployer
+      summary: replays a docker-compose environment after it has exited
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: compose_id
+          in: path
+          description: docker-compose environment id returned by the deploystart action.
+          required: true
+          type: string
+      responses:
+        200:
+          description: environment replay success
+        404:
+          description: environment replay failure
+  /getdeployerfile:
+    post:
+      tags:
+        - estuary-deployer
+      summary: gets a file content from the estuary-deployer service
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: file
+          in: body
+          description: File path on the disk
+          required: false
+          schema:
+            $ref: '#/components/schemas/file'
+      responses:
+        200:
+          description: get file content success
+        404:
+          description: get file content failure
 components:
   schemas:
-    EnvVar:
+    file:
       type: object
-      properties:
-        your_env_var:
-          type: string
+      example: '{"file" : "/etc/hostname"}'
+    istestfinishedfile:
+      type: object
+      example: '{"file" : "/tmp/is_test_finished"}'
+    envvar:
+      type: object
+      example: '{"DATABASE" : "mysql56", "IMAGE":"latest"}'
+    template:
+      type: string
+      minLength: 3
+      example: |
+          version: '2.2'
+          services:
+            alpine:
+              restart: always
+              image: alpine:3.9.4
+              hostname: alpine
+              entrypoint: tail -f /etc/hostname
+    test_file_content:
+      type: string
+      minLength: 3
+      example: |
+        #!/bin/sh
+        cd /tmp
 
+        #simulates test run. here you can have a bunch of maven/make/other commands
+        sleep 120
+
+        #signal your test that it is finished. For standardization purpuse send it in /tmp
+        echo finished > /tmp/is_test_finished
 externalDocs:
-  description: Find out more about Swagger
-  url: http://swagger.io
+  description: Find out more on github
+  url: https://github.com/dinuta/estuary-deployer-service

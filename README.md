@@ -8,3 +8,5 @@ Estuary docker deployer service which will run your docker containers
 [![](https://images.microbadger.com/badges/image/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own version badge on microbadger.com") ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)
 
 
+## Postman collection example
+https://documenter.getpostman.com/view/2360061/SVYjUNCG

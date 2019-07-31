@@ -3,6 +3,8 @@ import os
 import subprocess
 from pathlib import Path
 
+from tests.rest.constants import Constants
+
 
 class Utils:
 
@@ -57,12 +59,36 @@ class Utils:
         out, err = result.communicate()
         return [out.decode('utf-8'), err.decode('utf-8')]
 
-    def docker_ps(self, file):
-        file_path = Path(file)
+    def docker_ps(self, id):
+        file_path = Path(Constants.DOCKER_PATH + f"{id}/{id}")
         if not file_path.is_file():
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        result = subprocess.Popen(["docker-compose", "-f", f"{file}", "ps"], stdout=subprocess.PIPE,
+        result = subprocess.Popen(["docker", "ps", "--filter", f"name={id}"], stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
+        out, err = result.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]
+
+    def docker_exec(self, container_id, command):
+        container_exec_cmd = ["docker", "exec", f"{container_id}"]
+        container_exec_cmd.extend(command)
+        result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        out, err = result.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]
+
+    def docker_exec_detached(self, container_id, command):
+        container_exec_cmd = ["docker", "exec", "-d", f"{container_id}"]
+        container_exec_cmd.extend(command)
+        result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        out, err = result.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]
+
+    def docker_stats(self, command):
+        container_exec_cmd = r'''docker stats --no-stream''' + command
+        # container_exec_cmd.extend(command)
+        result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, shell=True)
         out, err = result.communicate()
         return [out.decode('utf-8'), err.decode('utf-8')]
 

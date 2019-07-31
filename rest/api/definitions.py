@@ -19,6 +19,6 @@ swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,
     API_URL,
     config={
-        'app_name': "Jinja2Docker"
+        'app_name': "estuary-deployer"
     },
 )

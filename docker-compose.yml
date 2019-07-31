@@ -9,6 +9,7 @@ services:
 #    entrypoint: tail -f /etc/alpine-release
     environment:
       limit: 'sky' #example env var inserted. you can read it with environ('limit')
+      MAX_DEPLOY_MEMORY: 80 #% from total. tune this parameter after you measure how much a docker compose env consumes. E.g. 16 GB memory => docker will use up to ~13GB.)
     volumes:
       - ./inputs/templates:/data
       - ./inputs/variables:/variables
@@ -17,7 +18,7 @@ services:
       - ./tmp:/tmp
 #      - /etc/hostname:/etc/hostname #for hostname
     ports:
-      - "5000:5000"
+      - "8080:8080"
 
     expose:
-      - "5000"
+      - "8080"

@@ -1,4 +1,4 @@
-from rest.utils.constants import Constants
+from tests.rest.constants import Constants
 
 
 class ErrorCodes:

@@ -1,17 +1,18 @@
-version: '2.2'
+{%- set database=databases[environ('DATABASE')] -%}
+{%- set app=apps[environ('DATABASE')] -%}
+
+version: '3'
 services:
-  mysql561:
-    restart: always
-    image: mysql:5.6
-    hostname: mysql561
+  {{environ('DATABASE')}}:
+    restart: {{database.restart}}
+    image: {{database.image}}
     environment:
-      MYSQL_ROOT_PASSWORD: 'root'
-      MYSQL_DATABASE: 'testing'
+        {% for item in database.environment %} {{ item | safe }}: '{{database.environment[item] }}'
+        {% endfor %}
 
-    command: --default-authentication-plugin=mysql_native_password
+    command: {{database.command}}
     expose:
-      - '3306'
-#    volumes:
-#      - ./mysqlcnf:/etc/mysql/conf.d/
-
-#no jinja2 code. just for service deployer testing
+        - '{{database.expose[0]  | safe | trim}}'
+    volumes:
+        {%for item in database.volumes%} - {{item | trim}}
+        {% endfor %}

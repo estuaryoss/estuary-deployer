@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import traceback
+from logging.handlers import logging
 
 from flask import request
 
@@ -16,6 +17,8 @@ from rest.utils.utils import Utils
 
 app = create_app()
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+app.logger.setLevel(logging.DEBUG)
 
 
 @app.route('/swagger/swagger.yml')
@@ -43,11 +46,11 @@ def about():
 
 @app.route('/rend/<template>/<variables>', methods=['GET'])
 def get_content(template, variables):
-    os.environ['TEMPLATE'] = template
-    os.environ['VARIABLES'] = variables
-    r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
+    os.environ['TEMPLATE'] = template.strip()
+    os.environ['VARIABLES'] = variables.strip()
     http = HttpResponse()
     try:
+        r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
         response = r.rend_template("dummy"), 200
         # response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
     except Exception as e:
@@ -69,12 +72,12 @@ def get_content_with_env(template, variables):
     except:
         pass
 
-    os.environ['TEMPLATE'] = template
-    os.environ['VARIABLES'] = variables
+    os.environ['TEMPLATE'] = template.strip()
+    os.environ['VARIABLES'] = variables.strip()
 
-    r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
     http = HttpResponse()
     try:
+        r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
         response = r.rend_template("dummy"), 200
         # response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
     except Exception as e:
@@ -95,14 +98,29 @@ def deploy_start_file_from_client():
     dir = f"{Constants.DOCKER_PATH}{timestamp}"
     file = f"{dir}/{timestamp}"
     http = HttpResponse()
+
+    [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
+    app.logger.debug('Output: %s', out)
+    app.logger.debug('Error: %s', err)
+    if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
+        return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
+                            ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
+                                "MAX_DEPLOY_MEMORY"), "Used memory: " + out.strip() + " percent",
+                            str(traceback.format_exc())), 404
+
     try:
         utils.create_dir(dir)
         utils.write_to_file(file, input_data)
         [out, err] = utils.docker_up(file)
-        app.logger.info('Output: %s', out)
-        app.logger.info('Error: %s', err)
+        app.logger.debug('Output: %s', out)
+        app.logger.debug('Error: %s', err)
         result = str(timestamp)
-        response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
+        if len(utils.docker_ps(result)[0].split("\n")[1:-1]) > 0:
+            response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
+        else:
+            response = http.failure(Constants.DEPLOY_START_FAILURE,
+                                    ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE), err,
+                                    str(traceback.format_exc())), 404
     except FileNotFoundError as e:
         result = "Exception({0})".format(e.__str__())
         response = http.failure(Constants.DEPLOY_START_FAILURE,
@@ -111,8 +129,8 @@ def deploy_start_file_from_client():
     except:
         result = "Exception({0})".format(sys.exc_info()[0])
         [out, err] = utils.docker_down(file)
-        app.logger.info('Output: %s', out)
-        app.logger.info('Error: %s', err)
+        app.logger.debug('Output: %s', out)
+        app.logger.debug('Error: %s', err)
         response = http.failure(Constants.DEPLOY_START_FAILURE,
                                 ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE), result,
                                 str(traceback.format_exc())), 404
@@ -131,25 +149,29 @@ def deploy_with_env_file_from_server(template, variables):
     except:
         pass
 
-    os.environ['TEMPLATE'] = template
-    os.environ['VARIABLES'] = variables
+    os.environ['TEMPLATE'] = template.strip()
+    os.environ['VARIABLES'] = variables.strip()
     timestamp = int(time.time())
     dir = f"{Constants.DOCKER_PATH}{timestamp}"
     file = f"{dir}/{timestamp}"
 
-    r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
     http = HttpResponse()
     try:
+        r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
         utils.create_dir(dir)
         utils.write_to_file(file, r.rend_template("dummy"))
         [out, err] = utils.docker_up(file)
-        app.logger.info('Output: %s', out)
-        app.logger.info('Error: %s', err)
+        app.logger.debug('Output: %s', out)
+        app.logger.debug('Error: %s', err)
         result = str(timestamp)
-        response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
+        if len(utils.docker_ps(result)[0].split("\n")[1:-1]) > 0:
+            response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
+        else:
+            response = http.failure(Constants.DEPLOY_START_FAILURE,
+                                    ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE), err,
+                                    str(traceback.format_exc())), 404
     except FileNotFoundError as e:
         result = "Exception({0})".format(e.__str__())
-        [out, err] = utils.docker_down(file)
         response = http.failure(Constants.DEPLOY_START_FAILURE,
                                 ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE), result,
                                 str(traceback.format_exc())), 404
@@ -165,25 +187,29 @@ def deploy_with_env_file_from_server(template, variables):
 @app.route('/deploystart/<template>/<variables>', methods=['GET'])
 def deploy_start_file_from_server(template, variables):
     utils = Utils()
-    os.environ['TEMPLATE'] = template
-    os.environ['VARIABLES'] = variables
+    os.environ['TEMPLATE'] = template.strip()
+    os.environ['VARIABLES'] = variables.strip()
     timestamp = int(time.time())
     dir = f"{Constants.DOCKER_PATH}{timestamp}"
     file = f"{dir}/{timestamp}"
 
-    r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
     http = HttpResponse()
     try:
+        r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
         utils.create_dir(dir)
         utils.write_to_file(file, r.rend_template("dummy"))
         [out, err] = utils.docker_up(file)
-        app.logger.info('Output: %s', out)
-        app.logger.info('Error: %s', err)
+        app.logger.debug('Output: %s', out)
+        app.logger.debug('Error: %s', err)
         result = str(timestamp)
-        response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
+        if len(utils.docker_ps(result)[0].split("\n")[1:-1]) > 0:
+            response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
+        else:
+            response = http.failure(Constants.DEPLOY_START_FAILURE,
+                                    ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE), err,
+                                    str(traceback.format_exc())), 404
     except FileNotFoundError as e:
         result = "Exception({0})".format(e.__str__())
-        [out, err] = utils.docker_down(file)
         response = http.failure(Constants.DEPLOY_START_FAILURE,
                                 ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE), result,
                                 str(traceback.format_exc())), 404
@@ -196,25 +222,40 @@ def deploy_start_file_from_server(template, variables):
     return response
 
 
-@app.route('/replay/<file>', methods=['GET'])
-def replay_file_from_server(file):
+@app.route('/deployreplay/<id>', methods=['GET'])
+def replay_file_from_server(id):
+    id = id.strip()
     utils = Utils()
-    dir = f"{Constants.DOCKER_PATH}{file}"
-    file = f"{dir}/{file}"
-
-    r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
     http = HttpResponse()
+    dir = f"{Constants.DOCKER_PATH}{id}"
+    file = f"{dir}/{id}"
+
+    try:
+        [out, err] = utils.docker_ps(id)
+        result = out.split("\n")[1:-1]
+        if len(result) > 0:
+            return http.failure(Constants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE,
+                                ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE) % f"{id}",
+                                result,
+                                out), 404
+            app.logger.debug('Output: %s', out)
+            app.logger.debug('Error: %s', err)
+    except FileNotFoundError as e:
+        result = "Exception({0})".format(e.__str__())
+        return http.failure(Constants.DEPLOY_REPLAY_FAILURE,
+                            ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_REPLAY_FAILURE), result,
+                            str(traceback.format_exc())), 404
+    except:
+        result = "Exception({0})".format(sys.exc_info()[0])
+        return http.failure(Constants.DEPLOY_REPLAY_FAILURE,
+                            ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_REPLAY_FAILURE) % f"{id}", result,
+                            str(traceback.format_exc())), 404
+
     try:
         [out, err] = utils.docker_up(file)
-        app.logger.info('Output: %s', out)
-        app.logger.info('Error: %s', err)
-        response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), out), 200
-    except FileNotFoundError as e:
-        result = "Exception({0})".format(e.__str__())
-        [out, err] = utils.docker_down(file)
-        response = http.failure(Constants.DEPLOY_REPLAY_FAILURE,
-                                ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_REPLAY_FAILURE), result,
-                                str(traceback.format_exc())), 404
+        app.logger.debug('Output: %s', out)
+        app.logger.debug('Error: %s', err)
+        response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), id), 200
     except:
         result = "Exception({0})".format(sys.exc_info()[0])
         response = http.failure(Constants.DEPLOY_REPLAY_FAILURE,
@@ -224,22 +265,18 @@ def replay_file_from_server(file):
     return response
 
 
-@app.route('/deploystatus/<file>', methods=['GET'])
-def deploy_status(file):
+@app.route('/deploystatus/<id>', methods=['GET'])
+def deploy_status(id):
+    id = id.strip()
     utils = Utils()
-    file = f"{Constants.DOCKER_PATH}{file}/{file}"
+    file = f"{Constants.DOCKER_PATH}{id}/{id}"
     http = HttpResponse()
     try:
-        [out, err] = utils.docker_ps(file)
-        result = out
+        [out, err] = utils.docker_ps(id)
+        result = out.split("\n")[1:-1]
         response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
-        app.logger.info('Output: %s', out)
-        app.logger.info('Error: %s', err)
-    except Exception as e:
-        result = "Exception({0})".format(e.__str__())
-        response = http.failure(Constants.DEPLOY_STATUS_FAILURE,
-                                ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_STATUS_FAILURE), result,
-                                str(traceback.format_exc())), 404
+        app.logger.debug('Output: %s', out)
+        app.logger.debug('Error: %s', err)
     except FileNotFoundError as e:
         result = "Exception({0})".format(e.__str__())
         response = http.failure(Constants.DEPLOY_STATUS_FAILURE,
@@ -254,22 +291,19 @@ def deploy_status(file):
     return response
 
 
-@app.route('/deploystop/<file>', methods=['GET'])
-def deploy_stop(file):
+@app.route('/deploystop/<id>', methods=['GET'])
+def deploy_stop(id):
+    id= id.strip()
     utils = Utils()
-    file = f"{Constants.DOCKER_PATH}{file}/{file}"
+    file = f"{Constants.DOCKER_PATH}{id}/{id}"
     http = HttpResponse()
     try:
         [out, err] = utils.docker_down(file)
-        app.logger.info('Output: %s', out)
-        app.logger.info('Error: %s', err)
-        result = out
+        app.logger.debug('Output: %s', out)
+        app.logger.debug('Error: %s', err)
+        [out, err] = utils.docker_ps(id)
+        result = out.split("\n")[1:-1]
         response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
-    except Exception as e:
-        result = "Exception({0})".format(e.__str__())
-        response = http.failure(Constants.DEPLOY_STOP_FAILURE,
-                                ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_STOP_FAILURE), result,
-                                str(traceback.format_exc())), 404
     except FileNotFoundError as e:
         result = "Exception({0})".format(e.__str__())
         response = http.failure(Constants.DEPLOY_STOP_FAILURE,
@@ -284,8 +318,8 @@ def deploy_stop(file):
     return response
 
 
-@app.route('/getresultsfile', methods=['POST'])
-def get_results():
+@app.route('/getdeployerfile', methods=['POST'])
+def get_deployer_file():
     utils = Utils()
     http = HttpResponse()
     input_json = request.get_json(force=True)
@@ -295,8 +329,96 @@ def get_results():
         result = utils.read_file(file), 200
     except:
         result = "Exception({0})".format(sys.exc_info()[0])
-        result = http.failure(Constants.GET_RESULTS_FILE_FAILURE,
-                                ErrorCodes.HTTP_CODE.get(Constants.GET_RESULTS_FILE_FAILURE), result,
-                                str(traceback.format_exc())), 404
+        result = http.failure(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE,
+                              ErrorCodes.HTTP_CODE.get(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE), result,
+                              str(traceback.format_exc())), 404
 
     return result
+
+
+@app.route('/istestfinished/<id>/<framework_container_service_name>/<keyword>', methods=['GET'])
+def is_test_finished_default_file(id, framework_container_service_name, keyword):
+    utils = Utils()
+    http = HttpResponse()
+    file = Constants.DOCKER_PATH + "is_test_finished"
+    finished = False
+    container_id = id.strip() + "_" + framework_container_service_name.strip() + "_1"
+
+    [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"cat {file}"])
+    app.logger.debug('Output: %s', out)
+    app.logger.debug('Error: %s', err)
+    if "No such container".lower() in err.lower():
+        response = http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (file, container_id),
+                                finished,
+                                err), 404
+    elif keyword.strip().lower() in out.lower():
+        finished = True
+        response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), finished), 200
+    else:
+        response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), finished), 200
+
+    return response
+
+
+@app.route('/istestfinished/<id>/<framework_container_service_name>/<keyword>', methods=['POST'])
+def is_test_finished_specific_file(id, framework_container_service_name, keyword):
+    utils = Utils()
+    http = HttpResponse()
+    input_json = request.get_json(force=True)
+    file = input_json["file"]
+    finished = False
+    container_id = id.strip() + "_" + framework_container_service_name.strip() + "_1"
+    app.logger.debug('cid: %s', container_id)
+    [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"cat {file}"])
+    app.logger.debug('Output: %s', out)
+    app.logger.debug('Error: %s', err)
+
+    if "No such container".lower() in err.lower():
+        response = http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (file, container_id),
+                                finished,
+                                err), 404
+    elif keyword.strip().lower() in out.lower():
+        finished = True
+        response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), finished), 200
+    else:
+        response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), finished), 200
+
+    return response
+
+
+@app.route('/teststart/<id>/<framework_container_service_name>', methods=['POST'])
+def test_start(id, framework_container_service_name):
+    utils = Utils()
+    http = HttpResponse()
+    input_data = request.data.decode('utf-8')
+    file = Constants.DOCKER_PATH + "start.sh"
+    container_id = id.strip() + "_" + framework_container_service_name.strip() + "_1"
+    started = False
+
+    [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"echo  '{input_data}' > {file}"])
+    app.logger.debug('Output: %s', out)
+    app.logger.debug('Error: %s', err)
+    if err:
+        return http.failure(Constants.TEST_START_FAILURE,
+                            ErrorCodes.HTTP_CODE.get(Constants.TEST_START_FAILURE) % (file, container_id), started,
+                            err), 404
+
+    [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"chmod +x {file}"])
+    app.logger.debug('Output: %s', out)
+    app.logger.debug('Error: %s', err)
+    if err:
+        return http.failure(Constants.TEST_START_FAILURE,
+                            ErrorCodes.HTTP_CODE.get(Constants.TEST_START_FAILURE) % (file, container_id), started,
+                            err), 404
+
+    [out, err] = utils.docker_exec_detached(container_id, ["sh", "-c", f"{file}"])
+    app.logger.debug('Output: %s', out)
+    app.logger.debug('Error: %s', err)
+    if err:
+        return http.failure(Constants.TEST_START_FAILURE,
+                            ErrorCodes.HTTP_CODE.get(Constants.TEST_START_FAILURE) % (file, container_id), started,
+                            err), 404
+
+    return http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), True), 200

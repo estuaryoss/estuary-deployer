@@ -12,7 +12,7 @@ env:
   DOCKER_SCRIPTS_DIR: /home/dev/scripts
 
   #server on host
-  SERVER: "http://127.0.0.1:5000"
+  SERVER: "http://127.0.0.1:8080"
 
   # unit tests env vars
   TEMPLATES_DIR: inputs/templates
@@ -30,7 +30,7 @@ before_script:
   - py.test $SCRIPTS_DIR/render_test.py --cov=entities
 
 script:
-  - python3 -m unittest discover $SCRIPTS_DIR/rest "*_test.py"
+  - python3 -m unittest discover $SCRIPTS_DIR "*_test.py"
   - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR "render_test.py"
   - docker-compose down -v
 
