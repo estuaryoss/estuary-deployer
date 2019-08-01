@@ -10,5 +10,5 @@ Estuary docker deployer service which will run your docker containers
 ## Api docs 
 https://app.swaggerhub.com/apis/dinuta/estuary-deployer/1.0.0
 
-## Postman collection example
+## Postman collection
 https://documenter.getpostman.com/view/2360061/SVYjUNCG
