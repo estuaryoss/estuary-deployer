@@ -12,3 +12,27 @@ https://app.swaggerhub.com/apis/dinuta/estuary-deployer/1.0.0
 
 ## Postman collection
 https://documenter.getpostman.com/view/2360061/SVYjUNCG
+
+
+## Service run
+##### Using docker compose ###
+    docker-compose up
+    
+##### Using docker run ###
+    On Linux/Mac:
+    
+    docker run \ 
+    -e MAX_DEPLOY_MEMORY=80 \
+    -v $PWD/inputs/templates:/data \ 
+    -v $PWD/inputs/variables:/variables \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    dinutac/estuary-deployer:<tag>
+    
+    On Windows:
+            
+    docker run \ 
+    -e MAX_DEPLOY_MEMORY=80 \
+    -v %cd%/inputs/templates:/data \ 
+    -v %cd%/inputs/variables:/variables \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    dinutac/estuary-deployer:<tag>

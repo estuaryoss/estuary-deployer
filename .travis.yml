@@ -37,7 +37,8 @@ script:
   - docker run -i
     -v $TRAVIS_BUILD_DIR/inputs/templates:/data
     -v $TRAVIS_BUILD_DIR/inputs/variables:/variables  -e TEMPLATE=standalone.yml
-    -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest dinutac/estuary-deployer:latest
+    -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest --entrypoint python3 dinutac/estuary-deployer:latest
+    $DOCKER_SCRIPTS_DIR/main.py
 
   - docker run --entrypoint jinja2
     -v $TRAVIS_BUILD_DIR/inputs/templates:/data

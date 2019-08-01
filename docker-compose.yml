@@ -5,7 +5,6 @@ services:
     container_name: estuary-deployer
     image: dinutac/estuary-deployer:latest
     hostname: estuary-deployer
-    entrypoint: python3 /home/dev/scripts/main_flask.py
 #    entrypoint: tail -f /etc/alpine-release
     environment:
       limit: 'sky' #example env var inserted. you can read it with environ('limit')
@@ -16,7 +15,6 @@ services:
       - ./:/home/dev/scripts/
       - /var/run/docker.sock:/var/run/docker.sock #works on win also as long as you don't enable tcp daemon on 2375/2376
       - ./tmp:/tmp
-#      - /etc/hostname:/etc/hostname #for hostname
     ports:
       - "8080:8080"
 

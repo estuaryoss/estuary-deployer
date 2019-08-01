@@ -39,7 +39,7 @@ RUN pip3 install \
   requests
 
 ## Cleanup
-RUN rm -rf /var/cache/apk/* 
+RUN rm -rf /var/cache/apk/*
 
 # Create a shared data volume
 # create an empty file, otherwise the volume will
@@ -56,10 +56,11 @@ ENV SCRIPTS_DIR /home/dev/scripts
 ENV OUT_DIR out
 ENV TEMPLATE docker-compose.j2
 ENV VARIABLES variables.yml
+ENV MAX_DEPLOY_MEMORY 80
 
 ADD ./ $SCRIPTS_DIR/
 RUN chmod +x $SCRIPTS_DIR/*.py
- 
+
 WORKDIR /data
 
-ENTRYPOINT ["python3", "/home/dev/scripts/main.py"]
+ENTRYPOINT ["python3", "/home/dev/scripts/main_flask.py"]
