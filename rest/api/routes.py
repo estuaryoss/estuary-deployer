@@ -4,6 +4,7 @@ import time
 import traceback
 from logging.handlers import logging
 
+import flask
 from flask import request
 
 from about import properties
@@ -68,7 +69,7 @@ def get_content_with_env(template, variables):
         input_json = request.get_json(force=True)
         for key, value in input_json.items():
             if key not in env_vars:
-                os.environ[key] = value
+                os.environ[str(key)] = str(value)
     except:
         pass
 
@@ -100,8 +101,8 @@ def deploy_start_file_from_client():
     http = HttpResponse()
 
     [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
-    app.logger.debug('Output: %s', out)
-    app.logger.debug('Error: %s', err)
+    app.logger.debug('Max memory out: %s', out)
+    app.logger.debug('Max memory err: %s', err)
     if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
         return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
                             ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
@@ -145,7 +146,7 @@ def deploy_with_env_file_from_server(template, variables):
         input_json = request.get_json(force=True)
         for key, value in input_json.items():
             if key not in env_vars:
-                os.environ[key] = value
+                os.environ[str(key)] = str(value)
     except:
         pass
 
@@ -154,8 +155,17 @@ def deploy_with_env_file_from_server(template, variables):
     timestamp = int(time.time())
     dir = f"{Constants.DOCKER_PATH}{timestamp}"
     file = f"{dir}/{timestamp}"
-
     http = HttpResponse()
+
+    [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
+    app.logger.debug('Max memory out: %s', out)
+    app.logger.debug('Max memory err: %s', err)
+    if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
+        return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
+                            ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
+                                "MAX_DEPLOY_MEMORY"), "Used memory: " + out.strip() + " percent",
+                            str(traceback.format_exc())), 404
+
     try:
         r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
         utils.create_dir(dir)
@@ -192,8 +202,17 @@ def deploy_start_file_from_server(template, variables):
     timestamp = int(time.time())
     dir = f"{Constants.DOCKER_PATH}{timestamp}"
     file = f"{dir}/{timestamp}"
-
     http = HttpResponse()
+
+    [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
+    app.logger.debug('Max memory out: %s', out)
+    app.logger.debug('Max memory err: %s', err)
+    if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
+        return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
+                            ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
+                                "MAX_DEPLOY_MEMORY"), "Used memory: " + out.strip() + " percent",
+                            str(traceback.format_exc())), 404
+
     try:
         r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
         utils.create_dir(dir)
@@ -293,7 +312,7 @@ def deploy_status(id):
 
 @app.route('/deploystop/<id>', methods=['GET'])
 def deploy_stop(id):
-    id= id.strip()
+    id = id.strip()
     utils = Utils()
     file = f"{Constants.DOCKER_PATH}{id}/{id}"
     http = HttpResponse()
@@ -338,6 +357,9 @@ def get_deployer_file():
 
 @app.route('/istestfinished/<id>/<framework_container_service_name>/<keyword>', methods=['GET'])
 def is_test_finished_default_file(id, framework_container_service_name, keyword):
+    id = id.strip()
+    framework_container_service_name = framework_container_service_name.strip()
+    keyword = keyword.strip()
     utils = Utils()
     http = HttpResponse()
     file = Constants.DOCKER_PATH + "is_test_finished"
@@ -363,6 +385,9 @@ def is_test_finished_default_file(id, framework_container_service_name, keyword)
 
 @app.route('/istestfinished/<id>/<framework_container_service_name>/<keyword>', methods=['POST'])
 def is_test_finished_specific_file(id, framework_container_service_name, keyword):
+    id = id.strip()
+    framework_container_service_name = framework_container_service_name.strip()
+    keyword = keyword.strip()
     utils = Utils()
     http = HttpResponse()
     input_json = request.get_json(force=True)
@@ -388,8 +413,92 @@ def is_test_finished_specific_file(id, framework_container_service_name, keyword
     return response
 
 
+@app.route('/getcontainerfile/<id>/<container_service_name>', methods=['POST'])
+def get_results_file(id, container_service_name):
+    id = id.strip()
+    container_service_name = container_service_name.strip()
+    utils = Utils()
+    http = HttpResponse()
+    input_json = request.get_json(force=True)
+    file = input_json["file"]
+    container_id = id + "_" + container_service_name + "_1"
+    app.logger.debug('cid: %s', container_id)
+    [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"cat {file}"])
+    # [out, err] = utils.docker_cp(id, framework_container_service_name, file)
+    app.logger.debug('Output: %s', out)
+    app.logger.debug('Error: %s', err)
+
+    if "No such container".lower() in err.lower():
+        response = http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (file, container_id),
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (file, container_id),
+                                err), 404
+    elif "No such file".lower() in err.lower():
+        response = http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (file, container_id),
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (file, container_id),
+                                err), 404
+    elif "Is a directory".lower() in err.lower():
+        response = http.failure(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR,
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (file, container_id),
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (file, container_id),
+                                err), 404
+    else:
+        response = out, 200
+
+    return response
+
+
+@app.route('/getcontainerfolder/<id>/<container_service_name>', methods=['POST'])
+def get_container_folder(id, container_service_name):
+    id = id.strip()
+    container_service_name = container_service_name.strip()
+    utils = Utils()
+    http = HttpResponse()
+    input_json = request.get_json(force=True)
+    folder = input_json["folder"]
+    container_id = id + "_" + container_service_name + "_1"
+    app.logger.debug('cid: %s', container_id)
+    [out, err] = utils.docker_cp(id, container_service_name, folder)
+    app.logger.debug('Output: %s', out)
+    app.logger.debug('Error: %s', err)
+
+    if "No such container".lower() in err.lower():
+        return http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
+                            ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (folder, container_id),
+                            ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (folder, container_id),
+                            err), 404
+    elif "No such file".lower() in err.lower():
+        return http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
+                            ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (folder, container_id),
+                            ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (folder, container_id),
+                            err), 404
+    else:
+        app.logger.debug('Out: %s', out)
+
+    try:
+        path = f"/tmp/{id}/" + folder.split("/")[-1]
+        utils.zip_file(id, path)
+    except FileNotFoundError as e:
+        result = "Exception({0})".format(e.__str__())
+        return http.failure(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE,
+                            ErrorCodes.HTTP_CODE.get(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE), result,
+                            str(traceback.format_exc())), 404
+    except:
+        result = "Exception({0})".format(sys.exc_info()[0])
+        return http.failure(Constants.FOLDER_ZIP_FAILURE,
+                            ErrorCodes.HTTP_CODE.get(Constants.FOLDER_ZIP_FAILURE), result,
+                            str(traceback.format_exc())), 404
+    return flask.send_file(
+        f"/tmp/{id}.zip",
+        mimetype='application/zip',
+        as_attachment=True), 200
+
+
 @app.route('/teststart/<id>/<framework_container_service_name>', methods=['POST'])
 def test_start(id, framework_container_service_name):
+    id = id.strip()
+    framework_container_service_name = framework_container_service_name.strip()
     utils = Utils()
     http = HttpResponse()
     input_data = request.data.decode('utf-8')

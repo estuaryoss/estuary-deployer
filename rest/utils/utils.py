@@ -1,5 +1,6 @@
 import errno
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -22,6 +23,12 @@ class Utils:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
         with open(file, 'r') as f:
             return f.read()
+
+    def zip_file(self, id, path):
+        file_path = Path(path)
+        if not file_path.exists():
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
+        shutil.make_archive(f"/tmp/{id}", 'zip', f"/tmp/{id}")
 
     def docker_up(self, file):
         file_path = Path(file)
@@ -76,6 +83,15 @@ class Utils:
         out, err = result.communicate()
         return [out.decode('utf-8'), err.decode('utf-8')]
 
+    def docker_cp(self, compose_id, service_name, file_or_folder):
+        container_id = f"{compose_id}_{service_name}_1"
+        command = rf''' {container_id}:{file_or_folder} /tmp/{compose_id}'''
+        container_exec_cmd = r'''docker cp ''' + command
+        result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, shell=True)
+        out, err = result.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]
+
     def docker_exec_detached(self, container_id, command):
         container_exec_cmd = ["docker", "exec", "-d", f"{container_id}"]
         container_exec_cmd.extend(command)
@@ -85,7 +101,7 @@ class Utils:
         return [out.decode('utf-8'), err.decode('utf-8')]
 
     def docker_stats(self, command):
-        container_exec_cmd = r'''docker stats --no-stream''' + command
+        container_exec_cmd = r'''docker stats --no-stream ''' + command
         # container_exec_cmd.extend(command)
         result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE, shell=True)

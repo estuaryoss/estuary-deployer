@@ -4,4 +4,4 @@ requests
 parameterized
 python-coveralls
 pytest-cov
-flask_swagger_ui
+requests_toolbelt

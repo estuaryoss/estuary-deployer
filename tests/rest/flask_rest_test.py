@@ -2,15 +2,17 @@
 import os
 import time
 import unittest
+import zipfile
 
 import requests
 import yaml
 from flask import json
 from parameterized import parameterized
+from requests_toolbelt.utils import dump
 
 from tests.rest.constants import Constants
 from tests.rest.error_codes import ErrorCodes
-
+from tests.rest.utils import Utils
 
 class FlaskServerTestCase(unittest.TestCase):
     # server = "http://localhost:8080"
@@ -440,7 +442,7 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-        "/tmp/is_test_finished", container_id))
+            "/tmp/is_test_finished", container_id))
         self.assertEqual(body.get('message'), False)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE)
@@ -563,6 +565,167 @@ class FlaskServerTestCase(unittest.TestCase):
         time.sleep(sleep_time)
         requests.get(self.server + f"/deploystop/{container_id}")
 
+    @parameterized.expand([
+        ("alpine.yml", "variables.yml")
+    ])
+    def test_getcontainerfile_n(self, template, variables):
+        container_file = "/etc/alabalaportocala"
+        payload = {'file': container_file}
+        headers = {'Content-type': 'application/json'}
+        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        self.assertEqual(response.status_code, 200)
+        env_id = response.json().get("message")
+        framework_container_service_name = "alpine"
+        container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
+
+        response = requests.post(
+            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}",
+            data=json.dumps(payload), headers=headers)
+
+        self.assertEqual(response.status_code, 404)
+        print(dump.dump_all(response))
+        body = response.json()
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
+                             container_file, container_id))
+        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
+            container_file, container_id))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE)
+        self.assertIsNotNone(body.get('time'))
+        requests.get(self.server + f"/deploystop/{env_id}")
+
+    @parameterized.expand([
+        ("alpine.yml", "variables.yml")
+    ])
+    def test_getcontainerfile_is_folder_n(self, template, variables):
+        container_file = "/etc"
+        payload = {'file': container_file}
+        headers = {'Content-type': 'application/json'}
+        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        self.assertEqual(response.status_code, 200)
+        env_id = response.json().get("message")
+        framework_container_service_name = "alpine"
+        container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
+
+        response = requests.post(
+            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}",
+            data=json.dumps(payload), headers=headers)
+
+        self.assertEqual(response.status_code, 404)
+        print(dump.dump_all(response))
+        body = response.json()
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
+                             container_file, container_id))
+        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
+            container_file, container_id))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR)
+        self.assertIsNotNone(body.get('time'))
+        requests.get(self.server + f"/deploystop/{env_id}")
+
+    @parameterized.expand([
+        ("alpine.yml", "variables.yml")
+    ])
+    def test_getcontainerfile_p(self, template, variables):
+        container_file = "/etc/hostname"
+        payload = {'file': container_file}
+        headers = {'Content-type': 'application/json'}
+        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        self.assertEqual(response.status_code, 200)
+        env_id = response.json().get("message")
+        framework_container_service_name = "alpine"
+
+        response = requests.post(
+            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}",
+            data=json.dumps(payload), headers=headers)
+
+        body = response.text
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(body) > 0)
+        requests.get(self.server + f"/deploystop/{env_id}")
+
+    @parameterized.expand([
+        ("alpine.yml", "variables.yml")
+    ])
+    def test_getcontainerfolder_n(self, template, variables):
+        container_folder = "/alabalaportocala"
+        payload = {'folder': container_folder}
+        headers = {'Content-type': 'application/json'}
+        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        self.assertEqual(response.status_code, 200)
+        env_id = response.json().get("message")
+        framework_container_service_name = "alpine"
+        container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
+
+        response = requests.post(
+            self.server + f"/getcontainerfolder/{env_id}/{framework_container_service_name}",
+            data=json.dumps(payload), headers=headers)
+
+        body = response.json()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
+                             container_folder, container_id))
+        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
+            container_folder, container_id))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE)
+        self.assertIsNotNone(body.get('time'))
+        requests.get(self.server + f"/deploystop/{env_id}")
+
+    @parameterized.expand([
+        ("alpine.yml", "variables.yml")
+    ])
+    def test_getcontainerfile_p(self, template, variables):
+        container_folder = "/etc"
+        utils = Utils()
+        payload = {'folder': container_folder}
+        headers = {'Content-type': 'application/json'}
+        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        self.assertEqual(response.status_code, 200)
+        env_id = response.json().get("message")
+        framework_container_service_name = "alpine"
+
+        response = requests.post(
+            self.server + f"/getcontainerfolder/{env_id}/{framework_container_service_name}",
+            data=json.dumps(payload), headers=headers)
+
+        body = response.text
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(body) > 0)
+        utils.write_to_file("./response.zip", response.content)
+        self.assertTrue(zipfile.is_zipfile("response.zip"))
+        with zipfile.ZipFile('response.zip', 'w') as responsezip:
+            self.assertTrue(responsezip.testzip() is None)
+        requests.get(self.server + f"/deploystop/{env_id}")
+
+    @parameterized.expand([
+        ("mysql56.yml", "variables.yml")
+    ])
+    def test_max_deploy_memory_p(self, template, variables):
+        max_mem_procent = "4"
+        payload = {'DATABASE': 'mysql56', 'MAX_DEPLOY_MEMORY': max_mem_procent}
+        headers = {'Content-type': 'application/json'}
+        env_list = []
+        for i in list(range(50)):
+            response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
+                                     headers=headers)
+            if response.status_code == 200:
+                env_list.append(response.json().get("message"))
+            else:
+                break  # here max memory is met
+
+        body = yaml.load(response.text, Loader=yaml.Loader)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % max_mem_procent)
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.MAX_DEPLOY_MEMORY_REACHED)
+        self.assertIsNotNone(body.get('time'))
+        for value in env_list:
+            requests.get(self.server + f"/deploystop/{value}")
 
 if __name__ == '__main__':
     unittest.main()
