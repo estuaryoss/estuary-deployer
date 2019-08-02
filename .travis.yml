@@ -30,9 +30,19 @@ before_script:
   - py.test $SCRIPTS_DIR/render_test.py --cov=entities
 
 script:
-  - python3 -m unittest discover $SCRIPTS_DIR "*_test.py"
+  - python3 -m unittest discover $SCRIPTS_DIR "render_test.py"
+  - python3 -m unittest discover $SCRIPTS_DIR/rest "*_test.py"
   - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR "render_test.py"
   - docker-compose down -v
+
+  - docker run -d
+    -e MAX_DEPLOY_MEMORY=80
+    -p 8080:8080
+    -v $PWD/inputs/templates:/data
+    -v $PWD/inputs/variables:/variables
+    dinutac/estuary-deployer:latest
+  - sleep 10
+  - python3 -m unittest discover $SCRIPTS_DIR/rest_docker_sock "*_test.py"
 
   - docker run -i
     -v $TRAVIS_BUILD_DIR/inputs/templates:/data

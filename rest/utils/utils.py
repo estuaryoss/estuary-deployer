@@ -4,7 +4,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from tests.rest.constants import Constants
+from rest.utils.constants import Constants
 
 
 class Utils:

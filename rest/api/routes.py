@@ -103,6 +103,11 @@ def deploy_start_file_from_client():
     [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
     app.logger.debug('Max memory out: %s', out)
     app.logger.debug('Max memory err: %s', err)
+    if "Cannot connect to the Docker daemon".lower() in err.lower():
+        return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                            ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                            str(traceback.format_exc())), 404
+
     if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
         return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
                             ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
@@ -160,6 +165,10 @@ def deploy_with_env_file_from_server(template, variables):
     [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
     app.logger.debug('Max memory out: %s', out)
     app.logger.debug('Max memory err: %s', err)
+    if "Cannot connect to the Docker daemon".lower() in err.lower():
+        return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                            ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                            str(traceback.format_exc())), 404
     if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
         return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
                             ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
@@ -207,6 +216,10 @@ def deploy_start_file_from_server(template, variables):
     [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
     app.logger.debug('Max memory out: %s', out)
     app.logger.debug('Max memory err: %s', err)
+    if "Cannot connect to the Docker daemon".lower() in err.lower():
+        return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                            ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                            str(traceback.format_exc())), 404
     if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
         return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
                             ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
@@ -251,6 +264,10 @@ def replay_file_from_server(id):
 
     try:
         [out, err] = utils.docker_ps(id)
+        if "Cannot connect to the Docker daemon".lower() in err.lower():
+            return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                                ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                                str(traceback.format_exc())), 404
         result = out.split("\n")[1:-1]
         if len(result) > 0:
             return http.failure(Constants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE,
@@ -292,6 +309,10 @@ def deploy_status(id):
     http = HttpResponse()
     try:
         [out, err] = utils.docker_ps(id)
+        if "Cannot connect to the Docker daemon".lower() in err.lower():
+            return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                                ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                                str(traceback.format_exc())), 404
         result = out.split("\n")[1:-1]
         response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
         app.logger.debug('Output: %s', out)
@@ -318,6 +339,10 @@ def deploy_stop(id):
     http = HttpResponse()
     try:
         [out, err] = utils.docker_down(file)
+        if "Cannot connect to the Docker daemon".lower() in err.lower():
+            return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                                ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                                str(traceback.format_exc())), 404
         app.logger.debug('Output: %s', out)
         app.logger.debug('Error: %s', err)
         [out, err] = utils.docker_ps(id)
@@ -369,6 +394,10 @@ def is_test_finished_default_file(id, framework_container_service_name, keyword)
     [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"cat {file}"])
     app.logger.debug('Output: %s', out)
     app.logger.debug('Error: %s', err)
+    if "Cannot connect to the Docker daemon".lower() in err.lower():
+        return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                            ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                            str(traceback.format_exc())), 404
     if "No such container".lower() in err.lower():
         response = http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                                 ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (file, container_id),
@@ -398,7 +427,10 @@ def is_test_finished_specific_file(id, framework_container_service_name, keyword
     [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"cat {file}"])
     app.logger.debug('Output: %s', out)
     app.logger.debug('Error: %s', err)
-
+    if "Cannot connect to the Docker daemon".lower() in err.lower():
+        return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                            ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                            str(traceback.format_exc())), 404
     if "No such container".lower() in err.lower():
         response = http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                                 ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (file, container_id),
@@ -427,7 +459,10 @@ def get_results_file(id, container_service_name):
     # [out, err] = utils.docker_cp(id, framework_container_service_name, file)
     app.logger.debug('Output: %s', out)
     app.logger.debug('Error: %s', err)
-
+    if "Cannot connect to the Docker daemon".lower() in err.lower():
+        return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                            ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                            str(traceback.format_exc())), 404
     if "No such container".lower() in err.lower():
         response = http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                                 ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (file, container_id),
@@ -462,7 +497,10 @@ def get_container_folder(id, container_service_name):
     [out, err] = utils.docker_cp(id, container_service_name, folder)
     app.logger.debug('Output: %s', out)
     app.logger.debug('Error: %s', err)
-
+    if "Cannot connect to the Docker daemon".lower() in err.lower():
+        return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                            ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                            str(traceback.format_exc())), 404
     if "No such container".lower() in err.lower():
         return http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                             ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (folder, container_id),
@@ -509,6 +547,10 @@ def test_start(id, framework_container_service_name):
     [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"echo  '{input_data}' > {file}"])
     app.logger.debug('Output: %s', out)
     app.logger.debug('Error: %s', err)
+    if "Cannot connect to the Docker daemon".lower() in err.lower():
+        return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
+                            ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                            str(traceback.format_exc())), 404
     if err:
         return http.failure(Constants.TEST_START_FAILURE,
                             ErrorCodes.HTTP_CODE.get(Constants.TEST_START_FAILURE) % (file, container_id), started,

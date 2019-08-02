@@ -23,6 +23,7 @@ https://documenter.getpostman.com/view/2360061/SVYjUNCG
     
     docker run \ 
     -e MAX_DEPLOY_MEMORY=80 \
+    -p 8080:8080
     -v $PWD/inputs/templates:/data \ 
     -v $PWD/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
@@ -32,6 +33,7 @@ https://documenter.getpostman.com/view/2360061/SVYjUNCG
             
     docker run \ 
     -e MAX_DEPLOY_MEMORY=80 \
+    -p 8080:8080
     -v %cd%/inputs/templates:/data \ 
     -v %cd%/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
