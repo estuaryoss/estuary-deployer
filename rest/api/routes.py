@@ -366,15 +366,21 @@ def deploy_stop(id):
 def get_deployer_file():
     utils = Utils()
     http = HttpResponse()
-    input_json = request.get_json(force=True)
-    file = input_json["file"]
+    try:
+        input_json = request.get_json(force=True)
+        file = input_json["file"]
+    except Exception as e:
+        exception = "Exception({0})".format(sys.exc_info()[0])
+        return http.failure(Constants.MISSING_PARAMETER_POST,
+                              ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file", exception,
+                              str(traceback.format_exc())), 404
 
     try:
         result = utils.read_file(file), 200
     except:
-        result = "Exception({0})".format(sys.exc_info()[0])
+        exception = "Exception({0})".format(sys.exc_info()[0])
         result = http.failure(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE,
-                              ErrorCodes.HTTP_CODE.get(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE), result,
+                              ErrorCodes.HTTP_CODE.get(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE), exception,
                               str(traceback.format_exc())), 404
 
     return result
@@ -419,8 +425,14 @@ def is_test_finished_specific_file(id, framework_container_service_name, keyword
     keyword = keyword.strip()
     utils = Utils()
     http = HttpResponse()
-    input_json = request.get_json(force=True)
-    file = input_json["file"]
+    try:
+        input_json = request.get_json(force=True)
+        file = input_json["file"]
+    except Exception as e:
+        exception = "Exception({0})".format(sys.exc_info()[0])
+        return http.failure(Constants.MISSING_PARAMETER_POST,
+                            ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file", exception,
+                            str(traceback.format_exc())), 404
     finished = False
     container_id = id.strip() + "_" + framework_container_service_name.strip() + "_1"
     app.logger.debug('cid: %s', container_id)
@@ -451,8 +463,14 @@ def get_results_file(id, container_service_name):
     container_service_name = container_service_name.strip()
     utils = Utils()
     http = HttpResponse()
-    input_json = request.get_json(force=True)
-    file = input_json["file"]
+    try:
+        input_json = request.get_json(force=True)
+        file = input_json["file"]
+    except Exception as e:
+        exception = "Exception({0})".format(sys.exc_info()[0])
+        return http.failure(Constants.MISSING_PARAMETER_POST,
+                            ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file", exception,
+                            str(traceback.format_exc())), 404
     container_id = id + "_" + container_service_name + "_1"
     app.logger.debug('cid: %s', container_id)
     [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"cat {file}"])
@@ -490,8 +508,14 @@ def get_container_folder(id, container_service_name):
     container_service_name = container_service_name.strip()
     utils = Utils()
     http = HttpResponse()
-    input_json = request.get_json(force=True)
-    folder = input_json["folder"]
+    try:
+        input_json = request.get_json(force=True)
+        folder = input_json["folder"]
+    except Exception as e:
+        exception = "Exception({0})".format(sys.exc_info()[0])
+        return http.failure(Constants.MISSING_PARAMETER_POST,
+                            ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "folder", exception,
+                            str(traceback.format_exc())), 404
     container_id = id + "_" + container_service_name + "_1"
     app.logger.debug('cid: %s', container_id)
     [out, err] = utils.docker_cp(id, container_service_name, folder)
