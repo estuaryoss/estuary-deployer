@@ -747,7 +747,7 @@ class FlaskServerTestCase(unittest.TestCase):
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
     ])
-    def test_getcontainerfile_p(self, template, variables):
+    def test_getcontainerfolder_p(self, template, variables):
         container_folder = "/etc"
         utils = Utils()
         payload = {'folder': container_folder}
