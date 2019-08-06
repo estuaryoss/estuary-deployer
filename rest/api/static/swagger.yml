@@ -359,7 +359,7 @@ paths:
           description: target container to get folder from
           required: true
           type: string
-        - name: file
+        - name: folder
           in: body
           description: target container folder path to get
           required: false
