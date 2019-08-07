@@ -6,6 +6,7 @@ from logging.handlers import logging
 
 import flask
 from flask import request
+from flask_cors import CORS
 
 from about import properties
 from entities.render import Render
@@ -17,6 +18,7 @@ from rest.utils.http_response import HttpResponse
 from rest.utils.utils import Utils
 
 app = create_app()
+CORS(app)
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 app.logger.setLevel(logging.DEBUG)
