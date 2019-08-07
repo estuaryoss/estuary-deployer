@@ -1,5 +1,5 @@
 # estuary-deployer-service
-Estuary docker deployer service which will run your docker containers
+Estuary docker deployer service which will run your docker containers and/or your tests.  
 
 ## Build & Coverage
 [![Build Status](https://travis-ci.org/dinuta/estuary-deployer-service.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer-service)
