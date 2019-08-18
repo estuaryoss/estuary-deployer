@@ -416,6 +416,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/teststart/{container_id}/{framework_container_service_name}",
                                  data=payload,
                                  headers=headers)
+        print(dump.dump_all(response))
         self.assertEqual(response.status_code, 200)
         response = requests.get(
             self.server + f"/istestfinished/{container_id}/{framework_container_service_name}/{keyword_is_test_finished}",
@@ -507,7 +508,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/teststart/{env_id}/{framework_container_service_name}",
                                  data=payload,
                                  headers=headers)
-
+        print(dump.dump_all(response))
         body = response.json()
         container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
         self.assertEqual(response.status_code, 404)
@@ -528,7 +529,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/teststart/dummy/{framework_container_service_name}",
                                  data=payload,
                                  headers=headers)
-
+        print(dump.dump_all(response))
         body = response.json()
         container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
         self.assertEqual(response.status_code, 404)
@@ -555,7 +556,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/teststart/{container_id}/{framework_container_service_name}",
                                  data=payload,
                                  headers=headers)
-
+        print(dump.dump_all(response))
         self.assertEqual(response.status_code, 200)
         payload = {'file': '/tmp/is_test_finished'}
         response = requests.post(
@@ -598,7 +599,7 @@ class FlaskServerTestCase(unittest.TestCase):
             data=json.dumps(payload), headers=headers)
 
         self.assertEqual(response.status_code, 404)
-        print(dump.dump_all(response))
+        # print(dump.dump_all(response))
         body = response.json()
         self.assertEqual(body.get('description'),
                          ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
@@ -629,7 +630,7 @@ class FlaskServerTestCase(unittest.TestCase):
             data=json.dumps(payload), headers=headers)
 
         self.assertEqual(response.status_code, 404)
-        print(dump.dump_all(response))
+        # print(dump.dump_all(response))
         body = response.json()
         self.assertEqual(body.get('description'),
                          ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file")
@@ -656,7 +657,7 @@ class FlaskServerTestCase(unittest.TestCase):
             data=json.dumps(payload), headers=headers)
 
         self.assertEqual(response.status_code, 404)
-        print(dump.dump_all(response))
+        # print(dump.dump_all(response))
         body = response.json()
         self.assertEqual(body.get('description'),
                          ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
@@ -769,6 +770,51 @@ class FlaskServerTestCase(unittest.TestCase):
         with zipfile.ZipFile('response.zip', 'w') as responsezip:
             self.assertTrue(responsezip.testzip() is None)
         requests.get(self.server + f"/deploystop/{env_id}")
+
+    @parameterized.expand([
+        ("mysql56.yml", "variables.yml")
+    ])
+    def test_get_logs_p(self, template, variables):
+        payload = {'DATABASE': 'mysql56'}
+        headers = {'Content-type': 'application/json'}
+        response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
+                                 headers=headers)
+        self.assertEqual(response.status_code, 200)
+        env_id = response.json().get("message")
+
+        response = requests.get(self.server + f"/deploylogs/{env_id}")
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertGreater(len(body.get("message")), 15)  # at least 15
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertIsNotNone(body.get('time'))
+        requests.get(self.server + f"/deploystop/{env_id}")
+
+    @parameterized.expand([
+        ("mysql56.yml", "variables.yml")
+    ])
+    def test_get_logs_id_not_found_n(self, template, variables):
+        payload = {'DATABASE': 'mysql56'}
+        headers = {'Content-type': 'application/json'}
+        response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
+                                 headers=headers)
+        self.assertEqual(response.status_code, 200)
+        env_id = response.json().get("message")
+        dummy_env_id = response.json().get("message") + "dummy"
+
+        response = requests.get(self.server + f"/deploylogs/{dummy_env_id}")
+        body = response.json()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % dummy_env_id)
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.GET_LOGS_FAILED)
+        self.assertIsNotNone(body.get('time'))
+        requests.get(self.server + f"/deploystop/{env_id}")
+
 
     @parameterized.expand([
         ("mysql56.yml", "variables.yml")

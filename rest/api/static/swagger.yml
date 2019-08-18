@@ -10,7 +10,7 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-# host: localhost:8080
+host: localhost:8080
 basePath: /
 tags:
   - name: estuary-deployer
@@ -208,6 +208,27 @@ paths:
           description: get deploy status success
         404:
           description: get deploy status failure
+  /deploylogs/{compose_id}:
+    get:
+      tags:
+        - estuary-deployer
+      summary: gets the logs of each running container specified by compose id identifier.
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: compose_id
+          in: path
+          description: docker-compose environment id returned by the deploystart action.
+          required: true
+          type: string
+      responses:
+        200:
+          description: get compose environment logs success
+        404:
+          description: get compose environment logs failure
   /teststart/{compose_id}/{framework_service_name}:
     post:
       tags:
@@ -359,7 +380,7 @@ paths:
           description: target container to get folder from
           required: true
           type: string
-        - name: folder
+        - name: file
           in: body
           description: target container folder path to get
           required: false

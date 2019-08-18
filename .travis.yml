@@ -20,7 +20,14 @@ env:
 
 before_install:
   - docker build -t dinutac/estuary-deployer:latest .
-  - docker-compose up -d
+  - docker run -d
+    -e MAX_DEPLOY_MEMORY=80
+    -p 8080:8080
+    -v $PWD/inputs/templates:/data
+    -v $PWD/inputs/variables:/variables
+    -v /var/run/docker.sock:/var/run/docker.sock
+    --name estuary-deployer
+    dinutac/estuary-deployer:latest
   - sleep 10
 
 install:
@@ -33,7 +40,7 @@ script:
   - python3 -m unittest discover $SCRIPTS_DIR "render_test.py"
   - python3 -m unittest discover $SCRIPTS_DIR/rest "*_test.py"
   - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR "render_test.py"
-  - docker-compose down -v
+  - docker stop estuary-deployer
 
   - docker run -d
     -e MAX_DEPLOY_MEMORY=80

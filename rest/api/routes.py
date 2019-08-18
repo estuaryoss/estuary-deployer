@@ -171,10 +171,9 @@ def deploy_with_env_file_from_server(template, variables):
         return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
                             ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
                             str(traceback.format_exc())), 404
-    if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
+    if int(float(out)) >= int(os.environ['MAX_DEPLOY_MEMORY']):
         return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
-                            ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
-                                "MAX_DEPLOY_MEMORY"), "Used memory: " + out.strip() + " percent",
+                            ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % int(os.environ['MAX_DEPLOY_MEMORY']), "Used memory: " + out.strip() + " percent",
                             str(traceback.format_exc())), 404
 
     try:
@@ -374,8 +373,8 @@ def get_deployer_file():
     except Exception as e:
         exception = "Exception({0})".format(sys.exc_info()[0])
         return http.failure(Constants.MISSING_PARAMETER_POST,
-                              ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file", exception,
-                              str(traceback.format_exc())), 404
+                            ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file", exception,
+                            str(traceback.format_exc())), 404
 
     try:
         result = utils.read_file(file), 200
@@ -495,8 +494,10 @@ def get_results_file(id, container_service_name):
                                 err), 404
     elif "Is a directory".lower() in err.lower():
         response = http.failure(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR,
-                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (file, container_id),
-                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (file, container_id),
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
+                                    file, container_id),
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
+                                    file, container_id),
                                 err), 404
     else:
         response = out, 200
@@ -599,3 +600,28 @@ def test_start(id, framework_container_service_name):
                             err), 404
 
     return http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), True), 200
+
+
+@app.route('/deploylogs/<id>', methods=['GET'])
+def deploy_logs(id):
+    id = id.strip()
+    dir = f"{Constants.DOCKER_PATH}{id}"
+    file = f"{dir}/{id}"
+    utils = Utils()
+    http = HttpResponse()
+
+    try:
+        [out, err] = utils.docker_logs(file)
+        app.logger.debug('Output: %s', out)
+        app.logger.debug('Error: %s', err)
+        if err:
+            return http.failure(Constants.GET_LOGS_FAILED,
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % (id), err,
+                                err), 404
+    except:
+        exception = "Exception({0})".format(sys.exc_info()[0])
+        return http.failure(Constants.GET_LOGS_FAILED,
+                            ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % (id), exception,
+                            exception), 404
+
+    return http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), out.split("\n")), 200

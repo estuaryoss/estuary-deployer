@@ -16,5 +16,6 @@ class ErrorCodes:
         Constants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE: "Starting environment id %s failed. Environment it is active.",
         Constants.MAX_DEPLOY_MEMORY_REACHED: "Maximum memory %s percent allowed on the host reached. Tune this env var if needed: MAX_DEPLOY_MEMORY",
         Constants.DOCKER_DAEMON_NOT_RUNNING: "Docker daemon is not running. You must start it.",
-        Constants.MISSING_PARAMETER_POST: "Body parameter '%s' sent in request missing. Please include parameter. E.g. {\"parameter\": \"value\"}"
+        Constants.MISSING_PARAMETER_POST: "Body parameter '%s' sent in request missing. Please include parameter. E.g. {\"parameter\": \"value\"}",
+        Constants.GET_LOGS_FAILED: "Getting logs for %s failed."
     }
