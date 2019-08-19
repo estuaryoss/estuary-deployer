@@ -2,7 +2,7 @@
 Estuary docker deployer service which will run your docker containers and/or your tests.  
 
 ## Build & Coverage
-[![Build Status](https://travis-ci.org/dinuta/estuary-deployer-service.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer)
+[![Build Status](https://travis-ci.org/dinuta/estuary-deployer.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer)
 [![Coverage Status](https://coveralls.io/repos/github/dinuta/estuary-deployer/badge.svg?branch=master)](https://coveralls.io/github/dinuta/estuary-deployer?branch=master)
 ## Docker Hub
 [![](https://images.microbadger.com/badges/image/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own version badge on microbadger.com") ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)
