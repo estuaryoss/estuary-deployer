@@ -1,9 +1,9 @@
 import errno
-
 import os
 import shutil
 import subprocess
 from pathlib import Path
+
 from rest.utils.constants import Constants
 
 
@@ -70,8 +70,10 @@ class Utils:
         file_path = Path(f"{file}")
         if not file_path.is_file():
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        result = subprocess.Popen(["docker-compose", "-f", f"{file}", "logs", "-t", f"--tail={Constants.DOCKER_LOGS_LINES}"], stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
+        result = subprocess.Popen(
+            ["docker-compose", "-f", f"{file}", "logs", "-t", f"--tail={Constants.DOCKER_LOGS_LINES}"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
         out, err = result.communicate()
         return [out.decode('utf-8'), err.decode('utf-8')]
 
@@ -87,6 +89,20 @@ class Utils:
     def docker_exec(self, container_id, command):
         container_exec_cmd = ["docker", "exec", f"{container_id}"]
         container_exec_cmd.extend(command)
+        result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        out, err = result.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]
+
+    def docker_network_prune(self):
+        container_exec_cmd = ["docker", "network", "prune", "-f"]
+        result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        out, err = result.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]
+
+    def docker_volume_prune(self):
+        container_exec_cmd = ["docker", "volume", "prune", "-f"]
         result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
         out, err = result.communicate()
@@ -111,11 +127,14 @@ class Utils:
 
     def docker_stats(self, command):
         container_exec_cmd = r'''docker stats --no-stream ''' + command
-        # container_exec_cmd.extend(command)
         result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE, shell=True)
         out, err = result.communicate()
         return [out.decode('utf-8'), err.decode('utf-8')]
+
+    def docker_clean_up(self):
+        self.docker_network_prune()
+        self.docker_volume_prune()
 
     def get_hostname_fqdn(self):
         result = subprocess.Popen(["hostname", "--fqdn"], stdout=subprocess.PIPE,

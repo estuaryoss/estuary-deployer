@@ -37,7 +37,8 @@ RUN pip3 install \
   parameterized \
   flask_swagger_ui \
   requests \
-  flask-cors
+  flask-cors \
+  apscheduler
 
 ## Cleanup
 RUN rm -rf /var/cache/apk/*

@@ -2,26 +2,20 @@ import os
 import sys
 import time
 import traceback
-from logging.handlers import logging
 
 import flask
 from flask import request
-from flask_cors import CORS
 
 from about import properties
 from entities.render import Render
 from rest.api import create_app
-from rest.api.definitions import env_vars, swaggerui_blueprint, SWAGGER_URL
+from rest.api.definitions import env_vars
 from rest.utils.constants import Constants
 from rest.utils.error_codes import ErrorCodes
 from rest.utils.http_response import HttpResponse
 from rest.utils.utils import Utils
 
 app = create_app()
-CORS(app)
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
-
-app.logger.setLevel(logging.DEBUG)
 
 
 @app.route('/swagger/swagger.yml')
@@ -173,7 +167,8 @@ def deploy_with_env_file_from_server(template, variables):
                             str(traceback.format_exc())), 404
     if int(float(out)) >= int(os.environ['MAX_DEPLOY_MEMORY']):
         return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
-                            ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % int(os.environ['MAX_DEPLOY_MEMORY']), "Used memory: " + out.strip() + " percent",
+                            ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % int(
+                                os.environ['MAX_DEPLOY_MEMORY']), "Used memory: " + out.strip() + " percent",
                             str(traceback.format_exc())), 404
 
     try:
