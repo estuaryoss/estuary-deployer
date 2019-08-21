@@ -7,6 +7,7 @@ RUN apk add --no-cache \
   sshpass
 
 RUN apk add --no-cache \
+    bash \
     docker \
     py-pip
 
@@ -38,7 +39,8 @@ RUN pip3 install \
   flask_swagger_ui \
   requests \
   flask-cors \
-  apscheduler
+  apscheduler \
+  py_eureka_client
 
 ## Cleanup
 RUN rm -rf /var/cache/apk/*
@@ -62,7 +64,8 @@ ENV MAX_DEPLOY_MEMORY 80
 
 ADD ./ $SCRIPTS_DIR/
 RUN chmod +x $SCRIPTS_DIR/*.py
+RUN chmod +x $SCRIPTS_DIR/*.sh
 
-WORKDIR /data
+WORKDIR $SCRIPTS_DIR
 
 ENTRYPOINT ["python3", "/home/dev/scripts/main_flask.py"]

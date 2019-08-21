@@ -7,13 +7,13 @@ from rest.utils.utils import Utils
 
 
 class DockerScheduler:
-    scheduler = BackgroundScheduler(daemon=True)
-    interval = 60
+    scheduler = BackgroundScheduler(daemon=False)
+    interval = 120
 
     def __init__(self):
         self.scheduler.add_job(Utils().docker_clean_up, trigger='interval', seconds=self.interval)
         logging.basicConfig()
-        logging.getLogger('apscheduler').setLevel(logging.DEBUG)
+        logging.getLogger('apscheduler').setLevel(logging.INFO)
 
     def start(self):
         print("Starting docker cleanup scheduler ... \n")

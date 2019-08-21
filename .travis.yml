@@ -12,7 +12,8 @@ env:
   DOCKER_SCRIPTS_DIR: /home/dev/scripts
 
   #server on host
-  SERVER: "http://127.0.0.1:8080"
+  SERVER: "localhost:8080"
+  EUREKA_SERVER: "http://localhost:8081/eureka/v2"
 
   # unit tests env vars
   TEMPLATES_DIR: inputs/templates
@@ -20,6 +21,7 @@ env:
 
 before_install:
   - docker build -t dinutac/estuary-deployer:latest .
+  # start app before running functional rest API tests
   - docker run -d
     -e MAX_DEPLOY_MEMORY=80
     -p 8080:8080
@@ -37,26 +39,42 @@ before_script:
   - py.test $SCRIPTS_DIR/render_test.py --cov=entities
 
 script:
+  #run unit tests on travis vm and on docker
   - python3 -m unittest discover $SCRIPTS_DIR "render_test.py"
   - python3 -m unittest discover $SCRIPTS_DIR/rest "*_test.py"
   - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR "render_test.py"
   - docker stop estuary-deployer
+  - docker rm estuary-deployer
 
+  #run functional rest API tests
   - docker run -d
     -e MAX_DEPLOY_MEMORY=80
     -p 8080:8080
     -v $PWD/inputs/templates:/data
     -v $PWD/inputs/variables:/variables
+    --name estuary-deployer
     dinutac/estuary-deployer:latest
-  - sleep 10
+  - sleep 5
   - python3 -m unittest discover $SCRIPTS_DIR/rest_docker_sock "*_test.py"
+  - docker stop estuary-deployer
+  - docker rm estuary-deployer
 
+  #run eureka registration tests
+  - docker-compose up -d
+  - sleep 20
+  - docker ps
+  - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/rest_eureka "*_test.py"
+  - docker-compose down -v
+
+
+  #check template render
   - docker run -i
     -v $TRAVIS_BUILD_DIR/inputs/templates:/data
     -v $TRAVIS_BUILD_DIR/inputs/variables:/variables  -e TEMPLATE=standalone.yml
     -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest --entrypoint python3 dinutac/estuary-deployer:latest
     $DOCKER_SCRIPTS_DIR/main.py
 
+  #check template render
   - docker run --entrypoint jinja2
     -v $TRAVIS_BUILD_DIR/inputs/templates:/data
     -v $TRAVIS_BUILD_DIR/inputs/variables:/variables

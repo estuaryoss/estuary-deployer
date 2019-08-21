@@ -1,7 +1,9 @@
 flask
+flask_cors
 PyYAML
 requests
 parameterized
 python-coveralls
 pytest-cov
 requests_toolbelt
+py_eureka_client

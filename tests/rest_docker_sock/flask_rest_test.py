@@ -11,7 +11,7 @@ from tests.rest_docker_sock.error_codes import ErrorCodes
 
 class FlaskServerTestCase(unittest.TestCase):
     # server = "http://localhost:8080"
-    server = os.environ.get('SERVER')
+    server = "http://" + os.environ.get('SERVER')
 
     expected_version = "1.0.0"
 

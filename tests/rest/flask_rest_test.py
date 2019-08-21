@@ -17,7 +17,7 @@ from tests.rest.utils import Utils
 
 class FlaskServerTestCase(unittest.TestCase):
     # server = "http://localhost:8080"
-    server = os.environ.get('SERVER')
+    server = "http://" + os.environ.get('SERVER')
 
     expected_version = "1.0.0"
 
@@ -49,7 +49,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message'), "estuary-deployer-service")
+        self.assertEqual(body.get('message'), "estuary-deployer")
         self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
@@ -814,7 +814,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.GET_LOGS_FAILED)
         self.assertIsNotNone(body.get('time'))
         requests.get(self.server + f"/deploystop/{env_id}")
-
 
     @parameterized.expand([
         ("mysql56.yml", "variables.yml")

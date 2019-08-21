@@ -1,8 +1,9 @@
 properties = {
-    "name": "estuary-deployer-service",
+    "name": "estuary-deployer",
     "version": "1.0.0",
-    "description": "estuary-deployer-service",
+    "description": "estuary-deployer",
     "author": "Catalin Dinuta",
     "platforms": ["any"],
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "port": 8080
 }

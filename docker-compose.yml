@@ -7,16 +7,28 @@ services:
     hostname: estuary-deployer
 #    entrypoint: tail -f /etc/alpine-release
     environment:
-      limit: 'sky' #example env var inserted. you can read it with environ('limit')
-      MAX_DEPLOY_MEMORY: 80 #% from total. tune this parameter after you measure how much a docker compose env consumes. E.g. 16 GB memory => docker will still compose new env if less than ~13.)
+      limit: 'sky' # example env var inserted. you can read it with environ('limit')
+      MAX_DEPLOY_MEMORY: 80 # % from total. tune this parameter after you measure how much a docker compose env consumes. E.g. 16 GB memory => docker will still compose new env if less than ~13.)
+      #for eureka registering
+      EUREKA_SERVER: http://eureka-server:8080/eureka/v2 #your eureka server
+      APP_IP_PORT: estuary-deployer:8080 #your app details: where it is and on which port. needed for service discovery and spread of tests from the test client
+    entrypoint: bash -c "/home/dev/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 10 && python3 /home/dev/scripts/main_flask.py"
     volumes:
       - ./inputs/templates:/data
       - ./inputs/variables:/variables
-      - ./:/home/dev/scripts/
-      - /var/run/docker.sock:/var/run/docker.sock #works on win also as long as you don't enable tcp daemon on 2375/2376
-      - ./tmp:/tmp
-    ports:
-      - "8080:8080"
+#      - ./:/home/dev/scripts/
+      - /var/run/docker.sock:/var/run/docker.sock # works on win also as long as you don't enable tcp daemon on 2375/2376
+#      - ./tmp:/tmp
+#    ports:
+#      - "8081:8080"
+    expose:
+      - "8080"
 
+  eureka-server:
+    container_name: eureka-server
+    image: netflixoss/eureka:1.3.1
+    hostname: eureka-server
+#    ports:
+#      - "8081:8080"
     expose:
       - "8080"

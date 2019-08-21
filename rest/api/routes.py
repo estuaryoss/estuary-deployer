@@ -47,7 +47,7 @@ def get_content(template, variables):
     os.environ['VARIABLES'] = variables.strip()
     http = HttpResponse()
     try:
-        r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
+        r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
         response = r.rend_template("dummy"), 200
         # response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
     except Exception as e:
@@ -74,7 +74,7 @@ def get_content_with_env(template, variables):
 
     http = HttpResponse()
     try:
-        r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
+        r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
         response = r.rend_template("dummy"), 200
         # response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
     except Exception as e:
@@ -165,14 +165,14 @@ def deploy_with_env_file_from_server(template, variables):
         return http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
                             ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
                             str(traceback.format_exc())), 404
-    if int(float(out)) >= int(os.environ['MAX_DEPLOY_MEMORY']):
+    if int(float(out)) >= int(os.environ.get('MAX_DEPLOY_MEMORY')):
         return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
                             ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % int(
-                                os.environ['MAX_DEPLOY_MEMORY']), "Used memory: " + out.strip() + " percent",
+                                os.environ.get('MAX_DEPLOY_MEMORY')), "Used memory: " + out.strip() + " percent",
                             str(traceback.format_exc())), 404
 
     try:
-        r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
+        r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
         utils.create_dir(dir)
         utils.write_to_file(file, r.rend_template("dummy"))
         [out, err] = utils.docker_up(file)
@@ -223,7 +223,7 @@ def deploy_start_file_from_server(template, variables):
                             str(traceback.format_exc())), 404
 
     try:
-        r = Render(os.environ['TEMPLATE'], os.environ['VARIABLES'])
+        r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
         utils.create_dir(dir)
         utils.write_to_file(file, r.rend_template("dummy"))
         [out, err] = utils.docker_up(file)
