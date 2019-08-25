@@ -1,4 +1,5 @@
-# estuary-deployer
+# Testing as a Service with Docker
+## estuary-deployer
 Estuary docker deployer service which will run your docker containers and/or your tests.  
 
 ## Build & Coverage
