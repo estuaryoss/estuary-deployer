@@ -837,6 +837,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.get(self.server + "/getactivedeployments")
 
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json().get('message')), 1)
 
     @parameterized.expand([
