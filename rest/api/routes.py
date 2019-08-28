@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import traceback
+from secrets import token_hex
 
 import flask
 from flask import request
@@ -86,14 +87,29 @@ def get_content_with_env(template, variables):
     return response
 
 
+@app.route('/getactivedeployments', methods=['GET'])
+def get_active_deployments():
+    utils = Utils()
+    http = HttpResponse()
+    active_deployments = {}
+    full_deployments_list = utils.get_list_dir(f"{Constants.DOCKER_PATH}")
+    for item in full_deployments_list:
+        container_list = utils.docker_ps(item)[0].split("\n")[1:-1]
+        if len(container_list) > 0:
+            active_deployments[item] = container_list
+    app.logger.debug('Active deployments: %s', len(active_deployments))
+
+    return http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), active_deployments), 200
+
+
 @app.route('/deploystart', methods=['POST'])
 def deploy_start_file_from_client():
     utils = Utils()
 
     input_data = request.data.decode('utf-8')
-    timestamp = int(time.time())
-    dir = f"{Constants.DOCKER_PATH}{timestamp}"
-    file = f"{dir}/{timestamp}"
+    token = token_hex(8)
+    dir = f"{Constants.DOCKER_PATH}{token}"
+    file = f"{dir}/{token}"
     http = HttpResponse()
 
     [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
@@ -104,19 +120,26 @@ def deploy_start_file_from_client():
                             ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
                             str(traceback.format_exc())), 404
 
-    if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
-        return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
-                            ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
-                                "MAX_DEPLOY_MEMORY"), "Used memory: " + out.strip() + " percent",
-                            str(traceback.format_exc())), 404
-
+    if os.environ.get("MAX_DEPLOY_MEMORY"):
+        if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
+            return http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
+                                ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
+                                    "MAX_DEPLOY_MEMORY"), "Used memory: " + out.strip() + " percent",
+                                str(traceback.format_exc())), 404
+    if os.environ.get("MAX_DEPLOYMENTS"):
+        active_deployments = utils.get_active_deployments()
+        if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
+            return http.failure(Constants.MAX_DEPLOYMENTS_REACHED,
+                                ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
+                                    "MAX_DEPLOYMENTS"), active_deployments,
+                                f"Active deployments: {str(len(active_deployments))}"), 404
     try:
         utils.create_dir(dir)
         utils.write_to_file(file, input_data)
         [out, err] = utils.docker_up(file)
         app.logger.debug('Output: %s', out)
         app.logger.debug('Error: %s', err)
-        result = str(timestamp)
+        result = str(token)
         if len(utils.docker_ps(result)[0].split("\n")[1:-1]) > 0:
             response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
         else:
@@ -153,9 +176,9 @@ def deploy_with_env_file_from_server(template, variables):
 
     os.environ['TEMPLATE'] = template.strip()
     os.environ['VARIABLES'] = variables.strip()
-    timestamp = int(time.time())
-    dir = f"{Constants.DOCKER_PATH}{timestamp}"
-    file = f"{dir}/{timestamp}"
+    token = token_hex(8)
+    dir = f"{Constants.DOCKER_PATH}{token}"
+    file = f"{dir}/{token}"
     http = HttpResponse()
 
     [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
@@ -170,15 +193,22 @@ def deploy_with_env_file_from_server(template, variables):
                             ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % int(
                                 os.environ.get('MAX_DEPLOY_MEMORY')), "Used memory: " + out.strip() + " percent",
                             str(traceback.format_exc())), 404
-
+    if os.environ.get("MAX_DEPLOYMENTS"):
+        active_deployments = utils.get_active_deployments()
+        if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
+            return http.failure(Constants.MAX_DEPLOYMENTS_REACHED,
+                                ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
+                                    "MAX_DEPLOYMENTS"), active_deployments,
+                                f"Active deployments: {str(len(active_deployments))}"), 404
     try:
         r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
         utils.create_dir(dir)
+        utils.write_to_file(file)
         utils.write_to_file(file, r.rend_template("dummy"))
         [out, err] = utils.docker_up(file)
         app.logger.debug('Output: %s', out)
         app.logger.debug('Error: %s', err)
-        result = str(timestamp)
+        result = str(token)
         if len(utils.docker_ps(result)[0].split("\n")[1:-1]) > 0:
             response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
         else:
@@ -204,9 +234,9 @@ def deploy_start_file_from_server(template, variables):
     utils = Utils()
     os.environ['TEMPLATE'] = template.strip()
     os.environ['VARIABLES'] = variables.strip()
-    timestamp = int(time.time())
-    dir = f"{Constants.DOCKER_PATH}{timestamp}"
-    file = f"{dir}/{timestamp}"
+    token = token_hex(8)
+    dir = f"{Constants.DOCKER_PATH}{token}"
+    file = f"{dir}/{token}"
     http = HttpResponse()
 
     [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
@@ -221,15 +251,22 @@ def deploy_start_file_from_server(template, variables):
                             ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
                                 "MAX_DEPLOY_MEMORY"), "Used memory: " + out.strip() + " percent",
                             str(traceback.format_exc())), 404
-
+    if os.environ.get("MAX_DEPLOYMENTS"):
+        active_deployments = utils.get_active_deployments()
+        if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
+            return http.failure(Constants.MAX_DEPLOYMENTS_REACHED,
+                                ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
+                                    "MAX_DEPLOYMENTS"), active_deployments,
+                                f"Active deployments: {str(len(active_deployments))}"), 404
     try:
         r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
         utils.create_dir(dir)
+        utils.write_to_file(file)
         utils.write_to_file(file, r.rend_template("dummy"))
         [out, err] = utils.docker_up(file)
         app.logger.debug('Output: %s', out)
         app.logger.debug('Error: %s', err)
-        result = str(timestamp)
+        result = str(token)
         if len(utils.docker_ps(result)[0].split("\n")[1:-1]) > 0:
             response = http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result), 200
         else:
@@ -524,6 +561,7 @@ def get_container_folder(id, container_service_name):
                             ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
                             str(traceback.format_exc())), 404
     if "No such container".lower() in err.lower():
+        utils.docker_exec(container_id, f" rm -rf {id}")
         return http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                             ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (folder, container_id),
                             ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (folder, container_id),
@@ -611,12 +649,12 @@ def deploy_logs(id):
         app.logger.debug('Error: %s', err)
         if err:
             return http.failure(Constants.GET_LOGS_FAILED,
-                                ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % (id), err,
+                                ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % id, err,
                                 err), 404
     except:
         exception = "Exception({0})".format(sys.exc_info()[0])
         return http.failure(Constants.GET_LOGS_FAILED,
-                            ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % (id), exception,
+                            ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % id, exception,
                             exception), 404
 
     return http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), out.split("\n")), 200

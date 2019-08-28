@@ -17,5 +17,6 @@ class ErrorCodes:
         Constants.MAX_DEPLOY_MEMORY_REACHED: "Maximum memory %s percent allowed on the host reached. Tune this env var if needed: MAX_DEPLOY_MEMORY",
         Constants.DOCKER_DAEMON_NOT_RUNNING: "Docker daemon is not running. You must start it.",
         Constants.MISSING_PARAMETER_POST: "Body parameter '%s' sent in request missing. Please include parameter. E.g. {\"parameter\": \"value\"}",
-        Constants.GET_LOGS_FAILED: "Getting logs for %s failed."
+        Constants.GET_LOGS_FAILED: "Getting logs for %s failed.",
+        Constants.MAX_DEPLOYMENTS_REACHED: "Maximum deployments %s reached. Please stop some deployments, before starting new ones."
     }

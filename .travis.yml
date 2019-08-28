@@ -19,11 +19,16 @@ env:
   TEMPLATES_DIR: inputs/templates
   VARS_DIR: inputs/variables
 
+  #deployment
+  MAX_DEPLOY_MEMORY: 80
+  MAX_DEPLOYMENTS: 3
+
 before_install:
   - docker build -t dinutac/estuary-deployer:latest .
   # start app before running functional rest API tests
   - docker run -d
-    -e MAX_DEPLOY_MEMORY=80
+    -e MAX_DEPLOY_MEMORY=$MAX_DEPLOY_MEMORY
+    -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
     -p 8080:8080
     -v $PWD/inputs/templates:/data
     -v $PWD/inputs/variables:/variables

@@ -15,16 +15,19 @@ class EurekaClient:
         for app in eureka_client.get_applications(eureka_server=f"{self.host}").applications:
             for instance in app.up_instances:
                 # print(instance.app)
-                apps_list.append(instance.hostName)
+                apps_list.append(instance)
         return apps_list
 
 
 class FlaskServerEurekaTestCase(unittest.TestCase):
 
     def test_eureka_registration(self):
+        app_append_id = f"{os.environ.get('APP_APPEND_ID')}"
         up_services = EurekaClient(f"{os.environ.get('EUREKA_SERVER')}").get_apps()
         self.assertEqual(len(up_services), 1)  # 1 instance registered
-        self.assertEqual(up_services[0], "estuary-deployer")  # 1 instance registered
+        # print(up_services[0].app)
+        self.assertEqual(up_services[0].app, f"estuary-deployer{app_append_id}".upper())  # 1 instance registered
+        self.assertEqual(up_services[0].ipAddr, f"estuary-deployer")  # 1 instance registered
 
 
 if __name__ == '__main__':

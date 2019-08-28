@@ -16,10 +16,17 @@ from tests.rest.utils import Utils
 
 
 class FlaskServerTestCase(unittest.TestCase):
-    # server = "http://localhost:8080"
-    server = "http://" + os.environ.get('SERVER')
+    server = "http://localhost:8080"
+    # server = "http://" + os.environ.get('SERVER')
 
     expected_version = "1.0.0"
+
+    def setUp(self):
+        response = requests.get(self.server + "/getactivedeployments")
+        body = response.json()
+        active_deployments = list(body.get('message'))
+        for item in active_deployments:
+            requests.get(self.server + f"/deploystop/{item}")
 
     def test_env_endpoint(self):
         response = requests.get(self.server + "/env")
@@ -154,7 +161,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{body.get('message')}")
 
     @parameterized.expand([
         ("doesnotexists.yml", "variables.yml"),
@@ -185,7 +191,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{body.get('message')}")
 
     @parameterized.expand([
         ("doesnotexists.yml", "variables.yml"),
@@ -223,7 +228,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{container_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -244,7 +248,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{deploystart_body.get('message')}")
 
     def test_deployreplay_id_not_created_n(self):
         response = requests.get(self.server + f"/deployreplay/dummy_string")
@@ -276,7 +279,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(body.get('message')), 1)  # 1 container should be up and running
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{deploystart_body.get('message')}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -382,7 +384,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{body.get('message')}")
 
     def test_deploy_start_file_from_client_n(self):
         payload = "dummy_yml_will_not_work\n"
@@ -438,7 +439,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
         time.sleep(sleep_time)
-        requests.get(self.server + f"/deploystop/{container_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -463,7 +463,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -491,7 +490,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -517,7 +515,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.TEST_START_FAILURE)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     def test_teststart_get_invalid_env_id_n(self):
         with open("tests/rest/input/start.sh", closefd=True) as f:
@@ -579,7 +576,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
         time.sleep(sleep_time)
-        requests.get(self.server + f"/deploystop/{container_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -609,7 +605,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -637,7 +632,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.MISSING_PARAMETER_POST)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -667,7 +661,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -688,7 +681,6 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.text
         self.assertEqual(response.status_code, 200)
         self.assertTrue(len(body) > 0)
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -717,7 +709,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -743,7 +734,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.MISSING_PARAMETER_POST)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -769,7 +759,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertTrue(zipfile.is_zipfile("response.zip"))
         with zipfile.ZipFile('response.zip', 'w') as responsezip:
             self.assertTrue(responsezip.testzip() is None)
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("mysql56.yml", "variables.yml")
@@ -791,7 +780,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("mysql56.yml", "variables.yml")
@@ -813,7 +801,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_LOGS_FAILED)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{env_id}")
 
     @parameterized.expand([
         ("mysql56.yml", "variables.yml")
@@ -838,8 +825,92 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.MAX_DEPLOY_MEMORY_REACHED)
         self.assertIsNotNone(body.get('time'))
-        for value in env_list:
-            requests.get(self.server + f"/deploystop/{value}")
+
+    @parameterized.expand([
+        ("alpine.yml", "variables.yml")
+    ])
+    def test_getactivedeployments_p(self, template, variables):
+        response = requests.get(self.server + "/getactivedeployments")
+        self.assertEqual(len(response.json().get('message')), 0)
+        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        self.assertEqual(response.status_code, 200)
+
+        response = requests.get(self.server + "/getactivedeployments")
+
+        self.assertEqual(len(response.json().get('message')), 1)
+
+    @parameterized.expand([
+        ("alpine.yml", "variables.yml")
+    ])
+    def test_deploystart_max_deployments_p(self, template, variables):
+        response = requests.get(self.server + "/getactivedeployments")
+        self.assertEqual(len(response.json().get('message')), 0)
+        for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
+            response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+            self.assertEqual(response.status_code, 200)
+        response = requests.get(self.server + "/getactivedeployments")
+        self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
+
+        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        body = response.json()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
+                             'MAX_DEPLOYMENTS'))
+        self.assertEqual(body.get('stacktrace'),
+                         "Active deployments: %s" % os.environ.get('MAX_DEPLOYMENTS'))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.MAX_DEPLOYMENTS_REACHED)
+        self.assertIsNotNone(body.get('time'))
+
+    @parameterized.expand([
+        ("alpine.yml", "variables.yml")
+    ])
+    def test_deploystartenv_max_deployments_p(self, template, variables):
+        response = requests.get(self.server + "/getactivedeployments")
+        self.assertEqual(len(response.json().get('message')), 0)
+        for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
+            response = requests.post(self.server + f"/deploystartenv/{template}/{variables}")
+            self.assertEqual(response.status_code, 200)
+        response = requests.get(self.server + "/getactivedeployments")
+        self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
+
+        response = requests.post(self.server + f"/deploystartenv/{template}/{variables}")
+        body = response.json()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
+                             'MAX_DEPLOYMENTS'))
+        self.assertEqual(body.get('stacktrace'),
+                         "Active deployments: %s" % os.environ.get('MAX_DEPLOYMENTS'))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.MAX_DEPLOYMENTS_REACHED)
+        self.assertIsNotNone(body.get('time'))
+
+    def test_deploystartpostfromfile_max_deployments_p(self):
+        with open("tests/rest/input/alpine.yml", closefd=True) as f:
+            payload = f.read();
+        headers = {'Content-type': 'text/plain'}
+
+        response = requests.get(self.server + "/getactivedeployments")
+        self.assertEqual(len(response.json().get('message')), 0)
+        for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
+            response = requests.post(self.server + f"/deploystart", data=payload, headers=headers)
+            self.assertEqual(response.status_code, 200)
+        response = requests.get(self.server + "/getactivedeployments")
+        self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
+
+        response = requests.post(self.server + f"/deploystart", data=payload, headers=headers)
+        body = response.json()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
+                             'MAX_DEPLOYMENTS'))
+        self.assertEqual(body.get('stacktrace'),
+                         "Active deployments: %s" % os.environ.get('MAX_DEPLOYMENTS'))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.MAX_DEPLOYMENTS_REACHED)
+        self.assertIsNotNone(body.get('time'))
 
 
 if __name__ == '__main__':

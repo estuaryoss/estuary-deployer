@@ -8,9 +8,11 @@ services:
 #    entrypoint: tail -f /etc/alpine-release
     environment:
       limit: 'sky' # example env var inserted. you can read it with environ('limit')
+      MAX_DEPLOYMENTS: 3 # how many deployments to be done. Useful for VMs where user knows how much resources a docker-compose env use.
       MAX_DEPLOY_MEMORY: 80 # % from total. tune this parameter after you measure how much a docker compose env consumes. E.g. 16 GB memory => docker will still compose new env if less than ~13.)
       #for eureka registering
       EUREKA_SERVER: http://eureka-server:8080/eureka/v2 #your eureka server
+      APP_APPEND_ID: SR # this suffix will be added to the deployer service in order to differentiate between different services mapped on VM with specific resources
       APP_IP_PORT: estuary-deployer:8080 #your app details: where it is and on which port. needed for service discovery and spread of tests from the test client
     entrypoint: bash -c "/home/dev/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 10 && python3 /home/dev/scripts/main_flask.py"
     volumes:

@@ -208,6 +208,18 @@ paths:
           description: get deploy status success
         404:
           description: get deploy status failure
+  /getactivedeployments:
+    get:
+      tags:
+        - estuary-deployer
+      summary: gets the active deployments from the deployer service.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: get active deployments success.
+        404:
+          description: get active deployments failure
   /deploylogs/{compose_id}:
     get:
       tags:

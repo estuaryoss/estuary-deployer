@@ -10,8 +10,11 @@ from rest.api.eureka_registrator import EurekaRegistrator
 
 
 def create_app():
+    app_append_id = ""
+    if os.environ.get('APP_APPEND_ID'):
+        app_append_id = os.environ.get('APP_APPEND_ID')
     if os.environ.get('EUREKA_SERVER'):
-        EurekaRegistrator(os.environ.get('EUREKA_SERVER')).register_app(os.environ["APP_IP_PORT"])
+        EurekaRegistrator(os.environ.get('EUREKA_SERVER')).register_app(os.environ.get("APP_IP_PORT"), app_append_id)
     DockerScheduler().start()
     app = Flask(__name__, instance_relative_config=False)
     app.config.from_object('rest.api.flask_config.Config')

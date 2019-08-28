@@ -13,6 +13,13 @@ class Utils:
         if not os.path.exists(path):
             os.makedirs(path, permissions)
 
+    def get_list_dir(self, path):
+        file_path = Path(path)
+        if file_path.exists():
+            dir_list = [directory for directory in os.listdir(path) if os.path.isdir(f"{path}{directory}")]
+            return dir_list
+        return []
+
     def write_to_file(self, file, content=""):
         with open(file, 'w') as f:
             f.write(content)
@@ -132,6 +139,13 @@ class Utils:
         out, err = result.communicate()
         return [out.decode('utf-8'), err.decode('utf-8')]
 
+    def docker_active_deployments(self, command):
+        container_exec_cmd = r'''docker stats --no-stream ''' + command
+        result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, shell=True)
+        out, err = result.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]
+
     def docker_clean_up(self):
         self.docker_network_prune()
         self.docker_volume_prune()
@@ -141,3 +155,12 @@ class Utils:
                                   stderr=subprocess.PIPE)
         out, err = result.communicate()
         return [out.decode('utf-8'), err.decode('utf-8')]
+
+    def get_active_deployments(self):
+        active_deployments = {}
+        full_deployments_list = self.get_list_dir(f"{Constants.DOCKER_PATH}")
+        for item in full_deployments_list:
+            container_list = self.docker_ps(item)[0].split("\n")[1:-1]
+            if len(container_list) > 0:
+                active_deployments[item] = container_list
+        return active_deployments
