@@ -1,6 +1,7 @@
 # Testing as a Service with Docker
 ## estuary-deployer
-Estuary docker deployer service which will run your docker containers and/or your tests.  
+Estuary docker deployer service which will run your docker containers and/or your tests.   
+Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/releases/tag/2.0.0) the estuary-deployer service can run your tests using the estuary-testrunner service. Check-out the wiki !  
 
 ## Build & Coverage
 [![Build Status](https://travis-ci.org/dinuta/estuary-deployer.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer)
@@ -9,8 +10,8 @@ Estuary docker deployer service which will run your docker containers and/or you
 [![](https://images.microbadger.com/badges/image/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own version badge on microbadger.com") ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)
 
 ## Api docs 
-https://app.swaggerhub.com/apis/dinuta/estuary-deployer/1.0.0
-https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0
+https://app.swaggerhub.com/apis/dinuta/estuary-deployer/1.0.0  
+https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0  
 
 ## Postman collection
 https://documenter.getpostman.com/view/2360061/SVYjUNCG
