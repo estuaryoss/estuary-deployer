@@ -17,7 +17,8 @@ RUN apk add --no-cache \
     openssl-dev \
     gcc \
     libc-dev \
-    make
+    make \
+    curl
 
 RUN pip install \
   docker-compose
@@ -58,11 +59,14 @@ ENV TEMPLATES_DIR /data
 ENV VARS_DIR /variables
 ENV SCRIPTS_DIR /home/dev/scripts
 ENV OUT_DIR out
-ENV TEMPLATE docker-compose.j2
+ENV TEMPLATE alpine.yml
 ENV VARIABLES variables.yml
 ENV MAX_DEPLOY_MEMORY 80
 
 ADD ./ $SCRIPTS_DIR/
+ADD ./inputs/templates/ $TEMPLATES_DIR/
+ADD ./inputs/variables/ $VARS_DIR/
+
 RUN chmod +x $SCRIPTS_DIR/*.py
 RUN chmod +x $SCRIPTS_DIR/*.sh
 

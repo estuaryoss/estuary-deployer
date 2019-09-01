@@ -1,3 +1,4 @@
+import datetime
 import errno
 import os
 import shutil
@@ -41,7 +42,8 @@ class Utils:
         file_path = Path(file)
         if not file_path.is_file():
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        result = subprocess.Popen(["docker-compose", "-f", f"{file}", "up", "-d"], stdout=subprocess.PIPE,
+        result = subprocess.Popen(["docker-compose", "pull", "&&", "docker-compose", "-f", f"{file}", "up", "-d"],
+                                  stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE)
         out, err = result.communicate()
         return [out.decode('utf-8'), err.decode('utf-8')]
@@ -108,6 +110,20 @@ class Utils:
         out, err = result.communicate()
         return [out.decode('utf-8'), err.decode('utf-8')]
 
+    def docker_network_connect(self, deployer_net, container):
+        container_exec_cmd = ["docker", "network", "connect", f"{deployer_net}", f"{container}"]
+        result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        out, err = result.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]
+
+    def docker_network_disconnect(self, deployer_net, container):
+        container_exec_cmd = ["docker", "network", "disconnect", f"{deployer_net}", f"{container}"]
+        result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        out, err = result.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]
+
     def docker_volume_prune(self):
         container_exec_cmd = ["docker", "volume", "prune", "-f"]
         result = subprocess.Popen(container_exec_cmd, stdout=subprocess.PIPE,
@@ -160,7 +176,29 @@ class Utils:
         active_deployments = {}
         full_deployments_list = self.get_list_dir(f"{Constants.DOCKER_PATH}")
         for item in full_deployments_list:
-            container_list = self.docker_ps(item)[0].split("\n")[1:-1]
-            if len(container_list) > 0:
-                active_deployments[item] = container_list
+            try:
+                container_list = self.docker_ps(item)[0].split("\n")[1:-1]
+                if len(container_list) > 0:
+                    active_deployments[item] = container_list
+            except:
+                pass
         return active_deployments
+
+    def tmp_folder_clean_up(self):
+        active_deployments = list(self.get_active_deployments().keys())
+        full_deployments_list = self.get_list_dir(f"{Constants.DOCKER_PATH}")
+        for item in full_deployments_list:
+            if item not in active_deployments and (datetime.datetime.now() - datetime.datetime.fromtimestamp(
+                    os.path.getmtime(f"{Constants.DOCKER_PATH}{item}"))) > datetime.timedelta(hours=1):
+                shutil.rmtree(f"{Constants.DOCKER_PATH}{item}")
+
+    def run_cmd_detached(self, command):
+        subprocess.Popen(command, stdout=None,
+                         stderr=None, shell=True)
+
+    def run_cmd(self, command):
+        p = subprocess.Popen(command, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+
+        [out, err] = p.communicate()
+        return [out.decode('utf-8'), err.decode('utf-8')]

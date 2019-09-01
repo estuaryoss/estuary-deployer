@@ -1,3 +1,4 @@
+jinja2
 flask
 flask_cors
 PyYAML
@@ -7,3 +8,4 @@ python-coveralls
 pytest-cov
 requests_toolbelt
 py_eureka_client
+apscheduler

@@ -10,6 +10,7 @@ Estuary docker deployer service which will run your docker containers and/or you
 
 ## Api docs 
 https://app.swaggerhub.com/apis/dinuta/estuary-deployer/1.0.0
+https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0
 
 ## Postman collection
 https://documenter.getpostman.com/view/2360061/SVYjUNCG
@@ -22,22 +23,26 @@ https://documenter.getpostman.com/view/2360061/SVYjUNCG
 ##### Using docker run - simple 
     On Linux/Mac:
     
+    docker network create estuarydeployer_default
     docker run \ 
     -e MAX_DEPLOY_MEMORY=80 \
     -p 8080:8080
     -v $PWD/inputs/templates:/data \ 
     -v $PWD/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    --net=estuarydeployer_default \
     dinutac/estuary-deployer:<tag>
     
     On Windows:
-            
+    
+    docker network create estuarydeployer_default        
     docker run \ 
     -e MAX_DEPLOY_MEMORY=80 \
     -p 8080:8080
     -v %cd%/inputs/templates:/data \ 
     -v %cd%/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    --net=estuarydeployer_default \
     dinutac/estuary-deployer:<tag>
 
 
@@ -52,7 +57,8 @@ Start Eureka server with docker:
 Start your containers by specifying the full hostname or ip of the host machine on where your deployer service resides.  
 
     On Linux/Mac:
-
+    
+    docker network create estuarydeployer_default
     docker run \
     -e MAX_DEPLOYMENTS=3 \ #optional->  how many deployments to be done. it is an option to deploy a fixed no of docker-compose envs
     -e MAX_DEPLOY_MEMORY=80 \ #optional-> how much % of memory to be used by deployer service
@@ -63,10 +69,11 @@ Start your containers by specifying the full hostname or ip of the host machine 
     -v $PWD/inputs/templates:/data \
     -v $PWD/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    --net=estuarydeployer_default
     dinutac/estuary-deployer:<tag>
 
     On Windows:
-
+    docker network create estuarydeployer_default
     docker run \
     -e MAX_DEPLOYMENTS=3 \ #optional->  how many deployments to be done. it is an option to deploy a fixed no of docker-compose envs
     -e MAX_DEPLOY_MEMORY=80 \ #optional-> how much % of memory to be used by deployer service
@@ -77,4 +84,5 @@ Start your containers by specifying the full hostname or ip of the host machine 
     -v %cd%/inputs/templates:/data \
     -v %cd%/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    --net=estuarydeployer_default
     dinutac/estuary-deployer:<tag>

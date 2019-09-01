@@ -5,21 +5,25 @@ from about import properties
 
 class HttpResponse:
 
-    def success(self, code, description, message):
+    @staticmethod
+    def success(code, description, message):
         return {
             "message": message,
             "description": description,
             "code": code,
-            "time": datetime.datetime.now(),
+            "time": str(datetime.datetime.now()),
+            "name": properties["name"],
             "version": properties["version"]
         }
 
-    def failure(self, code, description, message, stacktrace):
+    @staticmethod
+    def failure(code, description, message, stacktrace):
         return {
             "message": message,
             "description": description,
             "code": code,
             "stacktrace": stacktrace,
-            "time": datetime.datetime.now(),
+            "time": str(datetime.datetime.now()),
+            "name": properties["name"],
             "version": properties["version"]
         }

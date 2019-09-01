@@ -13,7 +13,7 @@ class FlaskServerTestCase(unittest.TestCase):
     # server = "http://localhost:8080"
     server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "1.0.0"
+    expected_version = "2.0.0"
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")

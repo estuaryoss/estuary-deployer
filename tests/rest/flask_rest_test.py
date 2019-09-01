@@ -8,7 +8,6 @@ import requests
 import yaml
 from flask import json
 from parameterized import parameterized
-from requests_toolbelt.utils import dump
 
 from tests.rest.constants import Constants
 from tests.rest.error_codes import ErrorCodes
@@ -19,9 +18,11 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080"
     # server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "1.0.0"
+    expected_version = "2.0.0"
+    sleep_before_container_up = 5
 
     def setUp(self):
+        time.sleep(self.sleep_before_container_up)
         response = requests.get(self.server + "/getactivedeployments")
         body = response.json()
         active_deployments = list(body.get('message'))
@@ -53,12 +54,14 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_about_endpoint(self):
         response = requests.get(self.server + "/about")
+        name = "estuary-deployer"
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message'), "estuary-deployer")
+        self.assertEqual(body.get('message'), name)
         self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('name'), name)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
 
@@ -154,7 +157,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
-
+        time.sleep(self.sleep_before_container_up)
         body = yaml.load(response.text, Loader=yaml.Loader)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
@@ -184,7 +187,7 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_deploystart_p(self, template, variables):
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
-
+        time.sleep(self.sleep_before_container_up)
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
@@ -211,64 +214,12 @@ class FlaskServerTestCase(unittest.TestCase):
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
     ])
-    def test_deployreplay_p(self, template, variables):
-        headers = {'Content-type': 'application/json'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
-        container_id = response.json().get("message");
-        self.assertEqual(response.status_code, 200)
-        body = response.json()
-        response = requests.get(self.server + f"/deploystop/{body.get('message')}")
-        self.assertEqual(response.status_code, 200)
-
-        response = requests.get(self.server + f"/deployreplay/{container_id}")
-
-        body = response.json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
-
-    @parameterized.expand([
-        ("alpine.yml", "variables.yml")
-    ])
-    def test_deployreplay_n(self, template, variables):
-        headers = {'Content-type': 'application/json'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
-        self.assertEqual(response.status_code, 200)
-        deploystart_body = response.json()
-        compose_id = deploystart_body.get('message')
-
-        response = requests.get(self.server + f"/deployreplay/{compose_id}")
-
-        body = response.json()
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE) % compose_id)
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE)
-        self.assertIsNotNone(body.get('time'))
-
-    def test_deployreplay_id_not_created_n(self):
-        response = requests.get(self.server + f"/deployreplay/dummy_string")
-
-        self.assertEqual(response.status_code, 404)
-
-        body = response.json()
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_REPLAY_FAILURE))
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.DEPLOY_REPLAY_FAILURE)
-        self.assertIsNotNone(body.get('time'))
-
-    @parameterized.expand([
-        ("alpine.yml", "variables.yml")
-    ])
     def test_deploystatus_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         deploystart_body = response.json()
-
         response = requests.get(self.server + f"/deploystatus/{deploystart_body.get('message')}")
 
         body = response.json()
@@ -286,6 +237,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystatus_n(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         deploystart_body = response.json()
 
@@ -356,6 +308,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystop_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         deploystart_body = response.json()
 
@@ -377,6 +330,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.post(self.server + f"/deploystart", data=payload,
                                  headers=headers)
+        time.sleep(self.sleep_before_container_up)
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'),
@@ -386,196 +340,21 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     def test_deploy_start_file_from_client_n(self):
-        payload = "dummy_yml_will_not_work\n"
+        payload = "dummy_yml_will_not_work \n alabalaportocala"
         headers = {'Content-type': 'text/plain'}
-
+        # it will respond with 200 because it is async now. However later checks can reveal that no containers are up for this env_id
         response = requests.post(self.server + f"/deploystart", data=payload,
                                  headers=headers)
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        env_id = body.get('message')
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
-        self.assertIsNotNone(body.get('time'))
-
-    @parameterized.expand([
-        ("alpine.yml", "variables.yml")
-    ])
-    def test_teststart_get_p(self, template, variables):
-        with open("tests/rest/input/start.sh", closefd=True) as f:
-            payload = f.read();
-        headers = {'Content-type': 'text/plain'}
-
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
-
-        container_id = response.json().get("message")
-        framework_container_service_name = "alpine"
-        keyword_is_test_finished = "finished"
-        sleep_time = 10
-        self.assertEqual(response.status_code, 200)
-        response = requests.post(self.server + f"/teststart/{container_id}/{framework_container_service_name}",
-                                 data=payload,
-                                 headers=headers)
-        print(dump.dump_all(response))
-        self.assertEqual(response.status_code, 200)
-        response = requests.get(
-            self.server + f"/istestfinished/{container_id}/{framework_container_service_name}/{keyword_is_test_finished}",
-            headers=headers)
-        body = response.json()
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('message'), False)
+                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        time.sleep(sleep_time)
-        response = requests.get(
-            self.server + f"/istestfinished/{container_id}/{framework_container_service_name}/{keyword_is_test_finished}",
-            headers=headers)
-        body = response.json()
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('message'), True)
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
-        time.sleep(sleep_time)
-
-    @parameterized.expand([
-        ("alpine.yml", "variables.yml")
-    ])
-    def test_istestfinished_get_n(self, template, variables):
-        headers = {'Content-type': 'text/plain'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
-        env_id = response.json().get("message")
-        framework_container_service_name = "dummy"
-        container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
-        keyword_is_test_finished = "finished"
-
-        response = requests.get(
-            self.server + f"/istestfinished/{env_id}/{framework_container_service_name}/{keyword_is_test_finished}",
-            headers=headers)
-
-        body = response.json()
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-            "/tmp/is_test_finished", container_id))
-        self.assertEqual(body.get('message'), False)
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE)
-        self.assertIsNotNone(body.get('time'))
-
-    @parameterized.expand([
-        ("alpine.yml", "variables.yml")
-    ])
-    def test_istestfinished_post_n(self, template, variables):
-        payload = {'file': '/tmp/is_test_finished'}
-        headers = {'Content-type': 'application/json'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
-        self.assertEqual(response.status_code, 200)
-        env_id = response.json().get("message")
-        framework_container_service_name = "dummy"
-        container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
-        keyword_is_test_finished = "finished"
-
-        response = requests.post(
-            self.server + f"/istestfinished/{env_id}/{framework_container_service_name}/{keyword_is_test_finished}",
-            data=json.dumps(payload), headers=headers)
-
-        body = response.json()
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                             "/tmp/is_test_finished", container_id))
-        self.assertEqual(body.get('message'), False)
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE)
-        self.assertIsNotNone(body.get('time'))
-
-    @parameterized.expand([
-        ("alpine.yml", "variables.yml")
-    ])
-    def test_teststart_get__invalid_container_sn_n(self, template, variables):
-        with open("tests/rest/input/start.sh", closefd=True) as f:
-            payload = f.read();
-        headers = {'Content-type': 'text/plain'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
-        env_id = response.json().get("message")
-        framework_container_service_name = "dummy"
-        self.assertEqual(response.status_code, 200)
-
-        response = requests.post(self.server + f"/teststart/{env_id}/{framework_container_service_name}",
-                                 data=payload,
-                                 headers=headers)
-        print(dump.dump_all(response))
-        body = response.json()
-        container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.TEST_START_FAILURE) % ("/tmp/start.sh", container_id))
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.TEST_START_FAILURE)
-        self.assertIsNotNone(body.get('time'))
-
-    def test_teststart_get_invalid_env_id_n(self):
-        with open("tests/rest/input/start.sh", closefd=True) as f:
-            payload = f.read();
-        headers = {'Content-type': 'text/plain'}
-        env_id = "dummy"
-        framework_container_service_name = "alpine"
-
-        response = requests.post(self.server + f"/teststart/dummy/{framework_container_service_name}",
-                                 data=payload,
-                                 headers=headers)
-        print(dump.dump_all(response))
-        body = response.json()
-        container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.TEST_START_FAILURE) % ("/tmp/start.sh", container_id))
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.TEST_START_FAILURE)
-        self.assertIsNotNone(body.get('time'))
-
-    @parameterized.expand([
-        ("alpine.yml", "variables.yml")
-    ])
-    def test_teststart_post_p(self, template, variables):
-        with open("tests/rest/input/start.sh", closefd=True) as f:
-            payload = f.read();
-        headers = {'Content-type': 'text/plain'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
-        container_id = response.json().get("message")
-        framework_container_service_name = "alpine"
-        keyword_is_test_finished = "finished"
-        sleep_time = 10
-        self.assertEqual(response.status_code, 200)
-
-        response = requests.post(self.server + f"/teststart/{container_id}/{framework_container_service_name}",
-                                 data=payload,
-                                 headers=headers)
-        print(dump.dump_all(response))
-        self.assertEqual(response.status_code, 200)
-        payload = {'file': '/tmp/is_test_finished'}
-        response = requests.post(
-            self.server + f"/istestfinished/{container_id}/{framework_container_service_name}/{keyword_is_test_finished}",
-            headers=headers, data=json.dumps(payload))
-        body = response.json()
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('message'), False)
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
-        time.sleep(sleep_time)
-        response = requests.post(
-            self.server + f"/istestfinished/{container_id}/{framework_container_service_name}/{keyword_is_test_finished}",
-            headers=headers, data=json.dumps(payload))
-        body = response.json()
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('message'), True)
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
-        time.sleep(sleep_time)
+        active_deployments = requests.get(self.server + "/getactivedeployments").json().get('message')
+        self.assertTrue(env_id not in active_deployments)
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -585,6 +364,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'file': container_file}
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
         framework_container_service_name = "alpine"
@@ -615,6 +395,7 @@ class FlaskServerTestCase(unittest.TestCase):
             'file_other': container_file}  # or just no payload will return the same message: missing param in post
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
         framework_container_service_name = "alpine"
@@ -641,6 +422,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'file': container_file}
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
         framework_container_service_name = "alpine"
@@ -670,6 +452,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'file': container_file}
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
         framework_container_service_name = "alpine"
@@ -690,6 +473,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'folder': container_folder}
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
         framework_container_service_name = "alpine"
@@ -718,6 +502,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'folder_other': container_folder}
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
         framework_container_service_name = "alpine"
@@ -744,6 +529,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'folder': container_folder}
         headers = {'Content-type': 'application/json'}
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
         framework_container_service_name = "alpine"
@@ -768,6 +554,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
 
@@ -833,6 +620,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server + "/getactivedeployments")
         self.assertEqual(len(response.json().get('message')), 0)
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
 
         response = requests.get(self.server + "/getactivedeployments")
@@ -848,6 +636,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(response.json().get('message')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
             response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+            time.sleep(self.sleep_before_container_up)
             self.assertEqual(response.status_code, 200)
         response = requests.get(self.server + "/getactivedeployments")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
@@ -873,6 +662,7 @@ class FlaskServerTestCase(unittest.TestCase):
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
             response = requests.post(self.server + f"/deploystartenv/{template}/{variables}")
             self.assertEqual(response.status_code, 200)
+            time.sleep(self.sleep_before_container_up)
         response = requests.get(self.server + "/getactivedeployments")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
 
@@ -897,6 +687,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(response.json().get('message')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
             response = requests.post(self.server + f"/deploystart", data=payload, headers=headers)
+            time.sleep(self.sleep_before_container_up)
             self.assertEqual(response.status_code, 200)
         response = requests.get(self.server + "/getactivedeployments")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))

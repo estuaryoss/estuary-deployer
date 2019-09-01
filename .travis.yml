@@ -24,18 +24,10 @@ env:
   MAX_DEPLOYMENTS: 3
 
 before_install:
+  - docker pull alpine:3.9.4
+  - docker pull mysql:5.6
+  - docker pull dinutac/estuary-testrunner:latest
   - docker build -t dinutac/estuary-deployer:latest .
-  # start app before running functional rest API tests
-  - docker run -d
-    -e MAX_DEPLOY_MEMORY=$MAX_DEPLOY_MEMORY
-    -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
-    -p 8080:8080
-    -v $PWD/inputs/templates:/data
-    -v $PWD/inputs/variables:/variables
-    -v /var/run/docker.sock:/var/run/docker.sock
-    --name estuary-deployer
-    dinutac/estuary-deployer:latest
-  - sleep 10
 
 install:
   - pip install -r requirements.txt
@@ -44,25 +36,62 @@ before_script:
   - py.test $SCRIPTS_DIR/render_test.py --cov=entities
 
 script:
-  #run unit tests on travis vm and on docker
-  - python3 -m unittest discover $SCRIPTS_DIR "render_test.py"
-  - python3 -m unittest discover $SCRIPTS_DIR/rest "*_test.py"
-  - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR "render_test.py"
-  - docker stop estuary-deployer
-  - docker rm estuary-deployer
-
-  #run functional rest API tests
+  #run functional testrunner integration API tests
+  - docker network create estuarydeployer_default
   - docker run -d
     -e MAX_DEPLOY_MEMORY=80
     -p 8080:8080
     -v $PWD/inputs/templates:/data
     -v $PWD/inputs/variables:/variables
+    -v /var/run/docker.sock:/var/run/docker.sock
+    --net=estuarydeployer_default
+    --name estuary-deployer
+    dinutac/estuary-deployer:latest
+#  - docker logs -f estuary-deployer &
+  - sleep 10
+#  - docker network ls
+#  - echo "Deployer net is $(docker network ls | grep deployer | awk '{print $2}' | head -1)"
+  - python3 -m unittest discover $SCRIPTS_DIR/rest_testrunner_integration "*_test.py"
+  - docker ps
+  - docker stop $(docker ps -a -q)
+  - docker rm $(docker ps -a -q)
+  - docker network prune -f
+
+    #run unit tests on travis vm and on docker
+  - docker network create estuarydeployer_default
+  - docker run -d
+    -e MAX_DEPLOY_MEMORY=$MAX_DEPLOY_MEMORY
+    -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
+    -p 8080:8080
+    -v $PWD/inputs/templates:/data
+    -v $PWD/inputs/variables:/variables
+    -v /var/run/docker.sock:/var/run/docker.sock
+    --net=estuarydeployer_default
+    --name estuary-deployer
+    dinutac/estuary-deployer:latest
+  - sleep 10
+  - python3 -m unittest discover $SCRIPTS_DIR "render_test.py"
+  - python3 -m unittest discover $SCRIPTS_DIR/rest "*_test.py"
+  - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR "render_test.py"
+  - docker stop $(docker ps -a -q)
+  - docker rm $(docker ps -a -q)
+  - docker network prune -f
+
+  #run functional rest API tests without docker sock mount
+  - docker network create estuarydeployer_default
+  - docker run -d
+    -e MAX_DEPLOY_MEMORY=80
+    -p 8080:8080
+    -v $PWD/inputs/templates:/data
+    -v $PWD/inputs/variables:/variables
+    --net=estuarydeployer_default
     --name estuary-deployer
     dinutac/estuary-deployer:latest
   - sleep 5
   - python3 -m unittest discover $SCRIPTS_DIR/rest_docker_sock "*_test.py"
-  - docker stop estuary-deployer
-  - docker rm estuary-deployer
+  - docker stop $(docker ps -a -q)
+  - docker rm $(docker ps -a -q)
+  - docker network prune -f
 
   #run eureka registration tests
   - docker-compose up -d
