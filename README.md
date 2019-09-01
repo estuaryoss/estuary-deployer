@@ -1,7 +1,7 @@
 # Testing as a Service with Docker
 ## estuary-deployer
 Estuary docker deployer service which will run your docker containers and/or your tests.   
-Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/releases/tag/2.0.0) the estuary-deployer service can run your tests using the estuary-testrunner service. Check-out the wiki !  
+Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/releases/tag/2.0.0) the estuary-deployer service can run your tests using the [estuary-testrunner](https://github.com/dinuta/estuary-testrunner) service. Check-out the wiki !  
 
 ## Build & Coverage
 [![Build Status](https://travis-ci.org/dinuta/estuary-deployer.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer)
