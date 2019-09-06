@@ -3,7 +3,7 @@ import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from rest.utils.utils import Utils
+from rest.utils.docker_utils import DockerUtils
 
 
 class TmpFolderScheduler:
@@ -11,7 +11,7 @@ class TmpFolderScheduler:
     interval = 120
 
     def __init__(self):
-        self.scheduler.add_job(Utils().tmp_folder_clean_up, trigger='interval', seconds=self.interval)
+        self.scheduler.add_job(DockerUtils.tmp_folder_clean_up, trigger='interval', seconds=self.interval)
         logging.basicConfig()
         logging.getLogger('apscheduler').setLevel(logging.INFO)
 

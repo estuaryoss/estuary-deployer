@@ -11,11 +11,14 @@ from flask import request, Response
 from about import properties
 from entities.render import Render
 from rest.api import create_app
+from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployments
+from rest.api.apiresponsehelpers.constants import Constants
+from rest.api.apiresponsehelpers.error_codes import ErrorCodes
+from rest.api.apiresponsehelpers.http_response import HttpResponse
 from rest.api.definitions import env_vars
-from rest.utils.constants import Constants
-from rest.utils.error_codes import ErrorCodes
-from rest.utils.http_response import HttpResponse
-from rest.utils.utils import Utils
+from rest.utils.cmd_utils import CmdUtils
+from rest.utils.docker_utils import DockerUtils
+from rest.utils.io_utils import IOUtils
 
 app = create_app()
 
@@ -91,11 +94,11 @@ def get_content_with_env(template, variables):
     return response
 
 
-@app.route('/getactivedeployments', methods=['GET'])
+@app.route('/getdeploymentinfo', methods=['GET'])
 def get_active_deployments():
-    utils = Utils()
+    docker_utils = DockerUtils()
     http = HttpResponse()
-    active_deployments = utils.get_active_deployments()
+    active_deployments = docker_utils.get_active_deployments()
     app.logger.debug('Active deployments: %s', len(active_deployments))
 
     return Response(
@@ -105,7 +108,7 @@ def get_active_deployments():
 
 @app.route('/deploystart', methods=['POST'])
 def deploy_start_file_from_client():
-    utils = Utils()
+    docker_utils = DockerUtils()
 
     input_data = request.data.decode('utf-8')
     token = token_hex(8)
@@ -113,7 +116,7 @@ def deploy_start_file_from_client():
     file = f"{dir}/{token}"
     http = HttpResponse()
 
-    [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
+    [out, err] = docker_utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
     app.logger.debug('Max memory out: %s', out)
     app.logger.debug('Max memory err: %s', err)
     if "Cannot connect to the Docker daemon".lower() in err.lower():
@@ -130,7 +133,7 @@ def deploy_start_file_from_client():
                                                     "Used memory: " + out.strip() + " percent",
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
     if os.environ.get("MAX_DEPLOYMENTS"):
-        active_deployments = utils.get_active_deployments()
+        active_deployments = docker_utils.get_active_deployments()
         if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
             return Response(json.dumps(http.failure(Constants.MAX_DEPLOYMENTS_REACHED,
                                                     ErrorCodes.HTTP_CODE.get(
@@ -139,10 +142,10 @@ def deploy_start_file_from_client():
                                                     f"Active deployments: {str(len(active_deployments))}")), 404,
                             mimetype="application/json")
     try:
-        utils.create_dir(dir)
-        utils.write_to_file(file, input_data)
-        utils.run_cmd_detached(rf'''docker-compose -f {file} up -d''')
-        # [out, err] = utils.docker_up(file)  # eliminated because was in blocking mode
+        IOUtils.create_dir(dir)
+        IOUtils.write_to_file(file, input_data)
+        CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} up -d''')
+        # [out, err] = docker_utils.docker_up(file)  # eliminated because was in blocking mode
         result = str(token)
         response = Response(
             json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
@@ -154,7 +157,7 @@ def deploy_start_file_from_client():
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
     except:
         result = "Exception({0})".format(sys.exc_info()[0])
-        [out, err] = utils.docker_down(file)
+        [out, err] = docker_utils.docker_down(file)
         app.logger.debug('Output: %s', out)
         app.logger.debug('Error: %s', err)
         response = Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
@@ -166,7 +169,7 @@ def deploy_start_file_from_client():
 
 @app.route('/deploystartenv/<template>/<variables>', methods=['POST'])
 def deploy_with_env_file_from_server(template, variables):
-    utils = Utils()
+    docker_utils = DockerUtils()
     try:
         input_json = request.get_json(force=True)
         for key, value in input_json.items():
@@ -184,7 +187,7 @@ def deploy_with_env_file_from_server(template, variables):
     file = f"{dir}/{token}"
     http = HttpResponse()
 
-    [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
+    [out, err] = docker_utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
     app.logger.debug('Max memory out: %s', out)
     app.logger.debug('Max memory err: %s', err)
     if "Cannot connect to the Docker daemon".lower() in err.lower():
@@ -198,7 +201,7 @@ def deploy_with_env_file_from_server(template, variables):
                                                 "Used memory: " + out.strip() + " percent",
                                                 str(traceback.format_exc()))), 404, mimetype="application/json")
     if os.environ.get("MAX_DEPLOYMENTS"):
-        active_deployments = utils.get_active_deployments()
+        active_deployments = docker_utils.get_active_deployments()
         if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
             return Response(json.dumps(http.failure(Constants.MAX_DEPLOYMENTS_REACHED,
                                                     ErrorCodes.HTTP_CODE.get(
@@ -208,11 +211,11 @@ def deploy_with_env_file_from_server(template, variables):
                             mimetype="application/json")
     try:
         r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
-        utils.create_dir(dir)
-        utils.write_to_file(file)
-        utils.write_to_file(file, r.rend_template("dummy"))
-        utils.run_cmd_detached(rf'''docker-compose -f {file} up -d''')
-        # [out, err] = utils.docker_up(file)
+        IOUtils.create_dir(dir)
+        IOUtils.write_to_file(file)
+        IOUtils.write_to_file(file, r.rend_template("dummy"))
+        CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} up -d''')
+        # [out, err] = docker_utils.docker_up(file)
         result = str(token)
         response = Response(
             json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
@@ -233,7 +236,7 @@ def deploy_with_env_file_from_server(template, variables):
 
 @app.route('/deploystart/<template>/<variables>', methods=['GET'])
 def deploy_start_file_from_server(template, variables):
-    utils = Utils()
+    docker_utils = DockerUtils()
     os.environ['TEMPLATE'] = template.strip()
     os.environ['VARIABLES'] = variables.strip()
     app.logger.debug("Templates: " + os.environ.get('TEMPLATE'))
@@ -243,7 +246,7 @@ def deploy_start_file_from_server(template, variables):
     file = f"{dir}/{token}"
     http = HttpResponse()
 
-    [out, err] = utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
+    [out, err] = docker_utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
     app.logger.debug('Max memory out: %s', out)
     app.logger.debug('Max memory err: %s', err)
     if "Cannot connect to the Docker daemon".lower() in err.lower():
@@ -257,7 +260,7 @@ def deploy_start_file_from_server(template, variables):
                                                     "MAX_DEPLOY_MEMORY"), "Used memory: " + out.strip() + " percent",
                                                 str(traceback.format_exc()))), 404, mimetype="application/json")
     if os.environ.get("MAX_DEPLOYMENTS"):
-        active_deployments = utils.get_active_deployments()
+        active_deployments = docker_utils.get_active_deployments()
         if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
             return Response(json.dumps(http.failure(Constants.MAX_DEPLOYMENTS_REACHED,
                                                     ErrorCodes.HTTP_CODE.get(
@@ -267,11 +270,11 @@ def deploy_start_file_from_server(template, variables):
                             mimetype="application/json")
     try:
         r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
-        utils.create_dir(dir)
-        utils.write_to_file(file)
-        utils.write_to_file(file, r.rend_template("dummy"))
-        utils.run_cmd_detached(rf'''docker-compose -f {file} up -d''')
-        # [out, err] = utils.docker_up(file)
+        IOUtils.create_dir(dir)
+        IOUtils.write_to_file(file)
+        IOUtils.write_to_file(file, r.rend_template("dummy"))
+        CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} up -d''')
+        # [out, err] = docker_utils.docker_up(file)
         result = str(token)
         response = Response(
             json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
@@ -293,17 +296,18 @@ def deploy_start_file_from_server(template, variables):
 @app.route('/deploystatus/<id>', methods=['GET'])
 def deploy_status(id):
     id = id.strip()
-    utils = Utils()
+    docker_utils = DockerUtils()
     http = HttpResponse()
     try:
-        [out, err] = utils.docker_ps(id)
+        [out, err] = docker_utils.docker_ps(id)
         if "Cannot connect to the Docker daemon".lower() in err.lower():
             return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
                                                     ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
         result = out.split("\n")[1:-1]
         response = Response(
-            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
+                                    ActiveDeployments.active_deployment(id, result))), 200,
             mimetype="application/json")
         app.logger.debug('Output: %s', out)
         app.logger.debug('Error: %s', err)
@@ -324,18 +328,18 @@ def deploy_status(id):
 @app.route('/deploystop/<id>', methods=['GET'])
 def deploy_stop(id):
     id = id.strip()
-    utils = Utils()
+    docker_utils = DockerUtils()
     file = f"{Constants.DOCKER_PATH}{id}/{id}"
     http = HttpResponse()
     try:
-        [out, err] = utils.docker_down(file)
+        [out, err] = docker_utils.docker_down(file)
         if "Cannot connect to the Docker daemon".lower() in err.lower():
             return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
                                                     ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
         app.logger.debug('Output: %s', out)
         app.logger.debug('Error: %s', err)
-        [out, err] = utils.docker_ps(id)
+        [out, err] = docker_utils.docker_ps(id)
         result = out.split("\n")[1:-1]
         response = Response(
             json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
@@ -356,7 +360,6 @@ def deploy_stop(id):
 
 @app.route('/getdeployerfile', methods=['POST'])
 def get_deployer_file():
-    utils = Utils()
     http = HttpResponse()
     try:
         input_json = request.get_json(force=True)
@@ -368,7 +371,7 @@ def get_deployer_file():
                                                 exception,
                                                 str(traceback.format_exc()))), 404, mimetype="application/json")
     try:
-        result = Response(utils.read_file(file), 200, mimetype="text/plain")
+        result = Response(IOUtils.read_file(file), 200, mimetype="text/plain")
     except:
         exception = "Exception({0})".format(sys.exc_info()[0])
         result = Response(json.dumps(http.failure(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE,
@@ -382,7 +385,7 @@ def get_deployer_file():
 def get_results_file(id, container_service_name):
     id = id.strip()
     container_service_name = container_service_name.strip()
-    utils = Utils()
+    docker_utils = DockerUtils()
     http = HttpResponse()
     try:
         input_json = request.get_json(force=True)
@@ -395,8 +398,8 @@ def get_results_file(id, container_service_name):
                                                 str(traceback.format_exc()))), 404, mimetype="application/json")
     container_id = id + "_" + container_service_name + "_1"
     app.logger.debug('cid: %s', container_id)
-    [out, err] = utils.docker_exec(container_id, ["sh", "-c", f"cat {file}"])
-    # [out, err] = utils.docker_cp(id, framework_container_service_name, file)
+    [out, err] = docker_utils.docker_exec(container_id, ["sh", "-c", f"cat {file}"])
+    # [out, err] = docker_utils.docker_cp(id, framework_container_service_name, file)
     app.logger.debug('Output: %s', out)
     app.logger.debug('Error: %s', err)
     if "Cannot connect to the Docker daemon".lower() in err.lower():
@@ -436,7 +439,7 @@ def get_results_file(id, container_service_name):
 def get_container_folder(id, container_service_name):
     id = id.strip()
     container_service_name = container_service_name.strip()
-    utils = Utils()
+    docker_utils = DockerUtils()
     http = HttpResponse()
     try:
         input_json = request.get_json(force=True)
@@ -449,7 +452,7 @@ def get_container_folder(id, container_service_name):
                                                 str(traceback.format_exc()))), 404, mimetype="application/json")
     container_id = id + "_" + container_service_name + "_1"
     app.logger.debug('cid: %s', container_id)
-    [out, err] = utils.docker_cp(id, container_service_name, folder)
+    [out, err] = docker_utils.docker_cp(id, container_service_name, folder)
     app.logger.debug('Output: %s', out)
     app.logger.debug('Error: %s', err)
     if "Cannot connect to the Docker daemon".lower() in err.lower():
@@ -457,7 +460,7 @@ def get_container_folder(id, container_service_name):
                                                 ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
                                                 str(traceback.format_exc()))), 404, mimetype="application/json")
     if "No such container".lower() in err.lower():
-        utils.docker_exec(container_id, f" rm -rf {id}")
+        docker_utils.docker_exec(container_id, f" rm -rf {id}")
         return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                                                 ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
                                                     folder, container_id),
@@ -476,7 +479,7 @@ def get_container_folder(id, container_service_name):
 
     try:
         path = f"/tmp/{id}/" + folder.split("/")[-1]
-        utils.zip_file(id, path)
+        IOUtils.zip_file(id, path)
     except FileNotFoundError as e:
         result = "Exception({0})".format(e.__str__())
         return Response(json.dumps(http.failure(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE,
@@ -499,11 +502,11 @@ def deploy_logs(id):
     id = id.strip()
     dir = f"{Constants.DOCKER_PATH}{id}"
     file = f"{dir}/{id}"
-    utils = Utils()
+    docker_utils = DockerUtils()
     http = HttpResponse()
 
     try:
-        [out, err] = utils.docker_logs(file)
+        [out, err] = docker_utils.docker_logs(file)
         app.logger.debug('Output: %s', out)
         app.logger.debug('Error: %s', err)
         if err:
@@ -524,12 +527,12 @@ def deploy_logs(id):
 # must connect the test runner to the deployer network to be able to send http req to the test runner which runs in a initial segregated net
 @app.route('/testrunnernetconnect/<id>', methods=['GET'])
 def testrunner_docker_network_connect(id):
-    utils = Utils()
+    docker_utils = DockerUtils()
     http = HttpResponse()
     container_id = f"{id}_testrunner_1"
     try:
-        [out, err] = utils.run_cmd(["bash", "-c",
-                                    r'''docker network ls | grep deployer | awk '{print $2}' | head -1'''])
+        [out, err] = CmdUtils.run_cmd(["bash", "-c",
+                                       r'''docker network ls | grep deployer | awk '{print $2}' | head -1'''])
         app.logger.debug("Out: " + out)
         app.logger.debug("Err: " + err)
         if not out:
@@ -538,7 +541,7 @@ def testrunner_docker_network_connect(id):
                                                     err,
                                                     err)), 404, mimetype="application/json")
         deployer_network = out.strip()
-        [out, err] = utils.docker_network_connect(deployer_network, container_id)
+        [out, err] = docker_utils.docker_network_connect(deployer_network, container_id)
 
         if "already exists in network".lower() in err.lower():
             return Response(json.dumps(http.success(Constants.SUCCESS,
@@ -565,12 +568,12 @@ def testrunner_docker_network_connect(id):
 
 @app.route('/testrunnernetdisconnect/<id>', methods=['GET'])
 def testrunner_docker_network_disconnect(id):
-    utils = Utils()
+    docker_utils = DockerUtils()
     http = HttpResponse()
     container_id = f"{id}_testrunner_1"
     try:
-        [out, err] = utils.run_cmd(["bash", "-c",
-                                    r'''docker network ls | grep deployer | awk '{print $2}' | head -1'''])
+        [out, err] = CmdUtils.run_cmd(["bash", "-c",
+                                       r'''docker network ls | grep deployer | awk '{print $2}' | head -1'''])
         app.logger.debug("Out: " + out)
         app.logger.debug("Err: " + err)
         if not out:
@@ -579,7 +582,7 @@ def testrunner_docker_network_disconnect(id):
                                                     err,
                                                     err)), 404, mimetype="application/json")
         deployer_network = out.strip()
-        [out, err] = utils.docker_network_disconnect(deployer_network, container_id)
+        [out, err] = docker_utils.docker_network_disconnect(deployer_network, container_id)
 
         if "is not connected to network".lower() in err.lower():
             return Response(json.dumps(http.success(Constants.SUCCESS,
@@ -615,7 +618,7 @@ def testrunner_request(id, text):
     elements = text.strip().split("/")
     container_id = f"{id}_testrunner_1"
     input_data = ""
-    headers = {'Content-type': 'text/plain'}
+    headers = {'Content-type': 'application/json'}
     try:
         input_data = request.data.decode('utf-8').strip()
     except:

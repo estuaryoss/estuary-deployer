@@ -208,7 +208,7 @@ paths:
           description: get deploy status success
         404:
           description: get deploy status failure
-  /getactivedeployments:
+  /getdeploymentinfo:
     get:
       tags:
         - estuary-deployer

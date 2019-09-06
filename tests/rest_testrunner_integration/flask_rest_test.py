@@ -11,8 +11,8 @@ from parameterized import parameterized
 from requests_toolbelt.utils import dump
 
 from tests.rest_testrunner_integration.constants import Constants
-from tests.rest_testrunner_integration.utils import Utils
 from tests.rest_testrunner_integration.error_codes import ErrorCodes
+from tests.rest_testrunner_integration.utils import Utils
 
 
 class FlaskServerTestCase(unittest.TestCase):
@@ -29,15 +29,13 @@ class FlaskServerTestCase(unittest.TestCase):
         variables = "variables.yml"
         requests.get(f"http://localhost:8080/deploystart/{template}/{variables}")
         time.sleep(30)  # wait until the env is up and running, including image download and container boot
-        response = requests.get(f"http://localhost:8080/getactivedeployments")
-        compose_id = list(response.json().get('message').keys())[0]
+        compose_id = cls.get_deployment_info()[0]
         print("Docker compose env_id: " + compose_id)
         response = requests.get(f"http://localhost:8080/testrunnernetconnect/{compose_id}")
         print("Docker net connect response: " + json.dumps(response.json()))
 
     def setUp(self):
-        response = requests.get(f"http://localhost:8080/getactivedeployments")
-        self.compose_id = list(response.json().get('message').keys())[0]
+        self.compose_id = self.get_deployment_info()[0]
         for i in range(0, self.cleanup_count_safe):
             requests.get(self.server + f"/testrunner/{self.compose_id}" + "/teststop")
 
@@ -528,6 +526,17 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
+
+    @staticmethod
+    def get_deployment_info():
+        active_deployments = []
+        response = requests.get("http://localhost:8080/getdeploymentinfo")
+        body = response.json()
+        active_deployments_objects = body.get('message')
+        for item in active_deployments_objects:
+            active_deployments.append(item.get('id'))
+
+        return active_deployments
 
 
 if __name__ == '__main__':

@@ -23,9 +23,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def setUp(self):
         time.sleep(self.sleep_before_container_up)
-        response = requests.get(self.server + "/getactivedeployments")
-        body = response.json()
-        active_deployments = list(body.get('message'))
+        active_deployments = self.get_deployment_info()
         for item in active_deployments:
             requests.get(self.server + f"/deploystop/{item}")
 
@@ -219,15 +217,16 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
-        deploystart_body = response.json()
-        response = requests.get(self.server + f"/deploystatus/{deploystart_body.get('message')}")
+        compose_id = response.json().get('message')
+        response = requests.get(self.server + f"/deploystatus/{compose_id}")
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(len(body.get('message')), 1)  # 1 container should be up and running
+        self.assertEqual(len(body.get('message').get('containers')), 1)  # 1 container should be up and running
+        self.assertEqual(body.get('message').get('id'), compose_id)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
 
@@ -353,7 +352,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        active_deployments = requests.get(self.server + "/getactivedeployments").json().get('message')
+        active_deployments = self.get_deployment_info()
         self.assertTrue(env_id not in active_deployments)
 
     @parameterized.expand([
@@ -616,29 +615,32 @@ class FlaskServerTestCase(unittest.TestCase):
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
     ])
-    def test_getactivedeployments_p(self, template, variables):
-        response = requests.get(self.server + "/getactivedeployments")
+    def test_getdeploymentinfo_p(self, template, variables):
+        response = requests.get(self.server + "/getdeploymentinfo")
         self.assertEqual(len(response.json().get('message')), 0)
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
+        compose_id = response.json().get('message')
         self.assertEqual(response.status_code, 200)
 
-        response = requests.get(self.server + "/getactivedeployments")
+        response = requests.get(self.server + "/getdeploymentinfo")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json().get('message')), 1)
+        self.assertEqual(response.json().get('message')[0].get('id'), compose_id)
+        self.assertEqual(len(response.json().get('message')[0].get('containers')), 1)
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
     ])
     def test_deploystart_max_deployments_p(self, template, variables):
-        response = requests.get(self.server + "/getactivedeployments")
+        response = requests.get(self.server + "/getdeploymentinfo")
         self.assertEqual(len(response.json().get('message')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
             response = requests.get(self.server + f"/deploystart/{template}/{variables}")
             time.sleep(self.sleep_before_container_up)
             self.assertEqual(response.status_code, 200)
-        response = requests.get(self.server + "/getactivedeployments")
+        response = requests.get(self.server + "/getdeploymentinfo")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
 
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
@@ -657,13 +659,13 @@ class FlaskServerTestCase(unittest.TestCase):
         ("alpine.yml", "variables.yml")
     ])
     def test_deploystartenv_max_deployments_p(self, template, variables):
-        response = requests.get(self.server + "/getactivedeployments")
+        response = requests.get(self.server + "/getdeploymentinfo")
         self.assertEqual(len(response.json().get('message')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
             response = requests.post(self.server + f"/deploystartenv/{template}/{variables}")
             self.assertEqual(response.status_code, 200)
             time.sleep(self.sleep_before_container_up)
-        response = requests.get(self.server + "/getactivedeployments")
+        response = requests.get(self.server + "/getdeploymentinfo")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
 
         response = requests.post(self.server + f"/deploystartenv/{template}/{variables}")
@@ -683,13 +685,13 @@ class FlaskServerTestCase(unittest.TestCase):
             payload = f.read();
         headers = {'Content-type': 'text/plain'}
 
-        response = requests.get(self.server + "/getactivedeployments")
+        response = requests.get(self.server + "/getdeploymentinfo")
         self.assertEqual(len(response.json().get('message')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
             response = requests.post(self.server + f"/deploystart", data=payload, headers=headers)
             time.sleep(self.sleep_before_container_up)
             self.assertEqual(response.status_code, 200)
-        response = requests.get(self.server + "/getactivedeployments")
+        response = requests.get(self.server + "/getdeploymentinfo")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
 
         response = requests.post(self.server + f"/deploystart", data=payload, headers=headers)
@@ -703,6 +705,16 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.MAX_DEPLOYMENTS_REACHED)
         self.assertIsNotNone(body.get('time'))
+
+    def get_deployment_info(self):
+        active_deployments = []
+        response = requests.get(self.server + "/getdeploymentinfo")
+        body = response.json()
+        active_deployments_objects = body.get('message')
+        for item in active_deployments_objects:
+            active_deployments.append(item.get('id'))
+
+        return active_deployments
 
 
 if __name__ == '__main__':
