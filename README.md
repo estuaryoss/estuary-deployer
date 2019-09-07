@@ -1,3 +1,5 @@
+<h1 align="center"><img src="./docs/images/banner_estuary.png" alt="Testing as a service with Docker"></h1>    
+
 # Testing as a Service with Docker
 ## estuary-deployer
 Estuary docker deployer service which will run your docker containers and/or your tests.   
