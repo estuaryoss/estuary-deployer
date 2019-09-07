@@ -1,5 +1,6 @@
 <h1 align="center"><img src="./docs/images/banner_estuary.png" alt="Testing as a service with Docker"></h1>    
 
+Please donate: <a href="https://paypal.me/catalindinuta?locale.x=en_US"><img src="https://pbs.twimg.com/profile_images/1145724063106519040/b1L98qh9_400x400.jpg" height="40" width="40" align="center"></a>  
 # Testing as a Service with Docker
 ## estuary-deployer
 Estuary docker deployer service which will run your docker containers and/or your tests.   
