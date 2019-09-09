@@ -34,8 +34,6 @@ Note: The deployments will not work. Docker sock can't be mounted, at least on t
     docker run \ 
     -e MAX_DEPLOY_MEMORY=80 \
     -p 8080:8080
-    -v $PWD/inputs/templates:/data \ 
-    -v $PWD/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --net=estuarydeployer_default \
     dinutac/estuary-deployer:<tag>
@@ -46,12 +44,13 @@ Note: The deployments will not work. Docker sock can't be mounted, at least on t
     docker run \ 
     -e MAX_DEPLOY_MEMORY=80 \
     -p 8080:8080
-    -v %cd%/inputs/templates:/data \ 
-    -v %cd%/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --net=estuarydeployer_default \
     dinutac/estuary-deployer:<tag>
-
+    
+    Jinja2 templating can be done, just add:
+    -v %cd%/inputs/templates:/data \ 
+    -v %cd%/inputs/variables:/variables \
 
 ##### Using docker run - eureka registration
 To have all your deployer instances in a central location we use netflix eureka. This means your client will discover
@@ -73,8 +72,6 @@ Start your containers by specifying the full hostname or ip of the host machine 
     -e APP_IP_PORT=10.133.14.238:8081 #optional, but mandatory if EUREKA_SERVER env var is used -> the app hostname/ip:port
     -e APP_APPEND_ID=SR #optional-> this id will be appended to the default app name on service registration. Useful for user mappings service- resources on a VM
     -p 8080:8080
-    -v $PWD/inputs/templates:/data \
-    -v $PWD/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --net=estuarydeployer_default
     dinutac/estuary-deployer:<tag>
@@ -88,8 +85,10 @@ Start your containers by specifying the full hostname or ip of the host machine 
     -e APP_IP_PORT=10.133.14.238:8081 #optional, but mandatory if EUREKA_SERVER env var is used -> the app hostname/ip:port
     -e APP_APPEND_ID=SR #optional-> this id will be appended to the default app name on service registration. Useful for user mappings service- resources on a VM
     -p 8080:8080
-    -v %cd%/inputs/templates:/data \
-    -v %cd%/inputs/variables:/variables \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --net=estuarydeployer_default
     dinutac/estuary-deployer:<tag>
+    
+    Jinja2 templating can be done, just add:
+    -v %cd%/inputs/templates:/data \ 
+    -v %cd%/inputs/variables:/variables \
