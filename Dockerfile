@@ -72,4 +72,4 @@ RUN chmod +x $SCRIPTS_DIR/*.sh
 
 WORKDIR $SCRIPTS_DIR
 
-ENTRYPOINT ["python3", "/home/dev/scripts/main_flask.py"]
+CMD ["python3", "/home/dev/scripts/main_flask.py"]

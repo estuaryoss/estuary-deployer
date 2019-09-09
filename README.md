@@ -19,6 +19,9 @@ https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0
 ## Postman collection
 https://documenter.getpostman.com/view/2360061/SVYjUNCG
 
+## Heroku deployment playground
+https://estuary-deployer.herokuapp.com/api/docs  
+Note: The deployments will not work. Docker sock can't be mounted, at least on the free plan.
 
 ## Service run
 ##### Using docker compose 
