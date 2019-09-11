@@ -1,6 +1,6 @@
 properties = {
     "name": "estuary-deployer",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "estuary-deployer",
     "author": "Catalin Dinuta",
     "platforms": ["any"],

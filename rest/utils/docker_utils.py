@@ -116,7 +116,7 @@ class DockerUtils:
             try:
                 container_list = DockerUtils.docker_ps(item)[0].split("\n")[1:-1]
                 if len(container_list) > 0:
-                    active_deployments.append(ActiveDeployments.active_deployment(item, container_list))
+                    active_deployments.append(ActiveDeployments.active_deployment(item.strip(), container_list))
             except:
                 pass
         return active_deployments
@@ -126,8 +126,8 @@ class DockerUtils:
         active_deployments = []
         active_deployments_objects = DockerUtils.get_active_deployments()
         for item in active_deployments_objects:
-            active_deployments.append(item.get(id))
-        full_deployments_list = IOUtils.get_list_dir(f"{Constants.DOCKER_PATH}")
+            active_deployments.append(item.get('id'))
+        full_deployments_list = map(lambda x: x.strip(),IOUtils.get_list_dir(f"{Constants.DOCKER_PATH}"))
         for item in full_deployments_list:
             if item not in active_deployments and (datetime.datetime.now() - datetime.datetime.fromtimestamp(
                     os.path.getmtime(f"{Constants.DOCKER_PATH}{item}"))) > datetime.timedelta(hours=1):

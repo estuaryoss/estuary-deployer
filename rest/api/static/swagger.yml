@@ -1,8 +1,8 @@
 "swagger": '2.0'
 info:
   description: |
-    This is estuary-deployer with Docker.
-  version: "2.0.0"
+    This is estuary-deployer service which will manage your docker-compose deployments.
+  version: "2.0.1"
   title: estuary-deployer
   termsOfService: http://swagger.io/terms/
   contact:
