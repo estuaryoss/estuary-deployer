@@ -1,14 +1,16 @@
 <h1 align="center"><img src="./docs/images/banner_estuary.png" alt="Testing as a service with Docker"></h1>    
 
-Please donate: <a href="https://paypal.me/catalindinuta?locale.x=en_US"><img src="https://pbs.twimg.com/profile_images/1145724063106519040/b1L98qh9_400x400.jpg" height="40" width="40" align="center"></a>  
-# Testing as a Service with Docker
-## estuary-deployer
-Estuary docker deployer service which will run your docker containers and/or your tests.   
+Please donate: <a href="https://paypal.me/catalindinuta?locale.x=en_US"><img src="https://pbs.twimg.com/profile_images/1145724063106519040/b1L98qh9_400x400.jpg" height="40" width="40" align="center"></a> 
+
+# Testing as a Service
+## Estuary deployer
+Estuary docker deployer service which will run your containers and/or your tests.   
 Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/releases/tag/2.0.0) the estuary-deployer service can run your tests using the [estuary-testrunner](https://github.com/dinuta/estuary-testrunner) service. Check-out the wiki !  
 
 ## Build & Coverage
 [![Build Status](https://travis-ci.org/dinuta/estuary-deployer.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer)
 [![Coverage Status](https://coveralls.io/repos/github/dinuta/estuary-deployer/badge.svg?branch=master)](https://coveralls.io/github/dinuta/estuary-deployer?branch=master)
+
 ## Docker Hub
 [![](https://images.microbadger.com/badges/image/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own version badge on microbadger.com") ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)
 
@@ -18,10 +20,6 @@ https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0
 
 ## Postman collection
 https://documenter.getpostman.com/view/2360061/SVYjUNCG
-
-## Heroku deployment playground
-https://estuary-deployer.herokuapp.com/api/docs  
-Note: The deployments will not work. Docker sock can't be mounted, at least on the free plan.
 
 ## Service run
 ##### Using docker compose 
@@ -78,3 +76,12 @@ Start your containers by specifying the full hostname or ip of the host machine 
     Linux:
     -v $PWD/inputs/templates:/data \ 
     -v $PWD/inputs/variables:/variables \
+
+##### Using kubernetes
+    Not yet supported
+
+## Estuary stack
+[Estuary deployer](https://github.com/dinuta/estuary-deployer)  
+[Estuary testrunner](https://github.com/dinuta/estuary-testrunner)  
+[Estuary discovery](https://github.com/dinuta/estuary-discovery)  
+[Estuary viewer](https://github.com/dinuta/estuary-viewer)  
