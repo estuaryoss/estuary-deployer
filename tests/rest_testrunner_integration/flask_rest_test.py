@@ -25,19 +25,35 @@ class FlaskServerTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        template = "alpinetestrunner.yml"
-        variables = "variables.yml"
-        requests.get(f"http://localhost:8080/deploystart/{template}/{variables}")
-        time.sleep(30)  # wait until the env is up and running, including image download and container boot
+        with open("tests/rest_testrunner_integration/input/alpinetestrunner.yml", closefd=True) as f:
+            payload = f.read()
+
+        headers = {'Content-type': 'text/plain'}
+        response = requests.post(f"{FlaskServerTestCase.server}/deploystart", data=payload, headers=headers)
+        # print(dump.dump_all(response))
+        time.sleep(60)  # wait until the env is up and running, including image download and container boot
         compose_id = cls.get_deployment_info()[0]
         print("Docker compose env_id: " + compose_id)
-        response = requests.get(f"http://localhost:8080/testrunnernetconnect/{compose_id}")
+        response = requests.get(f"{FlaskServerTestCase.server}/testrunnernetconnect/{compose_id}")
+        # print(dump.dump_all(response))
         print("Docker net connect response: " + json.dumps(response.json()))
 
     def setUp(self):
         self.compose_id = self.get_deployment_info()[0]
         for i in range(0, self.cleanup_count_safe):
             requests.get(self.server + f"/testrunner/{self.compose_id}" + "/teststop")
+
+    @staticmethod
+    def get_deployment_info():
+        active_deployments = []
+        response = requests.get(f"{FlaskServerTestCase.server}/getdeploymentinfo")
+        # print(dump.dump_all(response))
+        body = response.json()
+        active_deployments_objects = body.get('message')
+        for item in active_deployments_objects:
+            active_deployments.append(item.get('id'))
+
+        return active_deployments
 
     def test_env_endpoint(self):
         response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/env")
@@ -526,18 +542,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-
-    @staticmethod
-    def get_deployment_info():
-        active_deployments = []
-        response = requests.get("http://localhost:8080/getdeploymentinfo")
-        body = response.json()
-        active_deployments_objects = body.get('message')
-        for item in active_deployments_objects:
-            active_deployments.append(item.get('id'))
-
-        return active_deployments
-
 
 if __name__ == '__main__':
     unittest.main()

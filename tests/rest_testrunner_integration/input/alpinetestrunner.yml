@@ -14,8 +14,8 @@ services:
     entrypoint: python3 /home/dev/scripts/main_flask.py
     environment:
       limit: 'sky' #example env var inserted. you can read it with environ('limit') in your jinja2 template
-      #      EUREKA_SERVER: http://eureka-server:8080/eureka/v2 #your eureka server
-      APP_IP_PORT: estuary-testrunner:8080 #your app details: where it is and on which port. needed for service discovery and spread of tests from the test client
+      EUREKA_SERVER: "{{eureka_server}}"
+      APP_IP_PORT: "{{app_ip_port}}/testrunner/{{deployment_id}}"
     volumes:
       - type: volume
         source: sharedcontent
@@ -34,7 +34,7 @@ volumes:
     driver_opts:
       o: bind
       type: none
-#      device: /host_mnt/c/Users/whateveruser/IdeaProjects/estuary-testrunner #on windows
+#      device: /host_mnt/c/Users/catal/IdeaProjects/estuary-testrunner #on windows
       device: /tmp #on linux
 
 

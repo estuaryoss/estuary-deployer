@@ -1,4 +1,11 @@
+import json
+
 import py_eureka_client.eureka_client as eureka_client
+from flask import Response
+
+from rest.api.apiresponsehelpers.http_response import HttpResponse
+from tests.rest.constants import Constants
+from tests.rest.error_codes import ErrorCodes
 
 
 class EurekaClient:
@@ -12,14 +19,21 @@ class EurekaClient:
         for app in eureka_client.get_applications(eureka_server=f"{self.host}").applications:
             for instance in app.up_instances:
                 # print(instance.app)
-                apps_list.append(instance.hostName)
+                apps_list.append({"ip": str(instance.ipAddr),
+                                  "port": str(instance.port.port),
+                                  "app": str(instance.app.lower()),
+                                  "homePageUrl": str(instance.homePageUrl),
+                                  "healthCheckUrl": str(instance.healthCheckUrl),
+                                  "statusPageUrl": str(instance.statusPageUrl)})
         return apps_list
 
 
 if __name__ == '__main__':
     # step 1 - get all services registered in eureka
-    up_services = EurekaClient("http://10.133.14.238:8080/eureka/v2").get_apps()
-    print(up_services)
+    apps_list = EurekaClient("http://192.168.100.12:8080/eureka/v2").get_apps()
+    http = HttpResponse()
+    print(json.dumps(
+            http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), apps_list)))
 
     # step 2 - start deploying your test envs on them (until no more ram available to use). Use multi thread
     # TODO

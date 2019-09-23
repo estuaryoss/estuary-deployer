@@ -15,7 +15,7 @@ services:
       APP_APPEND_ID: SR # this suffix will be added to the deployer service in order to differentiate between different services mapped on VM with specific resources
       APP_IP_PORT: estuary-deployer:8080 #your app details: where it is and on which port. needed for service discovery and spread of tests from the test client
 #    entrypoint: python3 /home/dev/scripts/main_flask.py
-    command: bash -c "/home/dev/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 10 && python3 /home/dev/scripts/main_flask.py"
+    command: bash -c "/home/dev/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 30 && python3 /home/dev/scripts/main_flask.py"
     volumes:
       - ./inputs/templates:/data
       - ./inputs/variables:/variables

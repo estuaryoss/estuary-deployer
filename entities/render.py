@@ -9,16 +9,13 @@ import jinja2
 import sys
 import yaml
 
-
 class Render:
-    TEMPLATES_DIR = os.environ.get('TEMPLATES_DIR')
-    VARS_DIR = os.environ.get('VARS_DIR')
 
-    def __init__(self, template=None, variables=None):
+    def __init__(self, template=None, variables=None, templates_dir=os.environ.get('TEMPLATES_DIR')):
         self.template = template
         self.variables = variables
         self.env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(self.TEMPLATES_DIR),
+            loader=jinja2.FileSystemLoader(templates_dir),
             extensions=['jinja2.ext.autoescape', 'jinja2.ext.do', 'jinja2.ext.loopcontrols', 'jinja2.ext.with_'],
             autoescape=True,
             trim_blocks=True)
@@ -29,8 +26,8 @@ class Render:
     def env_override(self, value, key):
         return os.getenv(key, value)
 
-    def rend_template(self, argv):
-        with open(self.VARS_DIR + "/" + self.variables, closefd=True) as f:
+    def rend_template(self, vars_dir=os.environ.get('VARS_DIR')):
+        with open(vars_dir + "/" + self.variables, closefd=True) as f:
             data = yaml.load(f, Loader=yaml.Loader)
 
         self.env.filters['yaml'] = self.yaml_filter
@@ -44,3 +41,6 @@ class Render:
         sys.stdout.write(template)
 
         return template
+
+    def get_jinja2env(self):
+        return self.env

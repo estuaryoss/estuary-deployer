@@ -18,6 +18,6 @@ class EurekaRegistrator:
                            instance_port=app_port,
                            instance_ip=app_ip,
                            health_check_url="ping",
-                           home_page_url="env",
+                           home_page_url="",
                            status_page_url="ping"
                            )

@@ -58,8 +58,8 @@ Start your containers by specifying the full hostname or ip of the host machine 
     docker run \
     -e MAX_DEPLOYMENTS=3 \ #optional->  how many deployments to be done. it is an option to deploy a fixed no of docker-compose envs
     -e MAX_DEPLOY_MEMORY=80 \ #optional-> how much % of memory to be used by deployer service
-    -e EUREKA_SERVER=http://10.13.14.28:8080/eureka/v2 # optional
-    -e APP_IP_PORT=10.13.14.28:8081 #optional, but mandatory if EUREKA_SERVER env var is used -> the app hostname/ip:port
+    -e EUREKA_SERVER="http://10.13.14.28:8080/eureka/v2" # optional
+    -e APP_IP_PORT="10.13.14.28:8081" #optional, but mandatory if EUREKA_SERVER env var is used -> the app hostname/ip:port
     -e APP_APPEND_ID=SR #optional-> this id will be appended to the default app name on service registration. Useful for user mappings service- resources on a VM
     -p 8080:8080
     -v /var/run/docker.sock:/var/run/docker.sock \
@@ -76,9 +76,6 @@ Start your containers by specifying the full hostname or ip of the host machine 
     Linux:
     -v $PWD/inputs/templates:/data \ 
     -v $PWD/inputs/variables:/variables \
-
-##### Using kubernetes
-    Not yet supported
 
 ## Estuary stack
 [Estuary deployer](https://github.com/dinuta/estuary-deployer)  

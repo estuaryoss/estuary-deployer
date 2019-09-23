@@ -18,7 +18,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080"
     # server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "2.0.1"
+    expected_version = "2.0.2"
     sleep_before_container_up = 5
 
     def setUp(self):
@@ -26,6 +26,16 @@ class FlaskServerTestCase(unittest.TestCase):
         active_deployments = self.get_deployment_info()
         for item in active_deployments:
             requests.get(self.server + f"/deploystop/{item}")
+
+    def get_deployment_info(self):
+        active_deployments = []
+        response = requests.get(self.server + "/getdeploymentinfo")
+        body = response.json()
+        active_deployments_objects = body.get('message')
+        for item in active_deployments_objects:
+            active_deployments.append(item.get('id'))
+
+        return active_deployments
 
     def test_env_endpoint(self):
         response = requests.get(self.server + "/env")
@@ -705,16 +715,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.MAX_DEPLOYMENTS_REACHED)
         self.assertIsNotNone(body.get('time'))
-
-    def get_deployment_info(self):
-        active_deployments = []
-        response = requests.get(self.server + "/getdeploymentinfo")
-        body = response.json()
-        active_deployments_objects = body.get('message')
-        for item in active_deployments_objects:
-            active_deployments.append(item.get('id'))
-
-        return active_deployments
 
 
 if __name__ == '__main__':

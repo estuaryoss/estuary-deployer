@@ -57,7 +57,7 @@ def get_content(template, variables):
     http = HttpResponse()
     try:
         r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
-        response = Response(r.rend_template("dummy"), 200, mimetype="text/plain")
+        response = Response(r.rend_template(), 200, mimetype="text/plain")
         # response = Response(json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200, mimetype="application/json")
     except Exception as e:
         result = "Exception({0})".format(e.__str__())
@@ -84,7 +84,7 @@ def get_content_with_env(template, variables):
     http = HttpResponse()
     try:
         r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
-        response = Response(r.rend_template("dummy"), 200, mimetype="text/plain")
+        response = Response(r.rend_template(), 200, mimetype="text/plain")
     except Exception as e:
         result = "Exception({0})".format(e.__str__())
         response = Response(json.dumps(http.failure(Constants.JINJA2_RENDER_FAILURE,
@@ -109,12 +109,11 @@ def get_active_deployments():
 @app.route('/deploystart', methods=['POST'])
 def deploy_start_file_from_client():
     docker_utils = DockerUtils()
+    http = HttpResponse()
 
-    input_data = request.data.decode('utf-8')
     token = token_hex(8)
     dir = f"{Constants.DOCKER_PATH}{token}"
     file = f"{dir}/{token}"
-    http = HttpResponse()
 
     [out, err] = docker_utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
     app.logger.debug('Max memory out: %s', out)
@@ -142,13 +141,30 @@ def deploy_start_file_from_client():
                                                     f"Active deployments: {str(len(active_deployments))}")), 404,
                             mimetype="application/json")
     try:
+        template_file_name = f"deployment_{token}.yml"
+        input_data = request.data.decode('utf-8')
+        template_file_path = f"{os.environ.get('TEMPLATES_DIR')}/{template_file_name}"
+        IOUtils.write_to_file(template_file_path)
+        IOUtils.write_to_file(template_file_path, input_data)
+
         IOUtils.create_dir(dir)
+        os.environ['TEMPLATE'] = f"{template_file_name}"
+        r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
+        # for testrunner deployed with deployer, other deployments will remain unchanged
+        if 'testrunner' in input_data and os.environ.get('EUREKA_SERVER') is not None:
+            if '{{app_ip_port}}' in input_data and '{{eureka_server}}' in input_data:
+                input_data = r.get_jinja2env().get_template(os.environ.get('TEMPLATE')).render(
+                    {"deployment_id": f"{token}",
+                     "app_ip_port": os.environ.get('APP_IP_PORT').split("/")[0],
+                     "eureka_server": os.environ.get('EUREKA_SERVER')
+                     }
+                )
+        app.logger.debug('File content: %s', input_data)
+        CmdUtils.run_cmd(["rm", "-rf", f"{template_file_path}"])
         IOUtils.write_to_file(file, input_data)
-        CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} up -d''')
-        # [out, err] = docker_utils.docker_up(file)  # eliminated because was in blocking mode
-        result = str(token)
+        CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
         response = Response(
-            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), token)), 200,
             mimetype="application/json")
     except FileNotFoundError as e:
         result = "Exception({0})".format(e.__str__())
@@ -213,8 +229,8 @@ def deploy_with_env_file_from_server(template, variables):
         r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
         IOUtils.create_dir(dir)
         IOUtils.write_to_file(file)
-        IOUtils.write_to_file(file, r.rend_template("dummy"))
-        CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} up -d''')
+        IOUtils.write_to_file(file, r.rend_template())
+        CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
         # [out, err] = docker_utils.docker_up(file)
         result = str(token)
         response = Response(
@@ -237,6 +253,7 @@ def deploy_with_env_file_from_server(template, variables):
 @app.route('/deploystart/<template>/<variables>', methods=['GET'])
 def deploy_start_file_from_server(template, variables):
     docker_utils = DockerUtils()
+    http = HttpResponse()
     os.environ['TEMPLATE'] = template.strip()
     os.environ['VARIABLES'] = variables.strip()
     app.logger.debug("Templates: " + os.environ.get('TEMPLATE'))
@@ -244,7 +261,6 @@ def deploy_start_file_from_server(template, variables):
     token = token_hex(8)
     dir = f"{Constants.DOCKER_PATH}{token}"
     file = f"{dir}/{token}"
-    http = HttpResponse()
 
     [out, err] = docker_utils.docker_stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
     app.logger.debug('Max memory out: %s', out)
@@ -272,8 +288,8 @@ def deploy_start_file_from_server(template, variables):
         r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
         IOUtils.create_dir(dir)
         IOUtils.write_to_file(file)
-        IOUtils.write_to_file(file, r.rend_template("dummy"))
-        CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} up -d''')
+        IOUtils.write_to_file(file, r.rend_template())
+        CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
         # [out, err] = docker_utils.docker_up(file)
         result = str(token)
         response = Response(
@@ -570,7 +586,7 @@ def testrunner_docker_network_connect(id):
 def testrunner_docker_network_disconnect(id):
     docker_utils = DockerUtils()
     http = HttpResponse()
-    container_id = f"{id}_testrunner_1"
+    container_id = f"{id}_estuary-testrunner_1"
     try:
         [out, err] = CmdUtils.run_cmd(["bash", "-c",
                                        r'''docker network ls | grep deployer | awk '{print $2}' | head -1'''])
@@ -634,7 +650,7 @@ def testrunner_request(id, text):
         else:
             pass
 
-        response = Response(r.text, r.status_code, mimetype="text/plain")
+        response = Response(r.text, r.status_code, mimetype="application/json")
 
     except Exception as e:
         exception = "Exception({0})".format(sys.exc_info()[0])
