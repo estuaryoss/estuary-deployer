@@ -21,6 +21,12 @@ https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0
 ## Postman collection
 https://documenter.getpostman.com/view/2360061/SVYjUNCG
 
+## Use cases
+- Debug accelerator. No more logs attached to Jira. After QA found bug, they can push the related image to registry. Then in a docker compose the QA can deploy "the bug" on a developer's machine or on dedicated debug machine(security reason due to docker sock mounting). The dev will have all he needs.
+- Testing as a service. A complete enevironment SUT/BD/Automation Framework can be deployed and tested
+- Bring up Docker containers remotely through HTTP.
+- Templating with Jinja2
+
 ## Service run
 ##### Using docker compose 
     docker-compose up
