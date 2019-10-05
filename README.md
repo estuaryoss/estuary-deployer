@@ -57,6 +57,8 @@ all services used for your test and then spread the tests across all.
 Start Eureka server with docker:  
 
     docker run -p 8080:8080 netflixoss/eureka:1.3.1  
+    or
+    docker run -p 8080:8080 dinutac/netflixoss-eureka:1.9.13
 
 Start your containers by specifying the full hostname or ip of the host machine on where your deployer service resides.  
     

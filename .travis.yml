@@ -29,6 +29,7 @@ before_install:
   - docker pull alpine:3.9.4
   - docker pull mysql:5.6
   - docker pull dinutac/estuary-testrunner:latest
+  - docker pull dinutac/netflixoss-eureka:1.9.13
   - chmod +x ngrok.sh
   - docker build -t dinutac/estuary-deployer:latest .
 
@@ -42,7 +43,7 @@ script:
   #run functional testrunner integration API tests
   - docker network create estuarydeployer_default
   - docker run -d
-    -p 8081:8080 netflixoss/eureka:1.3.1
+    -p 8081:8080 dinutac/netflixoss-eureka:1.9.13
   - IP_ADDR_STRING=$(hostname -I)
   - IP_ADDR_ARRAY=($IP_ADDR_STRING)
   - echo "EUREKA_SERVER=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2" >> .env
