@@ -9,3 +9,4 @@ pytest-cov
 requests_toolbelt
 py_eureka_client
 apscheduler
+flask-classful

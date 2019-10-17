@@ -22,5 +22,8 @@ class ErrorCodes:
         Constants.TESTRUNNER_TIMEOUT: "Could not reach testrunner container. Did you started it? Is the service name in docker-compose.yml defined as 'testrunner'?",
         Constants.GET_DEPLOYER_NETWORK_FAILED: "Failed to get the docker network associated with the estuary-deployer service.",
         Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to connect the testrunner service to the docker network associated with the estuary-deployer service.",
-        Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to disconnect the testrunner service to the docker network associated with the estuary-deployer service."
+        Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to disconnect the testrunner service to the docker network associated with the estuary-deployer service.",
+        Constants.GET_CONTAINER_ENV_VAR_FAILURE: "Getting env var %s from the container failed.",
+        Constants.EMPTY_REQUEST_BODY_PROVIDED: "Empty request body provided.",
+        Constants.UPLOAD_FILE_FAILURE: "Failed to upload file content."
     }

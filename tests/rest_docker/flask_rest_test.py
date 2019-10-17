@@ -8,17 +8,18 @@ import requests
 import yaml
 from flask import json
 from parameterized import parameterized
+from requests_toolbelt.utils import dump
 
-from tests.rest.constants import Constants
-from tests.rest.error_codes import ErrorCodes
-from tests.rest.utils import Utils
+from tests.rest_docker.constants import Constants
+from tests.rest_docker.error_codes import ErrorCodes
+from tests.rest_docker.utils import Utils
 
 
 class FlaskServerTestCase(unittest.TestCase):
-    server = "http://localhost:8080"
+    server = "http://localhost:8080/docker"
     # server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "2.0.2"
+    expected_version = "3.0.0"
     sleep_before_container_up = 5
 
     def setUp(self):
@@ -333,8 +334,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     def test_deploy_start_file_from_client_p(self):
-        with open("tests/rest/input/alpine.yml", closefd=True) as f:
-            payload = f.read();
+        with open("tests/rest_docker/input/alpine.yml", closefd=True) as f:
+            payload = f.read()
         headers = {'Content-type': 'text/plain'}
 
         response = requests.post(self.server + f"/deploystart", data=payload,
@@ -691,8 +692,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     def test_deploystartpostfromfile_max_deployments_p(self):
-        with open("tests/rest/input/alpine.yml", closefd=True) as f:
-            payload = f.read();
+        with open("tests/rest_docker/input/alpine.yml", closefd=True) as f:
+            payload = f.read()
         headers = {'Content-type': 'text/plain'}
 
         response = requests.get(self.server + "/getdeploymentinfo")
@@ -714,6 +715,70 @@ class FlaskServerTestCase(unittest.TestCase):
                          "Active deployments: %s" % os.environ.get('MAX_DEPLOYMENTS'))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.MAX_DEPLOYMENTS_REACHED)
+        self.assertIsNotNone(body.get('time'))
+
+    def test_getenv_endpoint_p(self):
+        env_var = "VARS_DIR"
+        response = requests.get(self.server + f"/getenv/{env_var}")
+
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertIsNotNone(body.get('message'))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertIsNotNone(body.get('time'))
+
+    def test_getenv_endpoint_n(self):
+        env_var = "alabalaportocala"
+        response = requests.get(self.server + f"/getenv/{env_var}")
+
+        body = response.json()
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_ENV_VAR_FAILURE) % env_var.upper())
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.GET_CONTAINER_ENV_VAR_FAILURE)
+        self.assertIsNotNone(body.get('time'))
+
+    @parameterized.expand([
+        "{\"file\": \"/tmp/config.properties\"}",
+        "{\"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}",
+        "{\"file\": \"/dummy/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"
+    ])
+    def test_uploadfile_n(self, payload):
+        headers = {'Content-type': 'application/json'}
+
+        response = requests.post(
+            self.server + f"/uploadfile",
+            data=payload, headers=headers)
+
+        body = response.json()
+        print(dump.dump_all(response))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.UPLOAD_FILE_FAILURE))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.UPLOAD_FILE_FAILURE)
+        self.assertIsNotNone(body.get('time'))
+
+    @parameterized.expand([
+        "{\"file\": \"/tmp/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"
+    ])
+    def test_uploadfile_p(self, payload):
+        headers = {'Content-type': 'application/json'}
+
+        response = requests.post(
+            self.server + f"/uploadfile",
+            data=payload, headers=headers)
+
+        body = response.json()
+        print(dump.dump_all(response))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
 
 

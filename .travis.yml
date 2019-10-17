@@ -1,7 +1,7 @@
 language: python
 
 python:
-  - "3.6"
+  - "3.7"
 
 services:
   - docker
@@ -89,7 +89,7 @@ script:
     dinutac/estuary-deployer:latest
   - sleep 10
   - python3 -m unittest discover $SCRIPTS_DIR "render_test.py"
-  - python3 -m unittest discover $SCRIPTS_DIR/rest "*_test.py"
+  - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
   - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR "render_test.py"
   #  - docker logs estuary-deployer
   - docker stop $(docker ps -a -q)
@@ -119,6 +119,18 @@ script:
   - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/rest_eureka "*_test.py"
   - docker-compose down -v
 
+  # run clean_folder scheduler
+  - docker-compose up -d
+  - docker ps
+  - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/clean_folder_scheduler "*_test.py"
+  - docker-compose down -v
+
+  # run env_expire scheduler
+  - docker-compose up -d
+  - sleep 45
+  - docker ps
+  - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/env_expire_scheduler "*_test.py"
+  - docker-compose down -v
 
   #check template render
   - docker run -i

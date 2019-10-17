@@ -1,4 +1,4 @@
-from tests.rest.constants import Constants
+from tests.rest_docker.constants import Constants
 
 
 class ErrorCodes:
@@ -18,5 +18,12 @@ class ErrorCodes:
         Constants.DOCKER_DAEMON_NOT_RUNNING: "Docker daemon is not running. You must start it.",
         Constants.MISSING_PARAMETER_POST: "Body parameter '%s' sent in request missing. Please include parameter. E.g. {\"parameter\": \"value\"}",
         Constants.GET_LOGS_FAILED: "Getting logs for %s failed.",
-        Constants.MAX_DEPLOYMENTS_REACHED: "Maximum deployments %s reached. Please stop some deployments, before starting new ones."
+        Constants.MAX_DEPLOYMENTS_REACHED: "Maximum deployments %s reached. Please stop some deployments, before starting new ones.",
+        Constants.TESTRUNNER_TIMEOUT: "Could not reach testrunner container. Did you started it? Is the service name in docker-compose.yml defined as 'testrunner'?",
+        Constants.GET_DEPLOYER_NETWORK_FAILED: "Failed to get the docker network associated with the estuary-deployer service.",
+        Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to connect the testrunner service to the docker network associated with the estuary-deployer service.",
+        Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to disconnect the testrunner service to the docker network associated with the estuary-deployer service.",
+        Constants.GET_CONTAINER_ENV_VAR_FAILURE: "Getting env var %s from the container failed.",
+        Constants.EMPTY_REQUEST_BODY_PROVIDED: "Empty request body provided.",
+        Constants.UPLOAD_FILE_FAILURE: "Failed to upload file content."
     }

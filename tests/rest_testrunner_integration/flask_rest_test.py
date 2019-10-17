@@ -16,7 +16,7 @@ from tests.rest_testrunner_integration.utils import Utils
 
 
 class FlaskServerTestCase(unittest.TestCase):
-    server = "http://localhost:8080"
+    server = "http://localhost:8080/docker"
     # server = "http://" + os.environ.get('SERVER')
 
     expected_version = "2.0.2"
@@ -403,12 +403,12 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message').get('finished'), "false")
         for value in commands:
             self.assertEqual(body.get('message').get("commands").get(value).get("status"), "scheduled")
-            self.assertEqual(body.get('message').get("commands").get(value).get("error"), "")
+            self.assertIsInstance(body.get('message').get("commands").get(value).get("details"), dict)
         time.sleep(int(payload) - 2)
         response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestinfo")
         body = response.json()
         self.assertEqual(body.get('message').get("commands").get(commands[0]).get("status"), "in progress")
-        self.assertEqual(body.get('message').get("commands").get(commands[0]).get("error"), "")
+        self.assertIsInstance(body.get('message').get("commands").get(commands[0]).get("details"), dict)
         time.sleep(int(payload) + 2)
         response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestinfo")
         body = response.json()
@@ -418,9 +418,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message').get('finished'), "true")
         self.assertGreaterEqual(len(body.get('message').get('processes')), 2)
         self.assertEqual(body.get('message').get("commands").get(commands[0]).get("status"), "finished")
-        self.assertEqual(body.get('message').get("commands").get(commands[0]).get("error"), "")
+        self.assertIsInstance(body.get('message').get("commands").get(commands[0]).get("details"), dict)
         self.assertEqual(body.get('message').get("commands").get(commands[1]).get("status"), "finished")
-        self.assertIn("invalid_command: not found\n", body.get('message').get("commands").get(commands[1]).get("error"))
+        self.assertIn("invalid_command: not found\n", body.get('message').get("commands").get(commands[1]).get("details").get("err"))
 
     @parameterized.expand([
         "3"
@@ -463,7 +463,7 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(len(body.get('message').get("commands")), len(commands) - 1)
         self.assertEqual(body.get('message').get("commands").get(commands[1]).get("status"), "finished")
-        self.assertEqual(body.get('message').get("commands").get(commands[1]).get("error"), "")
+        self.assertIsInstance(body.get('message').get("commands").get(commands[1]).get("details"), dict)
         self.assertEqual(body.get('message').get("commands").get(commands[2]).get("status"), "finished")
 
     def test_teststop_p(self):

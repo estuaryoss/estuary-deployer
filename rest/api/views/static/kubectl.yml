@@ -1,8 +1,8 @@
 "swagger": '2.0'
 info:
   description: |
-    This is estuary-deployer service which will manage your docker-compose deployments.
-  version: "2.0.0"
+    This is estuary-deployer with Kubectl.
+  version: "3.0.0"
   title: estuary-deployer
   termsOfService: http://swagger.io/terms/
   contact:
@@ -11,13 +11,13 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
 # host: localhost:8080
-basePath: /
+basePath: /kubectl/
 tags:
   - name: estuary-deployer
-    description: Estuary-deployer service which deploys docker containers using docker-compose templates
+    description: Estuary-deployer service which deploys using kubernetes templates
     externalDocs:
       description: Find out more on github
-      url: https://github.com/dinuta/estuary-deployer-service
+      url: https://github.com/dinuta/estuary-deployer
 schemes:
   - http
 paths:
@@ -102,28 +102,46 @@ paths:
           description: List of env vars by key-value pair
           required: false
           schema:
-            $ref: '#/components/schemas/envvar'
+            $ref: '#/definitions/envvar'
       responses:
         200:
           description: estuary-deployer rendered template with jinja2
         404:
           description: estuary-deployer failure to rend the template
+  /getenv/{env_name}:
+    get:
+      tags:
+        - estuary-deployer
+      summary: Gets the environment variable value from the estuary-deployer container
+      produces:
+        - application/json
+      parameters:
+        - name: env_name
+          in: path
+          description: The name of the env var wanted
+          required: true
+          type: string
+      responses:
+        200:
+          description: Get env var success
+        404:
+          description: Get env var failure
   /deploystart:
     post:
       tags:
         - estuary-deployer
-      summary: starts the docker-compose template
+      summary: starts the kubernetes template
       consumes:
         - text/plain
       produces:
         - application/json
       parameters:
-        - name: docker-compose template
+        - name: kubernetes template
           in: body
           description: 'version:'
           required: true
           schema:
-            $ref: '#/components/schemas/template'
+            $ref: '#/definitions/template'
       responses:
         200:
           description: deploy success
@@ -133,7 +151,7 @@ paths:
     post:
       tags:
         - estuary-deployer
-      summary: starts the docker-compose template with the template and the variables from the container
+      summary: starts the kubernetes template with the template and the variables from the container
       consumes:
         - application/json
         - application/x-www-form-urlencoded
@@ -155,7 +173,7 @@ paths:
           description: List of env vars by key-value pair
           required: false
           schema:
-            $ref: '#/components/schemas/envvar'
+            $ref: '#/definitions/envvar'
       responses:
         200:
           description: deploy success
@@ -165,7 +183,7 @@ paths:
     get:
       tags:
         - estuary-deployer
-      summary: starts the docker-compose template with the template and the variables from the container
+      summary: starts the kubernetes template with the template and the variables from the container
       consumes:
         - application/json
         - application/x-www-form-urlencoded
@@ -191,7 +209,7 @@ paths:
     get:
       tags:
         - estuary-deployer
-      summary: gets the running containers for a specific docker-compose environment after it was deployed
+      summary: gets the running containers for a specific kubernetes environment after it was deployed
       consumes:
         - application/json
         - application/x-www-form-urlencoded
@@ -200,7 +218,7 @@ paths:
       parameters:
         - name: compose_id
           in: path
-          description: docker-compose environment id returned by the deploystart action.
+          description: kubernetes environment id returned by the deploystart action.
           required: true
           type: string
       responses:
@@ -233,7 +251,7 @@ paths:
       parameters:
         - name: compose_id
           in: path
-          description: docker-compose environment id returned by the deploystart action.
+          description: kubernetes environment id returned by the deploystart action.
           required: true
           type: string
       responses:
@@ -245,7 +263,7 @@ paths:
     post:
       tags:
         - estuary-deployer
-      summary: gets a file from the docker-compose environment. Useful to get the test results file
+      summary: gets a file from the kubernetes environment. Useful to get the test results file
       consumes:
         - application/json
         - application/x-www-form-urlencoded
@@ -254,7 +272,7 @@ paths:
       parameters:
         - name: compose_id
           in: path
-          description: docker-compose environment id returned by the deploystart action.
+          description: kubernetes environment id returned by the deploystart action.
           required: true
           type: string
         - name: container_service_name
@@ -267,7 +285,7 @@ paths:
           description: target container file path to get
           required: false
           schema:
-            $ref: '#/components/schemas/file'
+            $ref: '#/definitions/file'
       responses:
         200:
           description: The content of the file in plain text
@@ -277,7 +295,7 @@ paths:
     post:
       tags:
         - estuary-deployer
-      summary: gets a folder as zip from the docker-compose environment. Useful to get the test results folder
+      summary: gets a folder as zip from the kubernetes environment. Useful to get the test results folder
       consumes:
         - application/json
         - application/x-www-form-urlencoded
@@ -286,7 +304,7 @@ paths:
       parameters:
         - name: compose_id
           in: path
-          description: docker-compose environment id returned by the deploystart action.
+          description: kubernetes environment id returned by the deploystart action.
           required: true
           type: string
         - name: container_service_name
@@ -299,7 +317,7 @@ paths:
           description: target container folder path to get
           required: false
           schema:
-            $ref: '#/components/schemas/folder'
+            $ref: '#/definitions/folder'
       responses:
         200:
           description: The content of the folder found on the target container as zip archive
@@ -309,7 +327,7 @@ paths:
     get:
       tags:
         - estuary-deployer
-      summary: stops the running containers for a specific docker-compose environment after it was deployed
+      summary: stops the running containers for a specific kubernetes environment after it was deployed
       consumes:
         - application/json
         - application/x-www-form-urlencoded
@@ -318,7 +336,7 @@ paths:
       parameters:
         - name: compose_id
           in: path
-          description: docker-compose environment id returned by the deploystart action.
+          description: kubernetes environment id returned by the deploystart action.
           required: true
           type: string
       responses:
@@ -342,84 +360,61 @@ paths:
           description: File path on the disk
           required: false
           schema:
-            $ref: '#/components/schemas/file'
+            $ref: '#/definitions/file'
       responses:
         200:
           description: get file content success
         404:
           description: get file content failure
-  /testrunnernetconnect/{compose_id}:
-    get:
+  /uploadfile:
+    post:
       tags:
         - estuary-deployer
-      summary: Connect the testrunner service found in docker-compose environment compose_id to the deloyer service network in order to be able to forward http requests needed for testing.
+      summary: Uploads a file
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
       produces:
         - application/json
       parameters:
-        - name: compose_id
-          in: path
-          description: docker-compose environment id returned by the deploystart action.
-          required: true
-          type: string
+        - name: file
+          in: body
+          description: Target file path and file content
+          required: false
+          schema:
+            $ref: '#/definitions/file_upload'
       responses:
         200:
-          description: testrunner network connect success
+          description: The content of the file was uploaded successfully
         404:
-          description: testrunner network connect failure
-  /testrunner/{compose_id}/{testrunner_route}:
-    get:
-      tags:
-        - estuary-deployer
-      summary: Forward the request to the testrunner service identified by docker-compose environment id 'compose_id' to route 'testrunner_route'. The user can plug in his custom implementation of the testrunner, the only condition is to be named 'testrunner' in docker-compose.yml
-      produces:
-        - application/json
-      parameters:
-        - name: compose_id
-          in: path
-          description: docker-compose environment id returned by the deploystart action.
-          required: true
-          type: string
-        - name: testrunner_route
-          in: path
-          description: testrunner service route. Check the documentation of the estuary-testrunner service.
-          required: true
-          type: string
-      responses:
-        200:
-          description: testrunner network connect success
-        404:
-          description: |
-            1. cannot find the estuary testrunner because the network is not yet connectedtestrunner
-            2. the request was forwarded to the estuary testrunner but did not find the route
-  /testrunnernetdisconnect/{compose_id}:
-    get:
-      tags:
-        - estuary-deployer
-      summary: Disconnects the testrunner service from the docker-compose environment compose_id in order to clean up the environment.
-      produces:
-        - application/json
-      parameters:
-        - name: compose_id
-          in: path
-          description: docker-compose environment id returned by the deploystart action.
-          required: true
-          type: string
-      responses:
-        200:
-          description: testrunner network disconnect success
-        404:
-          description: testrunner network disconnect failure
-components:
-  schemas:
+          description: Failure, the file content could not be uploaded
+definitions:
     file:
       type: object
-      example: '{"file" : "/etc/hostname"}'
+      properties:
+        file:
+          type: "string"
+      example: |
+           {"file":"/etc/hostname"}
     folder:
       type: object
-      example: '{"folder" : "/etc"}'
+      properties:
+        folder:
+          type: "string"
+      example: |
+           {"folder":"/tmp"}
+    file_upload:
+      type: object
+      properties:
+        file:
+          type: "string"
+        content:
+          type: "string"
+      example: {"file": "/tmp/config.properties", "content": "ip=10.0.0.1\nrequest_sec=100\nthreads=10\ntype=dual"}
     envvar:
       type: object
-      example: '{"DATABASE" : "mysql56", "IMAGE":"latest"}'
+      example: |
+          {"DATABASE" : "mysql56", "IMAGE":"latest"}
     template:
       type: string
       minLength: 3
@@ -433,4 +428,4 @@ components:
               entrypoint: tail -f /etc/hostname
 externalDocs:
   description: Find out more on github
-  url: https://github.com/dinuta/estuary-deployer-service
+  url: https://github.com/dinuta/estuary-deployer

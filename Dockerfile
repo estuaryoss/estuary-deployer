@@ -1,4 +1,4 @@
-FROM alpine:3.9.4
+FROM alpine:3.10.2
 
 RUN apk add --no-cache python
 
@@ -41,7 +41,13 @@ RUN pip3 install \
   requests \
   flask-cors \
   apscheduler \
-  py_eureka_client
+  py_eureka_client \
+  flask-classful
+
+## Kubectl
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
+RUN chmod +x /usr/local/bin/kubectl
+RUN mkdir /root/.kube
 
 ## Cleanup
 RUN rm -rf /var/cache/apk/*
@@ -62,6 +68,7 @@ ENV OUT_DIR out
 ENV TEMPLATE alpine.yml
 ENV VARIABLES variables.yml
 ENV MAX_DEPLOY_MEMORY 80
+ENV DEPLOY_ON docker
 
 ADD ./ $SCRIPTS_DIR/
 ADD ./inputs/templates/ $TEMPLATES_DIR/

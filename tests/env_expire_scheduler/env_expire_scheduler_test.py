@@ -1,0 +1,37 @@
+import time
+import unittest
+
+import requests
+from parameterized import parameterized
+
+from rest.api.apiresponsehelpers.constants import Constants
+from rest.api.schedulers.env_expire_scheduler import EnvExpireScheduler
+
+
+class EnvExpireSchedulerTestCase(unittest.TestCase):
+    server = "http://localhost:8080/docker"
+
+    def setUp(self):
+        self.path = f"{Constants.DOCKER_PATH}"
+        self.env_expire_scheduler = EnvExpireScheduler(self.path, 10, 1)
+
+    @parameterized.expand([
+        ("alpine.yml", "variables.yml")
+    ])
+    def test_env_clean_up(self, template, variables):
+        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        self.assertEqual(response.status_code, 200)
+        time.sleep(5)
+        response = requests.get(self.server + "/getdeploymentinfo")
+        self.assertEqual(len(response.json().get('message')), 1)
+        self.env_expire_scheduler.start()
+        time.sleep(80)
+        response = requests.get(self.server + "/getdeploymentinfo")
+        self.assertEqual(len(response.json().get('message')), 0)
+
+    def tearDown(self):
+        self.env_expire_scheduler.stop()
+
+
+if __name__ == '__main__':
+    unittest.main()

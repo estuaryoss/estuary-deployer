@@ -15,14 +15,14 @@ Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/release
 [![](https://images.microbadger.com/badges/image/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own version badge on microbadger.com") ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)
 
 ## Api docs 
-https://app.swaggerhub.com/apis/dinuta/estuary-deployer/1.0.0  
-https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0  
+https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0   
+https://app.swaggerhub.com/apis/dinuta/estuary-deployer/3.0.0  
 
 ## Postman collection
 https://documenter.getpostman.com/view/2360061/SVYjUNCG
 
 ## Use cases
-- Debug accelerator. No more logs attached to Jira. After QA found the bug, they can push the related image to registry. Then in a docker compose QA can deploy "the bug" on a developer's machine or on dedicated debug machine (security reason due to docker sock mounting). The dev will have all he needs
+- Debug accelerator. No more logs attached to Jira. QAs can push the related bug-ish image to registry. Then in a docker compose QA can deploy "the bug" on a developer's machine or on dedicated debug machine (security reason due to docker sock mounting). The dev will have all he needs
 - Testing as a service. A complete enevironment SUT/BD/Automation Framework can be deployed and tested
 - Bring up Docker containers remotely through HTTP
 - Templating with Jinja2
@@ -63,16 +63,21 @@ Start Eureka server with docker:
 Start your containers by specifying the full hostname or ip of the host machine on where your deployer service resides.  
     
     docker network create estuarydeployer_default
-    docker run \
-    -e MAX_DEPLOYMENTS=3 \ #optional->  how many deployments to be done. it is an option to deploy a fixed no of docker-compose envs
-    -e MAX_DEPLOY_MEMORY=80 \ #optional-> how much % of memory to be used by deployer service
-    -e EUREKA_SERVER="http://10.13.14.28:8080/eureka/v2" # optional
-    -e APP_IP_PORT="10.13.14.28:8081" #optional, but mandatory if EUREKA_SERVER env var is used -> the app hostname/ip:port
-    -e APP_APPEND_ID=SR #optional-> this id will be appended to the default app name on service registration. Useful for user mappings service- resources on a VM
-    -p 8080:8080
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    --net=estuarydeployer_default
-    dinutac/estuary-deployer:<tag>
+    docker run params:
+    Optional:
+            -e MAX_DEPLOYMENTS=3 ->  how many deployments to be done. it is an option to deploy a fixed no of docker-compose envs(docker only)
+            -e MAX_DEPLOY_MEMORY=80 -> how much % of memory to be used by deployer service (docker only)
+            -e EUREKA_SERVER="http://10.13.14.28:8080/eureka/v2" -> eureka server
+            -e APP_IP_PORT="10.13.14.28:8081" -> the app hostname/ip:port. Mandatory if EUREKA_SERVER is used
+            -e APP_APPEND_ID="lab" -> id will be appended to the default app name on service registration. Useful for user mappings service-resources on a VM
+            -e DEPLOY_ON="docker" -> on what the env to be deployed. Options: docker, kubectl
+            -e ENV_EXPIRE_IN=1440 -> how long it will take before the env will be deleted. Default is 1440 min.
+    Mandatory:
+        -p 8080:8080 -> port fwd from dokcer 8080 to host 8080
+        -v /var/run/docker.sock:/var/run/docker.sock -> docker sock mount
+        --net=estuarydeployer_default -> bind to this net prior created
+
+    dinutac/estuary-deployer:latest
 
 
     
@@ -85,6 +90,12 @@ Start your containers by specifying the full hostname or ip of the host machine 
     -v $PWD/inputs/templates:/data \ 
     -v $PWD/inputs/variables:/variables \
 
+Api call examples:  
+
+    http://192.168.100.12:8083/kubectl/ping -> if DEPLOY_ON is kubectl. Kubernetes deployments are not yet fully tested *  
+    or
+    http://192.168.100.12:8083/docker/ping -> if DEPLOY_ON is docker. Docker is the default option and is fully tested
+    
 ## Estuary stack
 [Estuary deployer](https://github.com/dinuta/estuary-deployer)  
 [Estuary testrunner](https://github.com/dinuta/estuary-testrunner)  

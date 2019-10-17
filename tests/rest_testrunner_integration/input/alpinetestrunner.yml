@@ -15,7 +15,7 @@ services:
     environment:
       limit: 'sky' #example env var inserted. you can read it with environ('limit') in your jinja2 template
       EUREKA_SERVER: "{{eureka_server}}"
-      APP_IP_PORT: "{{app_ip_port}}/testrunner/{{deployment_id}}"
+      APP_IP_PORT: "{{app_ip_port}}/docker/testrunner/{{deployment_id}}"
     volumes:
       - type: volume
         source: sharedcontent
