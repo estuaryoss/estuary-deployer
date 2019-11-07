@@ -250,15 +250,18 @@ class FlaskServerTestCase(unittest.TestCase):
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         deploystart_body = response.json()
+        id = "dummy"
 
-        response = requests.get(self.server + f"/deploystatus/dummy")
-
+        response = requests.get(self.server + f"/deploystatus/{id}")
+        #for dummy interogation the list of containers is empty
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_STATUS_FAILURE))
+                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(len(body.get('message').get('containers')), 0)
+        self.assertEqual(body.get('message').get('id'), id)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.DEPLOY_STATUS_FAILURE)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
         requests.get(self.server + f"/deploystop/{deploystart_body.get('message')}")
 
@@ -742,12 +745,11 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     @parameterized.expand([
-        "{\"file\": \"/tmp/config.properties\"}",
-        "{\"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}",
         "{\"file\": \"/dummy/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"
     ])
     def test_uploadfile_n(self, payload):
         headers = {'Content-type': 'application/json'}
+        mandatory_header_key = 'File-Path'
 
         response = requests.post(
             self.server + f"/uploadfile",
@@ -757,16 +759,41 @@ class FlaskServerTestCase(unittest.TestCase):
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.UPLOAD_FILE_FAILURE))
+                         ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % mandatory_header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.UPLOAD_FILE_FAILURE)
+        self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
+        self.assertIsNotNone(body.get('time'))
+
+    @parameterized.expand([
+        ""
+    ])
+    def test_uploadfile_n(self, payload):
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/tmp/config.properties'
+        }
+
+        response = requests.post(
+            self.server + f"/uploadfile",
+            data=payload, headers=headers)
+
+        body = response.json()
+        print(dump.dump_all(response))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.EMPTY_REQUEST_BODY_PROVIDED))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.EMPTY_REQUEST_BODY_PROVIDED)
         self.assertIsNotNone(body.get('time'))
 
     @parameterized.expand([
         "{\"file\": \"/tmp/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"
     ])
     def test_uploadfile_p(self, payload):
-        headers = {'Content-type': 'application/json'}
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/tmp/config.properties'
+        }
 
         response = requests.post(
             self.server + f"/uploadfile",
@@ -780,6 +807,76 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
+
+    def test_executecommand_n(self):
+        command = "dir"  # not working on linux
+
+        response = requests.post(
+            self.server + f"/executecommand",
+            data=command)
+
+        body = response.json()
+        print(dump.dump_all(response))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertNotEqual(body.get('message').get('command').get(command).get('details').get('code'), 0)
+        self.assertEqual(body.get('message').get('command').get(command).get('details').get('out'), "")
+        self.assertNotEqual(body.get('message').get('command').get(command).get('details').get('err'), "")
+        self.assertGreater(body.get('message').get('command').get(command).get('details').get('pid'), 0)
+        self.assertIsInstance(body.get('message').get('command').get(command).get('details').get('args'), list)
+        self.assertIsNotNone(body.get('time'))
+
+    def test_executecommand_p(self):
+        command = "cat /etc/hostname"
+
+        response = requests.post(
+            self.server + f"/executecommand",
+            data=command)
+
+        body = response.json()
+        print(dump.dump_all(response))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertEqual(body.get('message').get('command').get(command).get('details').get('code'), 0)
+        self.assertNotEqual(body.get('message').get('command').get(command).get('details').get('out'), "")
+        self.assertEqual(body.get('message').get('command').get(command).get('details').get('err'), "")
+        self.assertGreater(body.get('message').get('command').get(command).get('details').get('pid'), 0)
+        self.assertIsInstance(body.get('message').get('command').get(command).get('details').get('args'), list)
+        self.assertIsNotNone(body.get('time'))
+
+    def test_executecommand_rm_not_allowed_n(self):
+        command = "rm -rf /tmp"
+
+        response = requests.post(
+            self.server + f"/executecommand",
+            data=command)
+
+        body = response.json()
+        print(dump.dump_all(response))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.EXEC_COMMAND_NOT_ALLOWED) % command)
+        self.assertEqual(body.get('message'),
+                         ErrorCodes.HTTP_CODE.get(Constants.EXEC_COMMAND_NOT_ALLOWED) % command)
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.EXEC_COMMAND_NOT_ALLOWED)
+        self.assertIsNotNone(body.get('time'))
+
+    def test_executecommand_timeout_from_client_n(self):
+        command = "sleep 20"
+
+        try:
+            response = requests.post(
+                self.server + f"/executecommand",
+                data=command, timeout=2)
+        except Exception as e:
+            self.assertIsInstance(e, requests.exceptions.ReadTimeout)
 
 
 if __name__ == '__main__':

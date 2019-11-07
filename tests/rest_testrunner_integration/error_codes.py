@@ -15,5 +15,6 @@ class ErrorCodes:
         Constants.GET_CONTAINER_TEST_INFO_FAILURE: "Failed to get test info.",
         Constants.FOLDER_ZIP_FAILURE: "Failed to zip folder %s.",
         Constants.EMPTY_REQUEST_BODY_PROVIDED: "Empty request body provided.",
-        Constants.UPLOAD_TEST_CONFIG_FAILURE: "Failed to upload test configuration."
+        Constants.UPLOAD_TEST_CONFIG_FAILURE: "Failed to upload test configuration.",
+        Constants.HTTP_HEADER_NOT_PROVIDED: "Http header value not provided: '%s'"
     }

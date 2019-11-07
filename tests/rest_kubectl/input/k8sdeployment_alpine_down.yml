@@ -1,0 +1,22 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    k8s-app: alpine
+  name: alpine
+  namespace: default
+spec:
+  replicas: 0
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: alpine
+  template:
+    metadata:
+      labels:
+        k8s-app: alpine
+    spec:
+      containers:
+        - name: alpine
+          image: alpine:3.10.2
+          command: ["tail", "-f", "/etc/hostname"]

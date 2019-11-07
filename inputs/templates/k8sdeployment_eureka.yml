@@ -1,0 +1,36 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  labels:
+    k8s-app: netflixoss-eureka
+  name: netflixoss-eureka
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: netflixoss-eureka
+  template:
+    metadata:
+      labels:
+        k8s-app: netflixoss-eureka
+    spec:
+      containers:
+        - name: netflixoss-eureka
+          image: dinutac/netflixoss-eureka:1.9.13
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: netflixoss-eureka
+  name: netflixoss-eureka
+  namespace: default
+spec:
+  type: NodePort
+  ports:
+    - port: 8080
+      targetPort: 8080
+  selector:
+    k8s-app: netflixoss-eureka

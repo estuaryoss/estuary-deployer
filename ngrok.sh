@@ -7,5 +7,5 @@ unzip ngrok.zip
     killall -SIGINT ngrok && echo "ngrok terminated"
 } &
 {
-    ./ngrok http 8080 --authtoken=$NGROK_TOKEN
+    ./ngrok http $1 --authtoken=$2
 } &

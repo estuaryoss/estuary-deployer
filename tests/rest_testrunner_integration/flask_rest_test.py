@@ -17,9 +17,8 @@ from tests.rest_testrunner_integration.utils import Utils
 
 class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
-    # server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "2.0.2"
+    expected_version = "3.0.0"
     cleanup_count_safe = 5
     compose_id = ""
 
@@ -420,7 +419,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message').get("commands").get(commands[0]).get("status"), "finished")
         self.assertIsInstance(body.get('message').get("commands").get(commands[0]).get("details"), dict)
         self.assertEqual(body.get('message').get("commands").get(commands[1]).get("status"), "finished")
-        self.assertIn("invalid_command: not found\n", body.get('message').get("commands").get(commands[1]).get("details").get("err"))
+        self.assertIn("invalid_command: not found\n",
+                      body.get('message').get("commands").get(commands[1]).get("details").get("err"))
 
     @parameterized.expand([
         "3"
@@ -504,34 +504,58 @@ class FlaskServerTestCase(unittest.TestCase):
         # self.assertEqual(body.get('message').get("started"), "false")
 
     @parameterized.expand([
-        "{\"file\": \"/tmp/config.properties\"}",
-        "{\"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}",
         "{\"file\": \"/dummy/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"
     ])
-    def test_uploadtestconfig_n(self, payload):
+    def test_uploadfile_n(self, payload):
         headers = {'Content-type': 'application/json'}
+        mandatory_header_key = 'File-Path'
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/uploadtestconfig",
+            self.server + f"/testrunner/{self.compose_id}" + f"/uploadfile",
             data=payload, headers=headers)
 
         body = response.json()
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.UPLOAD_TEST_CONFIG_FAILURE))
+                         ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % mandatory_header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.UPLOAD_TEST_CONFIG_FAILURE)
+        self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
+        self.assertIsNotNone(body.get('time'))
+
+    @parameterized.expand([
+        ""
+    ])
+    def test_uploadfile_n(self, payload):
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/tmp/config.properties'
+        }
+
+        response = requests.post(
+            self.server + f"/testrunner/{self.compose_id}" + f"/uploadfile",
+            data=payload, headers=headers)
+
+        body = response.json()
+        print(dump.dump_all(response))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.EMPTY_REQUEST_BODY_PROVIDED))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.EMPTY_REQUEST_BODY_PROVIDED)
         self.assertIsNotNone(body.get('time'))
 
     @parameterized.expand([
         "{\"file\": \"/tmp/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"
     ])
-    def test_uploadtestconfig_p(self, payload):
-        headers = {'Content-type': 'application/json'}
+    def test_uploadfile_p(self, payload):
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/tmp/config.properties'
+        }
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/uploadtestconfig",
+            self.server + f"/testrunner/{self.compose_id}" + f"/uploadfile",
             data=payload, headers=headers)
 
         body = response.json()
@@ -542,6 +566,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
+
 
 if __name__ == '__main__':
     unittest.main()

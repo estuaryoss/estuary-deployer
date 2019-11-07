@@ -5,15 +5,15 @@ import requests
 from parameterized import parameterized
 
 from rest.api.apiresponsehelpers.constants import Constants
-from rest.api.schedulers.env_expire_scheduler import EnvExpireScheduler
+from rest.api.schedulers.docker_env_expire_scheduler import DockerEnvExpireScheduler
 
 
 class EnvExpireSchedulerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
 
     def setUp(self):
-        self.path = f"{Constants.DOCKER_PATH}"
-        self.env_expire_scheduler = EnvExpireScheduler(self.path, 10, 1)
+        self.path = f"{Constants.DEPLOY_FOLDER_PATH}"
+        self.env_expire_scheduler = DockerEnvExpireScheduler(self.path, 10, 1)
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")

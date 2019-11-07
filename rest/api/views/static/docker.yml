@@ -370,19 +370,23 @@ paths:
     post:
       tags:
         - estuary-deployer
-      summary: Uploads a file
+      summary: Uploads a file no mater the format. Binary or raw
       consumes:
         - application/json
         - application/x-www-form-urlencoded
       produces:
         - application/json
       parameters:
-        - name: file
+        - name: content
           in: body
-          description: Target file path and file content
-          required: false
+          description: The content of the file
+          required: true
           schema:
-            $ref: '#/definitions/file_upload'
+            $ref: '#/definitions/filecontent'
+        - in: header
+          name: File-Path
+          type: string
+          required: true
       responses:
         200:
           description: The content of the file was uploaded successfully
@@ -449,6 +453,25 @@ paths:
           description: testrunner network disconnect success
         404:
           description: testrunner network disconnect failure
+  /executecommand:
+    post:
+      tags:
+        - estuary-deployer
+      summary: Executes a command in blocking mode. If your command is not executing in less than few seconds, the api will timeout.
+      produces:
+        - application/json
+      parameters:
+        - name: command
+          in: body
+          description: The command to be executed on remote service.
+          required: true
+          schema:
+            $ref: '#/definitions/command'
+      responses:
+        200:
+          description: command execution success
+        404:
+          description: command execution failure
 definitions:
     file:
       type: object
@@ -464,18 +487,16 @@ definitions:
           type: "string"
       example: |
            {"folder":"/tmp"}
-    file_upload:
-      type: object
-      properties:
-        file:
-          type: "string"
-        content:
-          type: "string"
-      example: {"file": "/tmp/config.properties", "content": "ip=10.0.0.1\nrequest_sec=100\nthreads=10\ntype=dual"}
+    command:
+      type: string
+      example: ls -lrt
     envvar:
       type: object
       example: |
           {"DATABASE" : "mysql56", "IMAGE":"latest"}
+    filecontent:
+      type: object
+      example: {"file": "/home/automation/config.properties", "content": "ip=10.0.0.1\nrequest_sec=100\nthreads=10\ntype=dual"}
     template:
       type: string
       minLength: 3

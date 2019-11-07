@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import re
 import sys
 import traceback
 from secrets import token_hex
@@ -12,13 +13,13 @@ from flask_swagger_ui import get_swaggerui_blueprint
 
 from about import properties
 from entities.render import Render
-from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployments
 from rest.api.apiresponsehelpers.constants import Constants
 from rest.api.apiresponsehelpers.error_codes import ErrorCodes
 from rest.api.apiresponsehelpers.http_response import HttpResponse
 from rest.api.definitions import env_vars
 from rest.api.flask_config import Config
-from rest.api.views.routes import Routes
+from rest.api.views.routes_abc import Routes
+from rest.utils.cmd_utils import CmdUtils
 from rest.utils.io_utils import IOUtils
 from rest.utils.kubectl_utils import KubectlUtils
 
@@ -52,7 +53,7 @@ class KubectlView(FlaskView, Routes):
         return self.app.send_static_file("kubectl.yml")
 
     @route('/env')
-    def get_vars(self):
+    def get_env_vars(self):
         http = HttpResponse()
         return Response(
             json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), env_vars)),
@@ -74,7 +75,7 @@ class KubectlView(FlaskView, Routes):
             200, mimetype="application/json")
 
     @route('/getenv/<name>', methods=['GET'])
-    def get_env(self, name):
+    def get_env_var(self, name):
         name = name.upper().strip()
         http = HttpResponse()
         try:
@@ -147,23 +148,23 @@ class KubectlView(FlaskView, Routes):
             200, mimetype="application/json")
 
     @route('/deploystart', methods=['POST'])
-    def deploystart(self):
+    def deploy_start(self):
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
 
         token = token_hex(8)
-        dir = f"{Constants.DOCKER_PATH}{token}"
+        dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
 
         try:
             IOUtils.create_dir(dir)
             input_data = request.data.decode('utf-8')
             IOUtils.write_to_file(file, input_data)
-            [out, err] = kubectl_utils.up(f"{file}")
-            if err:
+            status = kubectl_utils.up(f"{file}")
+            if status.get('err'):
                 return Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
-                                                        err,
+                                                        status.get('err'),
                                                         str(traceback.format_exc()))), 404,
                                 mimetype="application/json")
             response = Response(
@@ -185,8 +186,10 @@ class KubectlView(FlaskView, Routes):
         return response
 
     @route('/deploystartenv/<template>/<variables>', methods=['POST'])
-    def deploystartenv(self, template, variables):
+    def deploy_start_env(self, template, variables):
+        http = HttpResponse()
         kubectl_utils = KubectlUtils()
+
         try:
             input_json = request.get_json(force=True)
             for key, value in input_json.items():
@@ -197,19 +200,24 @@ class KubectlView(FlaskView, Routes):
 
         os.environ['TEMPLATE'] = template.strip()
         os.environ['VARIABLES'] = variables.strip()
-        self.self.app.logger.debug("Templates: " + os.environ.get('TEMPLATE'))
+        self.app.logger.debug("Templates: " + os.environ.get('TEMPLATE'))
         self.app.logger.debug("Variables: " + os.environ.get('VARIABLES'))
         token = token_hex(8)
-        dir = f"{Constants.DOCKER_PATH}{token}"
+        dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
-        http = HttpResponse()
 
         try:
             r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
             IOUtils.create_dir(dir)
             IOUtils.write_to_file(file)
             IOUtils.write_to_file(file, r.rend_template())
-            kubectl_utils.up(f"{file}")
+            status = kubectl_utils.up(f"{file}")
+            if status.get('err'):
+                return Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
+                                                        ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
+                                                        status.get('err'),
+                                                        str(traceback.format_exc()))), 404,
+                                mimetype="application/json")
             result = str(token)
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
@@ -230,7 +238,7 @@ class KubectlView(FlaskView, Routes):
         return response
 
     @route('/deploystart/<template>/<variables>', methods=['GET'])
-    def deploystart_from_server(self, template, variables):
+    def deploy_start_from_server(self, template, variables):
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
         os.environ['TEMPLATE'] = template.strip()
@@ -238,7 +246,7 @@ class KubectlView(FlaskView, Routes):
         self.app.logger.debug("Templates: " + os.environ.get('TEMPLATE'))
         self.app.logger.debug("Variables: " + os.environ.get('VARIABLES'))
         token = token_hex(8)
-        dir = f"{Constants.DOCKER_PATH}{token}"
+        dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
 
         try:
@@ -246,7 +254,13 @@ class KubectlView(FlaskView, Routes):
             IOUtils.create_dir(dir)
             IOUtils.write_to_file(file)
             IOUtils.write_to_file(file, r.rend_template())
-            kubectl_utils.up(f"{file}")
+            status = kubectl_utils.up(f"{file}")
+            if status.get('err'):
+                return Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
+                                                        ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
+                                                        status.get('err'),
+                                                        str(traceback.format_exc()))), 404,
+                                mimetype="application/json")
             result = str(token)
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
@@ -266,25 +280,47 @@ class KubectlView(FlaskView, Routes):
 
         return response
 
-    @route('/deploystatus/<id>', methods=['GET'])
-    def deploy_status(self, id):
-        id = id.strip()
+    @route('/deploystop/<deployment>', methods=['GET'])
+    def deploy_stop(self, deployment):
+        deployment = deployment.strip()
+        kubectl_utils = KubectlUtils()
+        http = HttpResponse()
+        header_key = 'K8s-Namespace'
+
+        try:
+            namespace = "default"
+            if request.headers.get(f"{header_key}"):
+                namespace = request.headers.get(f"{header_key}")
+            status = kubectl_utils.down(deployment, namespace)
+            if "Error from server".lower() in status.get('err').lower():
+                return Response(json.dumps(http.failure(Constants.KUBERNETES_SERVER_ERROR,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.KUBERNETES_SERVER_ERROR) % status.get('err'),
+                                                        status.get('err'),
+                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
+            result = status.get('out').split("\n")[1:-1]
+            response = Response(
+                json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
+                mimetype="application/json")
+        except:
+            result = "Exception({0})".format(sys.exc_info()[0])
+            response = Response(json.dumps(http.failure(Constants.DEPLOY_STOP_FAILURE,
+                                                        ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_STOP_FAILURE), result,
+                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
+
+        return response
+
+    @route('/deploystatus/<deployment>', methods=['GET'])
+    def deploy_status(self, deployment):
+        deployment = deployment.strip()
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
         try:
-            [out, err] = kubectl_utils.ps(id)
-            if "Cannot connect to the Docker daemon".lower() in err.lower():
-                return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
-                                                        err,
-                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
-            result = out.split("\n")[1:-1]
+            deployment = kubectl_utils.get_active_deployment(deployment)
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
-                                        ActiveDeployments.active_deployment(id, result))), 200,
+                                        deployment)), 200,
                 mimetype="application/json")
-            self.app.logger.debug('Output: %s', out)
-            self.app.logger.debug('Error: %s', err)
         except FileNotFoundError as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_STATUS_FAILURE,
@@ -323,41 +359,52 @@ class KubectlView(FlaskView, Routes):
                                                       str(traceback.format_exc()))), 404, mimetype="application/json")
         return result
 
-    @route('/deploylogs/<id>', methods=['GET'])
-    def deploy_logs(self, id):
-        id = id.strip()
-        dir = f"{Constants.DOCKER_PATH}{id}"
-        file = f"{dir}/{id}"
+    @route('/deploylogs/<deployment>', methods=['GET'])
+    def deploy_logs(self, deployment):
+        deployment = deployment.strip()
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
+        header_key = 'K8s-Namespace'
 
         try:
-            [out, err] = kubectl_utils.logs(file)
-            self.app.logger.debug('Output: %s', out)
-            self.app.logger.debug('Error: %s', err)
-            if err:
+            namespace = "default"
+            if request.headers.get(f"{header_key}"):
+                namespace = request.headers.get(f"{header_key}")
+            status = kubectl_utils.logs(deployment, namespace)
+            if status.get('err'):
                 return Response(json.dumps(http.failure(Constants.GET_LOGS_FAILED,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % id, err,
-                                                        err)), 404, mimetype="application/json")
+                                                        status,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.GET_LOGS_FAILED) % deployment,
+                                                        status.get('err'))), 404, mimetype="application/json")
         except:
             exception = "Exception({0})".format(sys.exc_info()[0])
             return Response(json.dumps(http.failure(Constants.GET_LOGS_FAILED,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % id, exception,
+                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % deployment,
+                                                    exception,
                                                     exception)), 404, mimetype="application/json")
 
         return Response(
-            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), out.split("\n"))),
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
+                                    status.get('out'))),
             200, mimetype="application/json")
 
     @route('/uploadfile', methods=['POST'])
-    def uploadfile(self):
+    def upload_file(self):
         io_utils = IOUtils()
         http = HttpResponse()
+        header_key = 'File-Path'
         try:
-            input_data = request.get_json(force=True)
-            file_content = input_data["content"]
-            file_path = input_data["file"]
-            if not input_data:
+            file_content = request.get_data()
+            file_path = request.headers.get(f"{header_key}")
+            if not file_path:
+                return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
+            if not file_content:
                 return Response(json.dumps(http.failure(Constants.EMPTY_REQUEST_BODY_PROVIDED,
                                                         ErrorCodes.HTTP_CODE.get(Constants.EMPTY_REQUEST_BODY_PROVIDED),
                                                         ErrorCodes.HTTP_CODE.get(Constants.EMPTY_REQUEST_BODY_PROVIDED),
@@ -369,7 +416,7 @@ class KubectlView(FlaskView, Routes):
                                                     exception,
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
         try:
-            io_utils.write_to_file(file_path, file_content)
+            io_utils.write_to_file_binary(file_path, file_content)
         except Exception as e:
             exception = "Exception({0})".format(e.__str__())
             return Response(json.dumps(http.failure(Constants.UPLOAD_FILE_FAILURE,
@@ -381,3 +428,44 @@ class KubectlView(FlaskView, Routes):
                                                 ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))),
                         200,
                         mimetype="application/json")
+
+    @route('/executecommand', methods=['POST'])
+    def execute_command(self):
+        io_utils = IOUtils()
+        cmd_utils = CmdUtils()
+        http = HttpResponse()
+        info_init = {"command": {}}
+
+        input_data = request.data.decode('utf-8').strip()
+        if not input_data:
+            return Response(json.dumps(http.failure(Constants.EMPTY_REQUEST_BODY_PROVIDED,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.EMPTY_REQUEST_BODY_PROVIDED),
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.EMPTY_REQUEST_BODY_PROVIDED),
+                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
+        try:
+            cmd = io_utils.get_filtered_list_regex(input_data.split("\n")[0:1], re.compile(
+                r'(\s+|[^a-z]|^)rm\s+.*$'))  # supports only one command at a time
+            if not cmd:
+                return Response(json.dumps(http.failure(Constants.EXEC_COMMAND_NOT_ALLOWED,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.EXEC_COMMAND_NOT_ALLOWED) % input_data,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.EXEC_COMMAND_NOT_ALLOWED) % input_data,
+                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
+            command_dict = dict.fromkeys(cmd, {"details": {}})
+            info_init["command"] = command_dict
+            status = cmd_utils.run_cmd(["bash", "-c", f'''{cmd[0]}'''])
+            info_init["command"][cmd[0]]["details"] = json.loads(json.dumps(status))
+        except Exception as e:
+            exception = "Exception({0})".format(e.__str__())
+            return Response(json.dumps(http.failure(Constants.COMMAND_EXEC_FAILURE,
+                                                    ErrorCodes.HTTP_CODE.get(Constants.COMMAND_EXEC_FAILURE) % cmd[0],
+                                                    exception,
+                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
+
+        return Response(
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), info_init)),
+            200,
+            mimetype="application/json")

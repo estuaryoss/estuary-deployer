@@ -10,7 +10,7 @@ class ErrorCodes:
         Constants.DEPLOY_STATUS_FAILURE: "deploy status action failed",
         Constants.DEPLOY_REPLAY_FAILURE: "deploy replay action failed",
         Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE: "Getting file from the estuary deployer service container failed",
-        Constants.TEST_START_FAILURE: "Starting %s from the container %s failed",
+        Constants.COMMAND_EXEC_FAILURE: "Starting command '%s' failed",
         Constants.GET_CONTAINER_FILE_FAILURE: "Getting %s from the container %s failed",
         Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR: "Getting %s from the container %s failed. It is directory, not file.",
         Constants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE: "Starting environment id %s failed. Environment it is active.",
@@ -25,5 +25,9 @@ class ErrorCodes:
         Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to disconnect the testrunner service to the docker network associated with the estuary-deployer service.",
         Constants.GET_CONTAINER_ENV_VAR_FAILURE: "Getting env var %s from the container failed.",
         Constants.EMPTY_REQUEST_BODY_PROVIDED: "Empty request body provided.",
-        Constants.UPLOAD_FILE_FAILURE: "Failed to upload file content."
+        Constants.UPLOAD_FILE_FAILURE: "Failed to upload file content.",
+        Constants.HTTP_HEADER_NOT_PROVIDED: "Http header value not provided: '%s'",
+        Constants.EXEC_COMMAND_NOT_ALLOWED: "'rm' commands are filtered. Command '%s' was not executed.",
+        Constants.KUBERNETES_SERVER_ERROR: "Error response from server: '%s'"
     }
+

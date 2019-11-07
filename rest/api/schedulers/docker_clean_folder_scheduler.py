@@ -7,14 +7,15 @@ from rest.api.apiresponsehelpers.constants import Constants
 from rest.utils.docker_utils import DockerUtils
 
 
-class CleanFolderScheduler:
+class DockerCleanFolderScheduler:
 
-    def __init__(self, path=Constants.DOCKER_PATH, poll_interval=120, delete_period=60):
+    def __init__(self, path=Constants.DEPLOY_FOLDER_PATH, poll_interval=120, delete_period=60):
         self.interval = poll_interval
         self.delete_period = delete_period
         self.path = path
         self.scheduler = BackgroundScheduler(daemon=False)
-        self.scheduler.add_job(DockerUtils.folder_clean_up, args=[self.path,self.delete_period], trigger='interval', seconds=self.interval)
+        self.scheduler.add_job(DockerUtils.folder_clean_up, args=[self.path, self.delete_period], trigger='interval',
+                               seconds=self.interval)
         logging.basicConfig()
         logging.getLogger('apscheduler').setLevel(logging.INFO)
 

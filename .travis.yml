@@ -1,3 +1,5 @@
+dist: bionic
+
 language: python
 
 python:
@@ -68,7 +70,7 @@ script:
   - docker ps -a
   - python3 -m unittest discover $SCRIPTS_DIR/rest_testrunner_integration "*_test.py"
   - docker ps -a
-  #  - ./ngrok.sh
+  #  - ./ngrok.sh 8080 $NGROK_TOKEN
   #  - docker logs -f estuary-deployer
   #  - docker logs $(docker ps -a | grep testrunner | awk '{print $13}')
   - docker stop $(docker ps -a -q)
@@ -92,6 +94,26 @@ script:
   - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
   - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR "render_test.py"
   #  - docker logs estuary-deployer
+  - docker stop $(docker ps -a -q)
+  - docker rm $(docker ps -a -q)
+  - docker network prune -f
+
+    #run kubectl tests
+  - docker network create estuarydeployer_default
+  - docker run -d
+    -e DEPLOY_ON=kubectl
+    -e MAX_DEPLOY_MEMORY=$MAX_DEPLOY_MEMORY
+    -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
+    -p 8080:8080
+    -v $PWD/inputs/templates:/data
+    -v $PWD/inputs/variables:/variables
+    -v /var/run/docker.sock:/var/run/docker.sock
+    --net=estuarydeployer_default
+    --name estuary-deployer
+    dinutac/estuary-deployer:latest
+  - sleep 10
+  - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "flask_rest_test.py"
+#  - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "k8s_integration_test.py"
   - docker stop $(docker ps -a -q)
   - docker rm $(docker ps -a -q)
   - docker network prune -f

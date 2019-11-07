@@ -1,7 +1,7 @@
 import time
 import unittest
 
-from rest.api.schedulers.clean_folder_scheduler import CleanFolderScheduler
+from rest.api.schedulers.docker_clean_folder_scheduler import DockerCleanFolderScheduler
 from rest.utils.io_utils import IOUtils
 
 
@@ -9,7 +9,7 @@ class CleanFolderSchedulerTestCase(unittest.TestCase):
 
     def setUp(self):
         self.path = "./tmp/"
-        self.clean_folder_scheduler = CleanFolderScheduler(self.path, 10, 1)
+        self.clean_folder_scheduler = DockerCleanFolderScheduler(self.path, 10, 1)
 
     def test_folder_clean_up(self):
         utils = IOUtils()

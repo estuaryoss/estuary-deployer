@@ -51,9 +51,6 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def ps(id):
-        file_path = Path(Constants.DOCKER_PATH + f"{id}/{id}")
-        if not file_path.is_file():
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
         return CmdUtils.run_cmd(["docker", "ps", "--filter", f"name={id}"])
 
     @staticmethod
@@ -112,18 +109,17 @@ class DockerUtils(EnvCreation):
     @staticmethod
     def get_active_deployments():
         active_deployments = []
-        full_deployments_list = IOUtils.get_list_dir(f"{Constants.DOCKER_PATH}")
+        full_deployments_list = IOUtils.get_list_dir(f"{Constants.DEPLOY_FOLDER_PATH}")
         for item in full_deployments_list:
-            try:
-                container_list = DockerUtils.ps(item)[0].split("\n")[1:-1]
-                if len(container_list) > 0:
-                    active_deployments.append(ActiveDeployments.active_deployment(item.strip(), container_list))
-            except:
-                pass
+            container_list = DockerUtils.ps(item).get('out').split("\n")[1:-1]
+            for container in container_list:
+                if item in container:
+                    active_deployments.append(ActiveDeployments.docker_deployment(item.strip(), container_list))
+
         return active_deployments
 
     @staticmethod
-    def folder_clean_up(path=Constants.DOCKER_PATH, delete_period=60):
+    def folder_clean_up(path=Constants.DEPLOY_FOLDER_PATH, delete_period=60):
         active_deployments = []
         active_deployments_objects = DockerUtils.get_active_deployments()
         for item in active_deployments_objects:
@@ -135,7 +131,7 @@ class DockerUtils(EnvCreation):
                 shutil.rmtree(f"{path}{item}")
 
     @staticmethod
-    def env_clean_up(path=Constants.DOCKER_PATH, env_expire_in=1440): #1 day
+    def env_clean_up(path=Constants.DEPLOY_FOLDER_PATH, env_expire_in=1440):  # 1 day
         active_deployments = []
         active_deployments_objects = DockerUtils.get_active_deployments()
         for item in active_deployments_objects:

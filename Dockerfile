@@ -70,6 +70,8 @@ ENV VARIABLES variables.yml
 ENV MAX_DEPLOY_MEMORY 80
 ENV DEPLOY_ON docker
 
+ENV TZ UTC
+
 ADD ./ $SCRIPTS_DIR/
 ADD ./inputs/templates/ $TEMPLATES_DIR/
 ADD ./inputs/variables/ $VARS_DIR/

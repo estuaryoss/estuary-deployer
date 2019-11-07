@@ -19,7 +19,8 @@ https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0
 https://app.swaggerhub.com/apis/dinuta/estuary-deployer/3.0.0  
 
 ## Postman collection
-https://documenter.getpostman.com/view/2360061/SVYjUNCG
+Docker: https://documenter.getpostman.com/view/2360061/SVYjUNCG
+Kubernetes: https://documenter.getpostman.com/view/2360061/SW15zGn2
 
 ## Wiki
 https://github.com/dinuta/estuary-deployer/wiki  
@@ -95,7 +96,7 @@ Start your containers by specifying the full hostname or ip of the host machine 
 
 Api call examples:  
 
-    http://192.168.100.12:8083/kubectl/ping -> if DEPLOY_ON is kubectl. Kubernetes deployments are not yet fully tested *  
+    http://192.168.100.12:8083/kubectl/ping -> if DEPLOY_ON is kubernetes with kubectl. Kubernetes deployments are fully tested
     or
     http://192.168.100.12:8083/docker/ping -> if DEPLOY_ON is docker. Docker is the default option and is fully tested
     
