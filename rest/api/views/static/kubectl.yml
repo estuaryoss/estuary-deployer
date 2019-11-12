@@ -280,7 +280,7 @@ paths:
           description: deploy stop success
         404:
           description: deploy stop failure
-  /getdeployerfile:
+  /getfile:
     post:
       tags:
         - estuary-deployer
@@ -291,12 +291,31 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: file
-          in: body
+        - name: File-Path
+          type: string
+          in: header
           description: File path on the disk
-          required: false
-          schema:
-            $ref: '#/definitions/file'
+          required: true
+      responses:
+        200:
+          description: get file content success
+        404:
+          description: get file content failure
+    get:
+      tags:
+        - estuary-deployer
+      summary: gets a file content from the estuary-deployer service
+      consumes:
+        - application/json
+        - application/x-www-form-urlencoded
+      produces:
+        - application/json
+      parameters:
+        - name: File-Path
+          type: string
+          in: header
+          description: File path on the disk
+          required: true
       responses:
         200:
           description: get file content success
@@ -348,20 +367,6 @@ paths:
         404:
           description: command execution failure
 definitions:
-    file:
-      type: object
-      properties:
-        file:
-          type: "string"
-      example: |
-           {"file":"/etc/hostname"}
-    folder:
-      type: object
-      properties:
-        folder:
-          type: "string"
-      example: |
-           {"folder":"/tmp"}
     command:
       type: string
       example: ls -lrt

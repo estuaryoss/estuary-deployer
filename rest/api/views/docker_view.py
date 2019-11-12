@@ -428,47 +428,50 @@ class DockerView(FlaskView, Routes):
 
         return response
 
-    @route('/getdeployerfile', methods=['POST'])
-    def get_deployer_file(self):
+    @route('/getfile', methods=['GET', 'POST'])
+    def get_file(self):
         http = HttpResponse()
-        try:
-            input_json = request.get_json(force=True)
-            file = input_json["file"]
-        except Exception as e:
-            exception = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.MISSING_PARAMETER_POST,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file",
-                                                    exception,
+        header_key = 'File-Path'
+
+        file_path = request.headers.get(f"{header_key}")
+        if not file_path:
+            return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
+
         try:
-            result = Response(IOUtils.read_file(file), 200, mimetype="text/plain")
+            result = Response(IOUtils.read_file(file_path), 200, mimetype="text/plain")
         except:
             exception = "Exception({0})".format(sys.exc_info()[0])
-            result = Response(json.dumps(http.failure(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE,
+            result = Response(json.dumps(http.failure(Constants.GET_FILE_FAILURE,
                                                       ErrorCodes.HTTP_CODE.get(
-                                                          Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE),
+                                                          Constants.GET_FILE_FAILURE),
                                                       exception,
                                                       str(traceback.format_exc()))), 404, mimetype="application/json")
         return result
 
-    @route('/getcontainerfile/<id>/<container_service_name>', methods=['POST'])
-    def get_results_file(self, id, container_service_name):
+    @route('/getcontainerfile/<id>/<container_service_name>', methods=['GET', 'POST'])
+    def get_file_from_container(self, id, container_service_name):
         id = id.strip()
         container_service_name = container_service_name.strip()
         docker_utils = DockerUtils()
         http = HttpResponse()
-        try:
-            input_json = request.get_json(force=True)
-            file = input_json["file"]
-        except Exception as e:
-            exception = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.MISSING_PARAMETER_POST,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file",
-                                                    exception,
+        header_key = 'File-Path'
+
+        file_path = request.headers.get(f"{header_key}")
+        if not file_path:
+            return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
         container_id = id + "_" + container_service_name + "_1"
         self.app.logger.debug('cid: %s', container_id)
-        status = docker_utils.exec(container_id, ["sh", "-c", f"cat {file}"])
+        status = docker_utils.exec(container_id, ["sh", "-c", f"cat {file_path}"])
         # [out, err] = docker_utils.docker_cp(id, framework_container_service_name, file)
         self.app.logger.debug('Output: %s', status.get('out'))
         self.app.logger.debug('Error: %s', status.get('err'))
@@ -480,49 +483,50 @@ class DockerView(FlaskView, Routes):
         if "No such container".lower() in status.get('err').lower():
             return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                                                     ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        file, container_id),
+                                                        file_path, container_id),
                                                     ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        file, container_id),
+                                                        file_path, container_id),
                                                     status.get('err'))), 404, mimetype="application/json")
         elif "No such file".lower() in status.get('err').lower():
             return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                                                     ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        file, container_id),
+                                                        file_path, container_id),
                                                     ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        file, container_id),
+                                                        file_path, container_id),
                                                     status.get('err'))), 404, mimetype="application/json")
         elif "Is a directory".lower() in status.get('err').lower():
             return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR,
                                                     ErrorCodes.HTTP_CODE.get(
                                                         Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
-                                                        file, container_id),
+                                                        file_path, container_id),
                                                     ErrorCodes.HTTP_CODE.get(
                                                         Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
-                                                        file, container_id),
+                                                        file_path, container_id),
                                                     status.get('err'))), 404, mimetype="application/json")
         else:
             pass
 
         return Response(status.get('out'), 200, mimetype="text/plain")
 
-    @route('/getcontainerfolder/<id>/<container_service_name>', methods=['POST'])
-    def get_container_folder(self, id, container_service_name):
+    @route('/getcontainerfolder/<id>/<container_service_name>', methods=['GET', 'POST'])
+    def get_folder_from_container(self, id, container_service_name):
         id = id.strip()
         container_service_name = container_service_name.strip()
         docker_utils = DockerUtils()
         http = HttpResponse()
-        try:
-            input_json = request.get_json(force=True)
-            folder = input_json["folder"]
-        except Exception as e:
-            exception = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.MISSING_PARAMETER_POST,
+        header_key = 'Folder-Path'
+
+        folder_path = request.headers.get(f"{header_key}")
+        if not folder_path:
+            return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
                                                     ErrorCodes.HTTP_CODE.get(
-                                                        Constants.MISSING_PARAMETER_POST) % "folder", exception,
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
         container_id = id + "_" + container_service_name + "_1"
         self.app.logger.debug('cid: %s', container_id)
-        [out, err] = docker_utils.cp(id, container_service_name, folder)
+        [out, err] = docker_utils.cp(id, container_service_name, folder_path)
         self.app.logger.debug('Output: %s', out)
         self.app.logger.debug('Error: %s', err)
         if "Cannot connect to the Docker daemon".lower() in err.lower():
@@ -533,28 +537,28 @@ class DockerView(FlaskView, Routes):
             docker_utils.exec(container_id, f" rm -rf {id}")
             return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                                                     ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        folder, container_id),
+                                                        folder_path, container_id),
                                                     ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        folder, container_id),
+                                                        folder_path, container_id),
                                                     err)), 404, mimetype="application/json")
         elif "No such file".lower() in err.lower():
             return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
                                                     ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        folder, container_id),
+                                                        folder_path, container_id),
                                                     ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        folder, container_id),
+                                                        folder_path, container_id),
                                                     err)), 404, mimetype="application/json")
         else:
             self.app.logger.debug('Out: %s', out)
 
         try:
-            path = f"/tmp/{id}/" + folder.split("/")[-1]
+            path = f"/tmp/{id}/" + folder_path.split("/")[-1]
             IOUtils.zip_file(id, path)
         except FileNotFoundError as e:
             result = "Exception({0})".format(e.__str__())
-            return Response(json.dumps(http.failure(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE,
+            return Response(json.dumps(http.failure(Constants.GET_FILE_FAILURE,
                                                     ErrorCodes.HTTP_CODE.get(
-                                                        Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE), result,
+                                                        Constants.GET_FILE_FAILURE), result,
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
         except:
             result = "Exception({0})".format(sys.exc_info()[0])
@@ -714,7 +718,7 @@ class DockerView(FlaskView, Routes):
         return response
 
     @route('/uploadfile', methods=['POST'])
-    def uploadfile(self):
+    def upload_file(self):
         io_utils = IOUtils()
         http = HttpResponse()
         header_key = 'File-Path'

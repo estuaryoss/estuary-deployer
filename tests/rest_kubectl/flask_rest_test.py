@@ -120,41 +120,42 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(int(body.get("version")), 3)
 
     def test_getdeployerfile_p(self):
-        payload = {"file": "/etc/hostname"}
-        headers = {'Content-type': 'application/json'}
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/etc/hostname'
+        }
 
-        response = requests.post(self.server + f"/getdeployerfile", data=json.dumps(payload),
-                                 headers=headers)
+        response = requests.post(self.server + f"/getfile", headers=headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.text), 0)
 
     def test_getdeployerfile_n(self):
-        payload = {"file": "/etc/dummy"}
-        headers = {'Content-type': 'application/json'}
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/etc/dummy'
+        }
 
-        response = requests.post(self.server + f"/getdeployerfile", data=json.dumps(payload),
-                                 headers=headers)
+        response = requests.post(self.server + f"/getfile", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE))
+                         ErrorCodes.HTTP_CODE.get(Constants.GET_FILE_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE)
+        self.assertEqual(body.get('code'), Constants.GET_FILE_FAILURE)
         self.assertIsNotNone(body.get('time'))
 
     def test_getdeployerfile_missing_param_n(self):
-        payload = {}
+        header_key = 'File-Path'
         headers = {'Content-type': 'application/json'}
 
-        response = requests.post(self.server + f"/getdeployerfile", data=json.dumps(payload),
-                                 headers=headers)
+        response = requests.post(self.server + f"/getfile", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file")
+                         ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.MISSING_PARAMETER_POST)
+        self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
         self.assertIsNotNone(body.get('time'))
 
     def test_getenv_endpoint_p(self):

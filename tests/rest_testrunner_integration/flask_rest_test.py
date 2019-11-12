@@ -185,24 +185,24 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(body.get("services")), 2)
         self.assertEqual(int(body.get("version")), 3)
 
-    def test_getresultsfile_p(self):
-        payload = {"file": "/etc/hostname"}
-        headers = {'Content-type': 'application/json'}
+    def test_getfile_p(self):
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/etc/hostname'
+        }
 
-        response = requests.post(self.server + f"/testrunner/{self.compose_id}" + f"/getresultsfile",
-                                 data=json.dumps(payload),
-                                 headers=headers)
+        response = requests.post(self.server + f"/testrunner/{self.compose_id}" + f"/getfile", headers=headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.text), 0)
 
-    def test_getresultsfile_n(self):
-        payload = {"file": "/etc/dummy"}
-        headers = {'Content-type': 'application/json'}
+    def test_getfile_n(self):
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/etc/dummy'
+        }
 
-        response = requests.post(self.server + f"/testrunner/{self.compose_id}" + f"/getresultsfile",
-                                 data=json.dumps(payload),
-                                 headers=headers)
+        response = requests.post(self.server + f"/testrunner/{self.compose_id}" + f"/getfile", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -212,31 +212,30 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     def test_getcontainerfolder_file_param_missing_n(self):
-        container_file = "/etc/dummy"
-        payload = {'dummy': container_file}
+        header_key = 'File-Path'
         headers = {'Content-type': 'application/json'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getresultsfile",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/testrunner/{self.compose_id}" + f"/getfile", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file")
+                         ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.MISSING_PARAMETER_POST)
+        self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
         self.assertIsNotNone(body.get('time'))
 
-    def test_getcontainerfolder_p(self):
+    def test_getfolder_p(self):
         container_folder = "/tmp"
         utils = Utils()
-        payload = {'folder': container_folder}
-        headers = {'Content-type': 'application/json'}
+        headers = {
+            'Content-type': 'application/json',
+            'Folder-Path': container_folder
+        }
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getresultsfolder",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/testrunner/{self.compose_id}" + f"/getfolder", headers=headers)
 
         body = response.text
         self.assertEqual(response.status_code, 200)
@@ -246,14 +245,15 @@ class FlaskServerTestCase(unittest.TestCase):
         with zipfile.ZipFile('response.zip', 'w') as responsezip:
             self.assertTrue(responsezip.testzip() is None)
 
-    def test_getcontainerfolder_n(self):
+    def test_getfolder_n(self):
         container_folder = "/etc/hostname"
-        payload = {'folder': container_folder}
-        headers = {'Content-type': 'application/json'}
+        headers = {
+            'Content-type': 'application/json',
+            'Folder-Path': container_folder
+        }
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getresultsfolder",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/testrunner/{self.compose_id}" + f"/getfolder", headers=headers)
 
         body = response.json()
         print(dump.dump_all(response))
@@ -266,12 +266,13 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_getcontainerfolder_folder_not_found_n(self):
         container_folder = "/dummy"
-        payload = {'folder': container_folder}
-        headers = {'Content-type': 'application/json'}
+        headers = {
+            'Content-type': 'application/json',
+            'Folder-Path': container_folder
+        }
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getresultsfolder",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/testrunner/{self.compose_id}" + f"/getfolder", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -282,21 +283,19 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     def test_getcontainerfolder_folder_param_missing_n(self):
-        container_folder = "/dummy"
-        payload = {'dummy': container_folder}
+        header_key = "Folder-Path"
         headers = {'Content-type': 'application/json'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getresultsfolder",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/testrunner/{self.compose_id}" + f"/getfolder", headers=headers)
 
         body = response.json()
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "folder")
+                         ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.MISSING_PARAMETER_POST)
+        self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
         self.assertIsNotNone(body.get('time'))
 
     @parameterized.expand([

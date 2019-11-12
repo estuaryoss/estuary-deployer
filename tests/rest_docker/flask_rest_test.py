@@ -253,7 +253,7 @@ class FlaskServerTestCase(unittest.TestCase):
         id = "dummy"
 
         response = requests.get(self.server + f"/deploystatus/{id}")
-        #for dummy interogation the list of containers is empty
+        # for dummy interogation the list of containers is empty
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'),
@@ -265,42 +265,43 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
         requests.get(self.server + f"/deploystop/{deploystart_body.get('message')}")
 
-    def test_getdeployerfile_p(self):
-        payload = {"file": "/etc/hostname"}
-        headers = {'Content-type': 'application/json'}
+    def test_getfile_p(self):
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/etc/hostname'
+        }
 
-        response = requests.post(self.server + f"/getdeployerfile", data=json.dumps(payload),
-                                 headers=headers)
+        response = requests.post(self.server + f"/getfile", headers=headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.text), 0)
 
-    def test_getdeployerfile_n(self):
-        payload = {"file": "/etc/dummy"}
-        headers = {'Content-type': 'application/json'}
+    def test_getfile_n(self):
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': '/ec/dummy'
+        }
 
-        response = requests.post(self.server + f"/getdeployerfile", data=json.dumps(payload),
-                                 headers=headers)
+        response = requests.post(self.server + f"/getfile", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE))
+                         ErrorCodes.HTTP_CODE.get(Constants.GET_FILE_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE)
+        self.assertEqual(body.get('code'), Constants.GET_FILE_FAILURE)
         self.assertIsNotNone(body.get('time'))
 
-    def test_getdeployerfile_missing_param_n(self):
-        payload = {}
+    def test_getfile_missing_param_n(self):
+        header_key = 'File-Path'
         headers = {'Content-type': 'application/json'}
 
-        response = requests.post(self.server + f"/getdeployerfile", data=json.dumps(payload),
-                                 headers=headers)
+        response = requests.post(self.server + f"/getfile", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file")
+                         ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.MISSING_PARAMETER_POST)
+        self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
         self.assertIsNotNone(body.get('time'))
 
     def test_deploystop_n(self):
@@ -374,8 +375,11 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_getcontainerfile_n(self, template, variables):
         container_file = "/etc/alabalaportocala"
-        payload = {'file': container_file}
-        headers = {'Content-type': 'application/json'}
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': container_file
+        }
+
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
@@ -384,8 +388,7 @@ class FlaskServerTestCase(unittest.TestCase):
         container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
 
         response = requests.post(
-            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}", headers=headers)
 
         self.assertEqual(response.status_code, 404)
         # print(dump.dump_all(response))
@@ -403,10 +406,9 @@ class FlaskServerTestCase(unittest.TestCase):
         ("alpine.yml", "variables.yml")
     ])
     def test_getcontainerfile_missing_file_n(self, template, variables):
-        container_file = "/etc/hostname"
-        payload = {
-            'file_other': container_file}  # or just no payload will return the same message: missing param in post
+        header_key = 'File-Path'
         headers = {'Content-type': 'application/json'}
+
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
@@ -415,25 +417,27 @@ class FlaskServerTestCase(unittest.TestCase):
         container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
 
         response = requests.post(
-            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}", headers=headers)
 
         self.assertEqual(response.status_code, 404)
         # print(dump.dump_all(response))
         body = response.json()
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file")
+                         ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.MISSING_PARAMETER_POST)
+        self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
         self.assertIsNotNone(body.get('time'))
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
     ])
     def test_getcontainerfile_is_folder_n(self, template, variables):
-        container_file = "/etc"
-        payload = {'file': container_file}
-        headers = {'Content-type': 'application/json'}
+        container_folder = "/etc"
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': container_folder
+        }
+
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
@@ -442,17 +446,16 @@ class FlaskServerTestCase(unittest.TestCase):
         container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
 
         response = requests.post(
-            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}", headers=headers)
 
         self.assertEqual(response.status_code, 404)
         # print(dump.dump_all(response))
         body = response.json()
         self.assertEqual(body.get('description'),
                          ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
-                             container_file, container_id))
+                             container_folder, container_id))
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
-            container_file, container_id))
+            container_folder, container_id))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR)
         self.assertIsNotNone(body.get('time'))
@@ -462,8 +465,11 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_getcontainerfile_p(self, template, variables):
         container_file = "/etc/hostname"
-        payload = {'file': container_file}
-        headers = {'Content-type': 'application/json'}
+        headers = {
+            'Content-type': 'application/json',
+            'File-Path': container_file
+        }
+
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
@@ -471,8 +477,7 @@ class FlaskServerTestCase(unittest.TestCase):
         framework_container_service_name = "alpine"
 
         response = requests.post(
-            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/getcontainerfile/{env_id}/{framework_container_service_name}", headers=headers)
 
         body = response.text
         self.assertEqual(response.status_code, 200)
@@ -483,8 +488,11 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_getcontainerfolder_n(self, template, variables):
         container_folder = "/alabalaportocala"
-        payload = {'folder': container_folder}
-        headers = {'Content-type': 'application/json'}
+        headers = {
+            'Content-type': 'application/json',
+            'Folder-Path': container_folder
+        }
+
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
@@ -493,8 +501,7 @@ class FlaskServerTestCase(unittest.TestCase):
         container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
 
         response = requests.post(
-            self.server + f"/getcontainerfolder/{env_id}/{framework_container_service_name}",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/getcontainerfolder/{env_id}/{framework_container_service_name}", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -511,36 +518,39 @@ class FlaskServerTestCase(unittest.TestCase):
         ("alpine.yml", "variables.yml")
     ])
     def test_getcontainerfolder_missing_folder_n(self, template, variables):
-        container_folder = "/alabalaportocala"
-        payload = {'folder_other': container_folder}
-        headers = {'Content-type': 'application/json'}
+        header_key = 'Folder-Path'
+        headers = {
+            'Content-type': 'application/json'
+        }
+
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
         framework_container_service_name = "alpine"
-        container_id = f"{env_id}" + "_" + f"{framework_container_service_name}" + "_" + "1"
 
         response = requests.post(
-            self.server + f"/getcontainerfolder/{env_id}/{framework_container_service_name}",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/getcontainerfolder/{env_id}/{framework_container_service_name}", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "folder")
+                         ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.MISSING_PARAMETER_POST)
+        self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
         self.assertIsNotNone(body.get('time'))
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
     ])
     def test_getcontainerfolder_p(self, template, variables):
-        container_folder = "/etc"
         utils = Utils()
-        payload = {'folder': container_folder}
-        headers = {'Content-type': 'application/json'}
+        container_folder = "/etc"
+        headers = {
+            'Content-type': 'application/json',
+            'Folder-Path': container_folder
+        }
+
         response = requests.get(self.server + f"/deploystart/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
@@ -548,8 +558,7 @@ class FlaskServerTestCase(unittest.TestCase):
         framework_container_service_name = "alpine"
 
         response = requests.post(
-            self.server + f"/getcontainerfolder/{env_id}/{framework_container_service_name}",
-            data=json.dumps(payload), headers=headers)
+            self.server + f"/getcontainerfolder/{env_id}/{framework_container_service_name}", headers=headers)
 
         body = response.text
         self.assertEqual(response.status_code, 200)
@@ -872,7 +881,7 @@ class FlaskServerTestCase(unittest.TestCase):
         command = "sleep 20"
 
         try:
-            response = requests.post(
+            requests.post(
                 self.server + f"/executecommand",
                 data=command, timeout=2)
         except Exception as e:

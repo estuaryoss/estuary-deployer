@@ -336,25 +336,26 @@ class KubectlView(FlaskView, Routes):
 
         return response
 
-    @route('/getdeployerfile', methods=['POST'])
-    def get_deployer_file(self):
+    @route('/getfile', methods=['GET', 'POST'])
+    def get_file(self):
         http = HttpResponse()
-        try:
-            input_json = request.get_json(force=True)
-            file = input_json["file"]
-        except Exception as e:
-            exception = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.MISSING_PARAMETER_POST,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.MISSING_PARAMETER_POST) % "file",
-                                                    exception,
+        header_key = 'File-Path'
+
+        file_path = request.headers.get(f"{header_key}")
+        if not file_path:
+            return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
         try:
-            result = Response(IOUtils.read_file(file), 200, mimetype="text/plain")
+            result = Response(IOUtils.read_file(file_path), 200, mimetype="text/plain")
         except:
             exception = "Exception({0})".format(sys.exc_info()[0])
-            result = Response(json.dumps(http.failure(Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE,
+            result = Response(json.dumps(http.failure(Constants.GET_FILE_FAILURE,
                                                       ErrorCodes.HTTP_CODE.get(
-                                                          Constants.GET_ESTUARY_DEPLOYER_FILE_FAILURE),
+                                                          Constants.GET_FILE_FAILURE),
                                                       exception,
                                                       str(traceback.format_exc()))), 404, mimetype="application/json")
         return result
