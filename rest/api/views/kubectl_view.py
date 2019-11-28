@@ -171,8 +171,7 @@ class KubectlView(FlaskView, Routes):
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
         active_deployments = kubectl_utils.get_active_deployments()
-        self.app.logger.debug('Active deployments: %s', len(active_deployments))
-
+        self.app.logger.debug({"msg": {"active_deployments": f"{len(active_deployments)}"}})
         return Response(
             json.dumps(
                 http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), active_deployments)),
@@ -232,8 +231,8 @@ class KubectlView(FlaskView, Routes):
 
         os.environ['TEMPLATE'] = template.strip()
         os.environ['VARIABLES'] = variables.strip()
-        self.app.logger.debug("Templates: " + os.environ.get('TEMPLATE'))
-        self.app.logger.debug("Variables: " + os.environ.get('VARIABLES'))
+        self.app.logger.debug({"msg": {"template_file": os.environ.get('TEMPLATE')}})
+        self.app.logger.debug({"msg": {"variables_file": os.environ.get('VARIABLES')}})
         token = token_hex(8)
         dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
@@ -277,8 +276,8 @@ class KubectlView(FlaskView, Routes):
         fluentd_tag = "deploy_start_from_server"
         os.environ['TEMPLATE'] = template.strip()
         os.environ['VARIABLES'] = variables.strip()
-        self.app.logger.debug("Templates: " + os.environ.get('TEMPLATE'))
-        self.app.logger.debug("Variables: " + os.environ.get('VARIABLES'))
+        self.app.logger.debug({"msg": {"template_file": os.environ.get('TEMPLATE')}})
+        self.app.logger.debug({"msg": {"variables_file": os.environ.get('VARIABLES')}})
         token = token_hex(8)
         dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
