@@ -52,7 +52,7 @@ script:
   - echo "APP_IP_PORT=${IP_ADDR_ARRAY[0]}:8080" >> .env
   - cat .env
   - chmod +x wait-for-it.sh
-  - ./wait-for-it.sh -t 20 "http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2" -- echo "eureka running" && sleep 30
+  - ./wait-for-it.sh -t 20 "http://${IP_ADDR_ARRAY[0]}:8081" -- echo "eureka running" && sleep 30
   - docker run -d
     -e MAX_DEPLOY_MEMORY=80
     -p 8080:8080

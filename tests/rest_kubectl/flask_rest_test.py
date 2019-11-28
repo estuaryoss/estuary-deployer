@@ -14,7 +14,7 @@ from tests.rest_docker.error_codes import ErrorCodes
 class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/kubectl"
 
-    expected_version = "3.0.0"
+    expected_version = "4.0.0"
     sleep_before_container_up = 5
 
     def test_env_endpoint(self):

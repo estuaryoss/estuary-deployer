@@ -7,6 +7,8 @@ services:
     hostname: estuary-deployer
 #    entrypoint: tail -f /etc/alpine-release
     environment:
+#      DEPLOY_ON: kubectl
+#      FLUENTD_IP_PORT: '10.133.14.238:24224'
       limit: 'sky' # example env var inserted. you can read it with environ('limit')
       MAX_DEPLOYMENTS: 3 # how many deployments to be done. Useful for VMs where user knows how much resources a docker-compose env use.
       MAX_DEPLOY_MEMORY: 80 # % from total. tune this parameter after you measure how much a docker compose env consumes. E.g. 16 GB memory => docker will still compose new env if less than ~13.)

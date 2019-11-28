@@ -50,7 +50,8 @@ class KubectlUtils(EnvCreation):
         return active_deployments
 
     @staticmethod
-    def env_clean_up(env_expire_in=1440):  # 1 day
+    def env_clean_up(fluentd_utils, env_expire_in=1440):  # 1 day
+        fluentd_tag = "env_clean_up"
         env_expire_in_hours = env_expire_in / 60
         active_deployments = KubectlUtils.get_active_deployments()
         for item in active_deployments:
@@ -60,4 +61,6 @@ class KubectlUtils(EnvCreation):
             if match.group(2):
                 hours_uptime = int(match.group(2))
                 if hours_uptime >= env_expire_in_hours:
-                    KubectlUtils.down(item.get('name'), item.get('namespace'))
+                    result = KubectlUtils.down(item.get('name'), item.get('namespace'))
+                    fluentd_utils.emit(fluentd_tag, {
+                        "msg": {"action": "k8s_env_clean_up", "out": result.get('out'), "err": result.get('err')}})

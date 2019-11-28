@@ -18,7 +18,7 @@ from tests.rest_testrunner_integration.utils import Utils
 class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
 
-    expected_version = "3.0.0"
+    expected_version = "4.0.0"
     cleanup_count_safe = 5
     compose_id = ""
 

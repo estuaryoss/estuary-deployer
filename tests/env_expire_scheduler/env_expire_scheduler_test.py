@@ -13,7 +13,7 @@ class EnvExpireSchedulerTestCase(unittest.TestCase):
 
     def setUp(self):
         self.path = f"{Constants.DEPLOY_FOLDER_PATH}"
-        self.env_expire_scheduler = DockerEnvExpireScheduler(self.path, 10, 1)
+        self.env_expire_scheduler = DockerEnvExpireScheduler(path=self.path, poll_interval=10, env_expire_in=1)
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")

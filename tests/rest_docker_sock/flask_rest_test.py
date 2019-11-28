@@ -12,7 +12,7 @@ from tests.rest_docker_sock.error_codes import ErrorCodes
 class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
 
-    expected_version = "3.0.0"
+    expected_version = "4.0.0"
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")

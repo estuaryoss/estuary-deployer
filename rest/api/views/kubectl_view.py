@@ -10,16 +10,19 @@ from flask import request, Response, Flask
 from flask_classful import FlaskView, route
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
+from fluent import sender
 
 from about import properties
 from entities.render import Render
 from rest.api.apiresponsehelpers.constants import Constants
 from rest.api.apiresponsehelpers.error_codes import ErrorCodes
 from rest.api.apiresponsehelpers.http_response import HttpResponse
-from rest.api.definitions import env_vars
+from rest.api.definitions import env_vars, kubectl_swagger_file_content
 from rest.api.flask_config import Config
+from rest.api.logginghelpers.request_dumper import RequestDumper
 from rest.api.views.routes_abc import Routes
 from rest.utils.cmd_utils import CmdUtils
+from rest.utils.fluentd_utils import FluentdUtils
 from rest.utils.io_utils import IOUtils
 from rest.utils.kubectl_utils import KubectlUtils
 
@@ -32,6 +35,28 @@ class KubectlView(FlaskView, Routes):
         CORS(self.app)
         self.app.register_blueprint(self.get_swagger_blueprint(), url_prefix='/kubectl/api/docs')
         self.app.logger.setLevel(logging.DEBUG)
+        self.logger = sender.FluentSender(properties.get('name'), host=properties["fluentd_ip"],
+                                          port=int(properties["fluentd_port"]))
+        self.fluentd_utils = FluentdUtils(self.logger)
+        self.request_dumper = RequestDumper()
+
+    def before_request(self, name, *args, **kwargs):
+        ctx = self.app.app_context()
+        ctx.g.cid = token_hex(8)
+        self.request_dumper.set_correlation_id(ctx.g.cid)
+
+        response = self.fluentd_utils.debug(tag="api", msg=self.request_dumper.dump(request=request))
+        self.app.logger.debug(f"{response}")
+
+    def after_request(self, name, http_response):
+        headers = dict(http_response.headers)
+        headers['Correlation-Id'] = self.request_dumper.get_correlation_id()
+        http_response.headers = headers
+
+        response = self.fluentd_utils.debug(tag="api", msg=self.request_dumper.dump(http_response))
+        self.app.logger.debug(f"{response}")
+
+        return http_response
 
     def get_swagger_blueprint(self):
         return get_swaggerui_blueprint(
@@ -45,12 +70,18 @@ class KubectlView(FlaskView, Routes):
     def index(self):
         return "kubectl"
 
-    def get_app(self):
+    def get_view_fluentd_utils(self):
+        return self.fluentd_utils
+
+    def get_view_logger(self):
+        return self.logger
+
+    def get_view_app(self):
         return self.app
 
     @route('/swagger/swagger.yml')
     def swagger(self):
-        return self.app.send_static_file("kubectl.yml")
+        return Response(kubectl_swagger_file_content, 200, mimetype="application/json")
 
     @route('/env')
     def get_env_vars(self):
@@ -74,19 +105,19 @@ class KubectlView(FlaskView, Routes):
                 http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), properties["name"])),
             200, mimetype="application/json")
 
-    @route('/getenv/<name>', methods=['GET'])
-    def get_env_var(self, name):
-        name = name.upper().strip()
+    @route('/getenv/<envvar>', methods=['GET'])
+    def get_env_var(self, envvar):
+        envvar = envvar.upper().strip()
         http = HttpResponse()
         try:
             response = Response(json.dumps(
-                http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), os.environ[name])), 200,
+                http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), os.environ[envvar])), 200,
                 mimetype="application/json")
         except Exception as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.GET_CONTAINER_ENV_VAR_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(
-                                                            Constants.GET_CONTAINER_ENV_VAR_FAILURE) % name,
+                                                            Constants.GET_CONTAINER_ENV_VAR_FAILURE) % envvar,
                                                         result,
                                                         str(traceback.format_exc()))), 404, mimetype="application/json")
         return response
@@ -151,7 +182,7 @@ class KubectlView(FlaskView, Routes):
     def deploy_start(self):
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
-
+        fluentd_tag = "deploy_start"
         token = token_hex(8)
         dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
@@ -161,6 +192,7 @@ class KubectlView(FlaskView, Routes):
             input_data = request.data.decode('utf-8')
             IOUtils.write_to_file(file, input_data)
             status = kubectl_utils.up(f"{file}")
+            self.fluentd_utils.emit(fluentd_tag, {"msg": status})
             if status.get('err'):
                 return Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
@@ -189,7 +221,7 @@ class KubectlView(FlaskView, Routes):
     def deploy_start_env(self, template, variables):
         http = HttpResponse()
         kubectl_utils = KubectlUtils()
-
+        fluentd_tag = "deploy_start_env"
         try:
             input_json = request.get_json(force=True)
             for key, value in input_json.items():
@@ -212,6 +244,7 @@ class KubectlView(FlaskView, Routes):
             IOUtils.write_to_file(file)
             IOUtils.write_to_file(file, r.rend_template())
             status = kubectl_utils.up(f"{file}")
+            self.fluentd_utils.emit(fluentd_tag, {"msg": status})
             if status.get('err'):
                 return Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
@@ -241,6 +274,7 @@ class KubectlView(FlaskView, Routes):
     def deploy_start_from_server(self, template, variables):
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
+        fluentd_tag = "deploy_start_from_server"
         os.environ['TEMPLATE'] = template.strip()
         os.environ['VARIABLES'] = variables.strip()
         self.app.logger.debug("Templates: " + os.environ.get('TEMPLATE'))
@@ -255,6 +289,7 @@ class KubectlView(FlaskView, Routes):
             IOUtils.write_to_file(file)
             IOUtils.write_to_file(file, r.rend_template())
             status = kubectl_utils.up(f"{file}")
+            self.fluentd_utils.emit(fluentd_tag, {"msg": status})
             if status.get('err'):
                 return Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
@@ -286,12 +321,14 @@ class KubectlView(FlaskView, Routes):
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
         header_key = 'K8s-Namespace'
+        fluentd_tag = "deploy_stop"
 
         try:
             namespace = "default"
             if request.headers.get(f"{header_key}"):
                 namespace = request.headers.get(f"{header_key}")
             status = kubectl_utils.down(deployment, namespace)
+            self.fluentd_utils.emit(fluentd_tag, {"msg": status})
             if "Error from server".lower() in status.get('err').lower():
                 return Response(json.dumps(http.failure(Constants.KUBERNETES_SERVER_ERROR,
                                                         ErrorCodes.HTTP_CODE.get(

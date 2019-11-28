@@ -34,10 +34,10 @@ https://github.com/dinuta/estuary-deployer/wiki
 - Templating with Jinja2
 
 ## Service run
-##### Using docker compose 
+##### Docker compose
     docker-compose up
     
-##### Using docker run - simple 
+##### Docker run - simple
    
     docker network create estuarydeployer_default
     docker run \ 
@@ -56,7 +56,7 @@ https://github.com/dinuta/estuary-deployer/wiki
     -v $PWD/inputs/templates:/data \ 
     -v $PWD/inputs/variables:/variables \
 
-##### Using docker run - eureka registration
+##### Eureka registration
 To have all your deployer instances in a central location we use netflix eureka. This means your client will discover
 all services used for your test and then spread the tests across all.  
 
@@ -76,6 +76,7 @@ Start your containers by specifying the full hostname or ip of the host machine 
             -e EUREKA_SERVER="http://10.13.14.28:8080/eureka/v2" -> eureka server
             -e APP_IP_PORT="10.13.14.28:8081" -> the app hostname/ip:port. Mandatory if EUREKA_SERVER is used
             -e APP_APPEND_ID="lab" -> id will be appended to the default app name on service registration. Useful for user mappings service-resources on a VM
+            -e FLUENTD_IP_PORT="10.13.14.28:24224" -> fluentd log collector agent target ip:port
             -e DEPLOY_ON="docker" -> on what the env to be deployed. Options: docker, kubectl
             -e ENV_EXPIRE_IN=1440 -> how long it will take before the env will be deleted. Default is 1440 min.
     Mandatory:
@@ -96,7 +97,28 @@ Start your containers by specifying the full hostname or ip of the host machine 
     -v $PWD/inputs/templates:/data \ 
     -v $PWD/inputs/variables:/variables \
 
-Api call examples:  
+##### Fluentd
+Please consult [Fluentd](https://github.com/fluent/fluentd) for logging setup.
+Estuary-deployer tags all logs in format ```estuary-deployer.**```
+
+Matcher example:  
+
+```xml
+<match estuary*.**>
+  type stdout
+</match>
+```
+Docker run example:  
+
+    docker network create estuarydeployer_default
+    docker run \
+    -e FLUENTD_IP_PORT=10.10.10.1:24224 \
+    -p 8080:8080
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    --net=estuarydeployer_default \
+    dinutac/estuary-deployer:<tag>
+
+## Api call examples:
 
     http://192.168.100.12:8083/kubectl/ping -> if DEPLOY_ON is kubernetes with kubectl. Kubernetes deployments are fully tested
     or

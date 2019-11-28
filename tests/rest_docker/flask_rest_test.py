@@ -19,8 +19,8 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     # server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "3.0.0"
-    sleep_before_container_up = 5
+    expected_version = "4.0.0"
+    sleep_before_container_up = 6
 
     def setUp(self):
         time.sleep(self.sleep_before_container_up)
@@ -55,11 +55,13 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server + "/ping")
 
         body = json.loads(response.text)
+        headers = response.headers
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'), "pong")
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
+        self.assertEqual(len(headers.get('Correlation-Id')), 16)
 
     def test_about_endpoint(self):
         response = requests.get(self.server + "/about")

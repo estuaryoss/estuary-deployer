@@ -1,4 +1,4 @@
-FROM alpine:3.10.2
+FROM alpine:3.10
 
 RUN apk add --no-cache python
 
@@ -25,24 +25,6 @@ RUN pip install \
 
 RUN apk add --no-cache python3 && \
     pip3 install --upgrade pip setuptools --no-cache
-
-RUN pip3 install \
-  PyYAML \
-  httplib2 \
-  urllib3 \
-  simplejson \
-  Jinja2 \
-  jinja2-cli \
-  flask \
-  flask_restplus\
-  jsonify \
-  parameterized \
-  flask_swagger_ui \
-  requests \
-  flask-cors \
-  apscheduler \
-  py_eureka_client \
-  flask-classful
 
 ## Kubectl
 ADD https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
@@ -80,5 +62,7 @@ RUN chmod +x $SCRIPTS_DIR/*.py
 RUN chmod +x $SCRIPTS_DIR/*.sh
 
 WORKDIR $SCRIPTS_DIR
+
+RUN pip3 install -r $SCRIPTS_DIR/requirements.txt
 
 CMD ["python3", "/home/dev/scripts/main_flask.py"]

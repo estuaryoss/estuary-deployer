@@ -12,6 +12,7 @@ from flask import request, Response, Flask
 from flask_classful import FlaskView, route
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
+from fluent import sender
 
 from about import properties
 from entities.render import Render
@@ -19,11 +20,13 @@ from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeploy
 from rest.api.apiresponsehelpers.constants import Constants
 from rest.api.apiresponsehelpers.error_codes import ErrorCodes
 from rest.api.apiresponsehelpers.http_response import HttpResponse
-from rest.api.definitions import env_vars
+from rest.api.definitions import env_vars, docker_swagger_file_content
 from rest.api.flask_config import Config
+from rest.api.logginghelpers.request_dumper import RequestDumper
 from rest.api.views.routes_abc import Routes
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.docker_utils import DockerUtils
+from rest.utils.fluentd_utils import FluentdUtils
 from rest.utils.io_utils import IOUtils
 
 
@@ -35,6 +38,28 @@ class DockerView(FlaskView, Routes):
         CORS(self.app)
         self.app.register_blueprint(self.get_swagger_blueprint(), url_prefix='/docker/api/docs')
         self.app.logger.setLevel(logging.DEBUG)
+        self.logger = sender.FluentSender(properties.get('name'), host=properties["fluentd_ip"],
+                                          port=int(properties["fluentd_port"]))
+        self.fluentd_utils = FluentdUtils(self.logger)
+        self.request_dumper = RequestDumper()
+
+    def before_request(self, name, *args, **kwargs):
+        ctx = self.app.app_context()
+        ctx.g.cid = token_hex(8)
+        self.request_dumper.set_correlation_id(ctx.g.cid)
+
+        response = self.fluentd_utils.debug(tag="api", msg=self.request_dumper.dump(request=request))
+        self.app.logger.debug(f"{response}")
+
+    def after_request(self, name, http_response):
+        headers = dict(http_response.headers)
+        headers['Correlation-Id'] = self.request_dumper.get_correlation_id()
+        http_response.headers = headers
+
+        response = self.fluentd_utils.debug(tag="api", msg=self.request_dumper.dump(http_response))
+        self.app.logger.debug(f"{response}")
+
+        return http_response
 
     def get_swagger_blueprint(self):
         return get_swaggerui_blueprint(
@@ -48,12 +73,18 @@ class DockerView(FlaskView, Routes):
     def index(self):
         return "docker"
 
-    def get_app(self):
+    def get_view_fluentd_utils(self):
+        return self.fluentd_utils
+
+    def get_view_logger(self):
+        return self.logger
+
+    def get_view_app(self):
         return self.app
 
     @route('/swagger/swagger.yml')
     def swagger(self):
-        return self.app.send_static_file("docker.yml")
+        return Response(docker_swagger_file_content, 200, mimetype="application/json")
 
     @route('/env')
     def get_env_vars(self):
@@ -77,20 +108,20 @@ class DockerView(FlaskView, Routes):
                 http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), properties["name"])),
             200, mimetype="application/json")
 
-    @route('/getenv/<name>', methods=['GET'])
-    def get_env_var(self, name):
-        name = name.upper().strip()
+    @route('/getenv/<envvar>', methods=['GET'])
+    def get_env_var(self, envvar):
+        envvar = envvar.upper().strip()
         http = HttpResponse()
         try:
             response = Response(json.dumps(
-                http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), os.environ[f"{name}"])),
+                http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), os.environ[f"{envvar}"])),
                 200,
                 mimetype="application/json")
         except Exception as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.GET_CONTAINER_ENV_VAR_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(
-                                                            Constants.GET_CONTAINER_ENV_VAR_FAILURE) % f"{name}",
+                                                            Constants.GET_CONTAINER_ENV_VAR_FAILURE) % f"{envvar}",
                                                         result,
                                                         str(traceback.format_exc()))), 404, mimetype="application/json")
         return response

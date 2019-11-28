@@ -25,20 +25,39 @@ if __name__ == "__main__":
     if os.environ.get('ENV_EXPIRE_IN'):
         env_expire_in = int(os.environ.get("ENV_EXPIRE_IN"))
 
+    host = '0.0.0.0'
+    port = properties["port"]
+    fluentd_tag = "startup"
+
     if "docker" in deploy_on:
         # start schedulers
+        view = DockerView()
+
         DockerScheduler().start()
-        DockerEnvExpireScheduler(env_expire_in=env_expire_in).start()  # minutes
+        DockerEnvExpireScheduler(fluentd_utils=view.get_view_fluentd_utils(),
+                                 env_expire_in=env_expire_in).start()  # minutes
         DockerCleanFolderScheduler().start()
 
-        app = DockerView().get_app()
-        DockerView.register(app)
-        app.run(host='0.0.0.0', port=properties["port"])
-    elif "kubectl" in deploy_on:
-        KubectlEnvExpireScheduler(env_expire_in=env_expire_in).start()
 
-        app = KubectlView().get_app()
-        KubectlView.register(app)
-        app.run(host='0.0.0.0', port=properties["port"])
+    elif "kubectl" in deploy_on:
+        # start schedulers
+        view = KubectlView()
+
+        KubectlEnvExpireScheduler(fluentd_utils=view.get_view_fluentd_utils(),
+                                  env_expire_in=env_expire_in).start()
     else:
         raise NotImplementedError("Deploy on '%s' option is not supported" % deploy_on)
+
+    app = view.get_view_app()
+    fluentd_utils = view.get_view_fluentd_utils()
+    view.register(app)
+
+    fluentd_utils.emit(fluentd_tag, {"msg": dict(os.environ)})
+    fluentd_utils.emit(fluentd_tag, {"msg": {"host": host, "port": port}})
+    fluentd_utils.emit(fluentd_tag, {"msg": {
+        "fluentd_enabled": str(True if os.environ.get('FLUENTD_IP_PORT') else False).lower(),
+        "fluentd_ip": properties["fluentd_ip"],
+        "fluentd_port": properties["fluentd_port"]
+    }
+    })
+    app.run(host=host, port=port)

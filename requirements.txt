@@ -1,4 +1,5 @@
 jinja2
+jinja2-cli
 flask
 flask_cors
 PyYAML
@@ -9,4 +10,6 @@ pytest-cov
 requests_toolbelt
 py_eureka_client
 apscheduler
+flask_swagger_ui
 flask-classful
+fluent-logger

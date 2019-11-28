@@ -12,7 +12,7 @@ from tests.rest_kubectl.error_codes import ErrorCodes
 class FlaskServerTestCase(unittest.TestCase):
     home = "http://localhost:8080/kubectl"
 
-    expected_version = "3.0.0"
+    expected_version = "4.0.0"
     sleep_before_deployment_down = 5
     # input_deployment_path ="tests/rest_kubectl/input"
     input_deployment_path = "input"

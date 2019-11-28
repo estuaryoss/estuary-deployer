@@ -131,7 +131,8 @@ class DockerUtils(EnvCreation):
                 shutil.rmtree(f"{path}{item}")
 
     @staticmethod
-    def env_clean_up(path=Constants.DEPLOY_FOLDER_PATH, env_expire_in=1440):  # 1 day
+    def env_clean_up(fluentd_utils, path=Constants.DEPLOY_FOLDER_PATH, env_expire_in=1440):  # 1 day
+        fluentd_tag = 'env_clean_up'
         active_deployments = []
         active_deployments_objects = DockerUtils.get_active_deployments()
         for item in active_deployments_objects:
@@ -139,4 +140,6 @@ class DockerUtils(EnvCreation):
         for item in active_deployments:
             if (datetime.datetime.now() - datetime.datetime.fromtimestamp(
                     os.path.getmtime(f"{path}{item}"))) > datetime.timedelta(minutes=env_expire_in):
-                DockerUtils.down(f"{path}{item}/{item}")
+                result = DockerUtils.down(f"{path}{item}/{item}")
+                fluentd_utils.emit(fluentd_tag, {
+                    "msg": {"action": "docker_env_clean_up", "out": result.get('out'), "err": result.get('err')}})
