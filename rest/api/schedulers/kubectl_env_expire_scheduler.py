@@ -4,6 +4,7 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from rest.api.apiresponsehelpers.constants import Constants
+from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.utils.kubectl_utils import KubectlUtils
 
 
@@ -19,14 +20,17 @@ class KubectlEnvExpireScheduler:
         self.scheduler.add_job(KubectlUtils.env_clean_up, args=[self.fluentd_utils, self.env_expire_in],
                                trigger='interval',
                                seconds=self.interval)
+        self.message_dumper = MessageDumper()
         logging.basicConfig()
         logging.getLogger('apscheduler').setLevel(logging.INFO)
 
     def start(self):
-        self.fluentd_utils.emit(self.fluentd_tag, {"msg": "Starting kubectl env expire scheduler"})
+        self.fluentd_utils.debug(self.fluentd_tag,
+                                 self.message_dumper.dump_message("Starting k8s env expire scheduler"))
         atexit.register(lambda: self.scheduler.shutdown(wait=False))
         self.scheduler.start()
 
     def stop(self):
-        self.fluentd_utils.emit(self.fluentd_tag, {"msg": "Stopping kubectl env expire scheduler"})
+        self.fluentd_utils.debug(self.fluentd_tag,
+                                 self.message_dumper.dump_message("Stopping k8s env expire scheduler"))
         self.scheduler.shutdown(wait=False)

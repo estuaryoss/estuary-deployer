@@ -22,7 +22,7 @@ from rest.api.apiresponsehelpers.error_codes import ErrorCodes
 from rest.api.apiresponsehelpers.http_response import HttpResponse
 from rest.api.definitions import env_vars, docker_swagger_file_content
 from rest.api.flask_config import Config
-from rest.api.logginghelpers.request_dumper import RequestDumper
+from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.api.views.routes_abc import Routes
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.docker_utils import DockerUtils
@@ -41,22 +41,22 @@ class DockerView(FlaskView, Routes):
         self.logger = sender.FluentSender(properties.get('name'), host=properties["fluentd_ip"],
                                           port=int(properties["fluentd_port"]))
         self.fluentd_utils = FluentdUtils(self.logger)
-        self.request_dumper = RequestDumper()
+        self.message_dumper = MessageDumper()
 
     def before_request(self, name, *args, **kwargs):
         ctx = self.app.app_context()
         ctx.g.cid = token_hex(8)
-        self.request_dumper.set_correlation_id(ctx.g.cid)
+        self.message_dumper.set_correlation_id(ctx.g.cid)
 
-        response = self.fluentd_utils.debug(tag="api", msg=self.request_dumper.dump(request=request))
+        response = self.fluentd_utils.debug(tag="api", msg=self.message_dumper.dump(request=request))
         self.app.logger.debug(f"{response}")
 
     def after_request(self, name, http_response):
         headers = dict(http_response.headers)
-        headers['Correlation-Id'] = self.request_dumper.get_correlation_id()
+        headers['Correlation-Id'] = self.message_dumper.get_correlation_id()
         http_response.headers = headers
 
-        response = self.fluentd_utils.debug(tag="api", msg=self.request_dumper.dump(http_response))
+        response = self.fluentd_utils.debug(tag="api", msg=self.message_dumper.dump(http_response))
         self.app.logger.debug(f"{response}")
 
         return http_response

@@ -108,7 +108,7 @@ Matcher example:
   type stdout
 </match>
 ```
-Docker run example:  
+Run example:  
 
     docker network create estuarydeployer_default
     docker run \

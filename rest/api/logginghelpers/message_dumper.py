@@ -1,7 +1,7 @@
 import json
 
 
-class RequestDumper:
+class MessageDumper:
 
     def set_correlation_id(self, correlation_id):
         self.correlation_id = correlation_id
@@ -15,10 +15,17 @@ class RequestDumper:
 
         try:
             body = json.loads(request.get_data())
+            body["message"] = json.dumps(body.get("message"))
         except Exception as e:
-            body = "NA"
+            body = {"message": "NA"}
 
         return {
             "headers": headers,
-            "data": body
+            "body": body
+        }
+
+    def dump_message(self, message):
+        return {
+            "headers": {},
+            "body": {"message": json.dumps(message)}
         }

@@ -5,6 +5,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from fluent import sender
 
 from rest.api.apiresponsehelpers.constants import Constants
+from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.utils.docker_utils import DockerUtils
 from rest.utils.fluentd_utils import FluentdUtils
 
@@ -20,6 +21,7 @@ class DockerEnvExpireScheduler:
         self.interval = poll_interval
         self.env_expire_in = env_expire_in
         self.path = path
+        self.message_dumper = MessageDumper()
         self.scheduler = BackgroundScheduler(daemon=False)
         self.scheduler.add_job(DockerUtils.env_clean_up, args=[self.fluentd_utils, self.path, self.env_expire_in],
                                trigger='interval',
@@ -28,10 +30,12 @@ class DockerEnvExpireScheduler:
         logging.getLogger('apscheduler').setLevel(logging.INFO)
 
     def start(self):
-        self.fluentd_utils.emit(self.fluentd_tag, {"msg": "Starting docker env expire scheduler"})
+        self.fluentd_utils.debug(self.fluentd_tag,
+                                 self.message_dumper.dump_message("Starting docker env expire scheduler"))
         atexit.register(lambda: self.scheduler.shutdown(wait=False))
         self.scheduler.start()
 
     def stop(self):
-        self.fluentd_utils.emit(self.fluentd_tag, {"msg": "Stopping docker env expire scheduler"})
+        self.fluentd_utils.debug(self.fluentd_tag,
+                                 self.message_dumper.dump_message("Stopping docker env expire scheduler"))
         self.scheduler.shutdown(wait=False)

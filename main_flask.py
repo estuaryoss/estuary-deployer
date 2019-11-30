@@ -3,6 +3,7 @@ import os
 
 from about import properties
 from rest.api.eureka_registrator import EurekaRegistrator
+from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.api.schedulers.docker_clean_folder_scheduler import DockerCleanFolderScheduler
 from rest.api.schedulers.docker_env_expire_scheduler import DockerEnvExpireScheduler
 from rest.api.schedulers.docker_scheduler import DockerScheduler
@@ -28,6 +29,7 @@ if __name__ == "__main__":
     host = '0.0.0.0'
     port = properties["port"]
     fluentd_tag = "startup"
+    message_dumper = MessageDumper()
 
     if "docker" in deploy_on:
         # start schedulers
@@ -52,12 +54,12 @@ if __name__ == "__main__":
     fluentd_utils = view.get_view_fluentd_utils()
     view.register(app)
 
-    fluentd_utils.emit(fluentd_tag, {"msg": dict(os.environ)})
-    fluentd_utils.emit(fluentd_tag, {"msg": {"host": host, "port": port}})
-    fluentd_utils.emit(fluentd_tag, {"msg": {
-        "fluentd_enabled": str(True if os.environ.get('FLUENTD_IP_PORT') else False).lower(),
-        "fluentd_ip": properties["fluentd_ip"],
-        "fluentd_port": properties["fluentd_port"]
-    }
-    })
+    environ_dump = message_dumper.dump_message(dict(os.environ))
+    ip_port_dump = message_dumper.dump_message({"host": host, "port": port})
+
+    app.logger.debug({"msg": environ_dump})
+    app.logger.debug({"msg": ip_port_dump})
+
+    fluentd_utils.debug(fluentd_tag, environ_dump)
+
     app.run(host=host, port=port)

@@ -4,6 +4,7 @@ import re
 from pathlib import Path
 
 from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployments
+from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.env_creation import EnvCreation
 
@@ -51,7 +52,8 @@ class KubectlUtils(EnvCreation):
 
     @staticmethod
     def env_clean_up(fluentd_utils, env_expire_in=1440):  # 1 day
-        fluentd_tag = "env_clean_up"
+        fluentd_tag = "k8s_env_clean_up"
+        message_dumper = MessageDumper()
         env_expire_in_hours = env_expire_in / 60
         active_deployments = KubectlUtils.get_active_deployments()
         for item in active_deployments:
@@ -62,5 +64,7 @@ class KubectlUtils(EnvCreation):
                 hours_uptime = int(match.group(2))
                 if hours_uptime >= env_expire_in_hours:
                     result = KubectlUtils.down(item.get('name'), item.get('namespace'))
-                    fluentd_utils.emit(fluentd_tag, {
-                        "msg": {"action": "k8s_env_clean_up", "out": result.get('out'), "err": result.get('err')}})
+                    fluentd_utils.debug(fluentd_tag,
+                                        message_dumper.dump_message(
+                                            {"action": f"{fluentd_tag}", "out": result.get('out'),
+                                             "err": result.get('err')}))

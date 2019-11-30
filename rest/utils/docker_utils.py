@@ -6,6 +6,7 @@ from pathlib import Path
 
 from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployments
 from rest.api.apiresponsehelpers.constants import Constants
+from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.env_creation import EnvCreation
 from rest.utils.io_utils import IOUtils
@@ -132,7 +133,8 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def env_clean_up(fluentd_utils, path=Constants.DEPLOY_FOLDER_PATH, env_expire_in=1440):  # 1 day
-        fluentd_tag = 'env_clean_up'
+        fluentd_tag = 'docker_env_clean_up'
+        message_dumper = MessageDumper()
         active_deployments = []
         active_deployments_objects = DockerUtils.get_active_deployments()
         for item in active_deployments_objects:
@@ -141,5 +143,7 @@ class DockerUtils(EnvCreation):
             if (datetime.datetime.now() - datetime.datetime.fromtimestamp(
                     os.path.getmtime(f"{path}{item}"))) > datetime.timedelta(minutes=env_expire_in):
                 result = DockerUtils.down(f"{path}{item}/{item}")
-                fluentd_utils.emit(fluentd_tag, {
-                    "msg": {"action": "docker_env_clean_up", "out": result.get('out'), "err": result.get('err')}})
+                fluentd_utils.debug(fluentd_tag,
+                                    message_dumper.dump_message(
+                                        {"action": f"{fluentd_tag}", "out": result.get('out'),
+                                         "err": result.get('err')}))
