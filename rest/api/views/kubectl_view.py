@@ -81,7 +81,7 @@ class KubectlView(FlaskView, Routes):
 
     @route('/swagger/swagger.yml')
     def swagger(self):
-        return Response(kubectl_swagger_file_content, 200, mimetype="application/json")
+        return Response(kubectl_swagger_file_content, 200, mimetype="text/plain;charset=UTF-8")
 
     @route('/env')
     def get_env_vars(self):

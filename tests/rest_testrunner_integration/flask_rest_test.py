@@ -414,7 +414,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message').get('id'), test_id)
         self.assertEqual(body.get('message').get('started'), "false")
         self.assertEqual(body.get('message').get('finished'), "true")
-        self.assertGreaterEqual(len(body.get('message').get('processes')), 2)
+        self.assertGreaterEqual(len(body.get('message').get('processes')), 1)
         self.assertEqual(body.get('message').get("commands").get(commands[0]).get("status"), "finished")
         self.assertIsInstance(body.get('message').get("commands").get(commands[0]).get("details"), dict)
         self.assertEqual(body.get('message').get("commands").get(commands[1]).get("status"), "finished")

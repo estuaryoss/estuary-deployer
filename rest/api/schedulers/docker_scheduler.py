@@ -2,6 +2,7 @@ import atexit
 import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 from rest.utils.docker_utils import DockerUtils
 
@@ -10,8 +11,8 @@ class DockerScheduler:
 
     def __init__(self, poll_interval=120):
         self.poll_interval = poll_interval
-        self.scheduler = BackgroundScheduler(daemon=False)
-        self.scheduler.add_job(DockerUtils.clean_up, trigger='interval', seconds=self.poll_interval)
+        self.scheduler = BackgroundScheduler()
+        self.scheduler.add_job(DockerUtils.clean_up, IntervalTrigger(seconds=self.poll_interval))
         logging.basicConfig()
         logging.getLogger('apscheduler').setLevel(logging.INFO)
 

@@ -13,3 +13,4 @@ apscheduler
 flask_swagger_ui
 flask-classful
 fluent-logger
+pyinstaller

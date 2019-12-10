@@ -6,7 +6,6 @@ import sys
 import traceback
 from secrets import token_hex
 
-import flask
 import requests
 from flask import request, Response, Flask
 from flask_classful import FlaskView, route
@@ -84,7 +83,7 @@ class DockerView(FlaskView, Routes):
 
     @route('/swagger/swagger.yml')
     def swagger(self):
-        return Response(docker_swagger_file_content, 200, mimetype="application/json")
+        return Response(docker_swagger_file_content, 200, mimetype="text/plain;charset=UTF-8")
 
     @route('/env')
     def get_env_vars(self):
@@ -191,20 +190,21 @@ class DockerView(FlaskView, Routes):
         dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
 
-        [out, err] = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
-        self.app.logger.debug({"msg": {"memory_out": out, "err": err}})
-        if "Cannot connect to the Docker daemon".lower() in err.lower():
+        status = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
+        self.app.logger.debug({"msg": {"memory_out": status.get('out'), "err": status.get('err')}})
+        if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                                                    ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
+                                                    status.get('err'),
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
 
         if os.environ.get("MAX_DEPLOY_MEMORY"):
-            if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
+            if int(float(status.get('out').strip())) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
                 return Response(json.dumps(http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
                                                         ErrorCodes.HTTP_CODE.get(
                                                             Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
                                                             "MAX_DEPLOY_MEMORY"),
-                                                        "Used memory: " + out.strip() + " percent",
+                                                        "Used memory: " + status.get('out').strip() + " percent",
                                                         str(traceback.format_exc()))), 404, mimetype="application/json")
         if os.environ.get("MAX_DEPLOYMENTS"):
             active_deployments = docker_utils.get_active_deployments()
@@ -278,18 +278,21 @@ class DockerView(FlaskView, Routes):
         file = f"{dir}/{token}"
         http = HttpResponse()
 
-        [out, err] = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
-        self.app.logger.debug({"msg": {"memory_out": out, "err": err}})
-        if "Cannot connect to the Docker daemon".lower() in err.lower():
+        status = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
+        self.app.logger.debug({"msg": {"memory_out": status.get('out'), "err": status.get('err')}})
+        if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                                                    ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
+                                                    status.get('err'),
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
-        if int(float(out)) >= int(os.environ.get('MAX_DEPLOY_MEMORY')):
-            return Response(json.dumps(http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % int(
-                                                        os.environ.get('MAX_DEPLOY_MEMORY')),
-                                                    "Used memory: " + out.strip() + " percent",
-                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
+        if os.environ.get("MAX_DEPLOY_MEMORY"):
+            if int(float(status.get('out').strip())) >= int(os.environ.get('MAX_DEPLOY_MEMORY')):
+                return Response(json.dumps(http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.MAX_DEPLOY_MEMORY_REACHED) % int(
+                                                            os.environ.get('MAX_DEPLOY_MEMORY')),
+                                                        "Used memory: " + status.get('out').strip() + " percent",
+                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
         if os.environ.get("MAX_DEPLOYMENTS"):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
@@ -336,19 +339,21 @@ class DockerView(FlaskView, Routes):
         dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
 
-        [out, err] = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
-        self.app.logger.debug({"msg": {"memory_out": out, "err": err}})
-        if "Cannot connect to the Docker daemon".lower() in err.lower():
+        status = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
+        self.app.logger.debug({"msg": {"memory_out": status.get('out'), "err": status.get('err')}})
+        if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
+                                                    ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
+                                                    status.get('err'),
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
-        if int(float(out)) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
-            return Response(json.dumps(http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
-                                                        "MAX_DEPLOY_MEMORY"),
-                                                    "Used memory: " + out.strip() + " percent",
-                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
+        if os.environ.get("MAX_DEPLOY_MEMORY"):
+            if int(float(status.get('out').strip())) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
+                return Response(json.dumps(http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
+                                                            "MAX_DEPLOY_MEMORY"),
+                                                        "Used memory: " + status.get('out').strip() + " percent",
+                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
         if os.environ.get("MAX_DEPLOYMENTS"):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
@@ -474,121 +479,6 @@ class DockerView(FlaskView, Routes):
                                                       str(traceback.format_exc()))), 404, mimetype="application/json")
         return result
 
-    @route('/getcontainerfile/<id>/<container_service_name>', methods=['GET', 'POST'])
-    def get_file_from_container(self, id, container_service_name):
-        id = id.strip()
-        container_service_name = container_service_name.strip()
-        docker_utils = DockerUtils()
-        http = HttpResponse()
-        header_key = 'File-Path'
-
-        file_path = request.headers.get(f"{header_key}")
-        if not file_path:
-            return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
-                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
-        container_id = id + "_" + container_service_name + "_1"
-        self.app.logger.debug({"msg": {"container_id": container_id}})
-        status = docker_utils.exec(container_id, ["sh", "-c", f"cat {file_path}"])
-        # [out, err] = docker_utils.docker_cp(id, framework_container_service_name, file)
-        self.app.logger.debug({"msg": status})
-        if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
-            return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
-                                                    status.get('err'),
-                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
-        if "No such container".lower() in status.get('err').lower():
-            return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        file_path, container_id),
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        file_path, container_id),
-                                                    status.get('err'))), 404, mimetype="application/json")
-        elif "No such file".lower() in status.get('err').lower():
-            return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        file_path, container_id),
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        file_path, container_id),
-                                                    status.get('err'))), 404, mimetype="application/json")
-        elif "Is a directory".lower() in status.get('err').lower():
-            return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR,
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
-                                                        file_path, container_id),
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.GET_CONTAINER_FILE_FAILURE_IS_DIR) % (
-                                                        file_path, container_id),
-                                                    status.get('err'))), 404, mimetype="application/json")
-        else:
-            pass
-
-        return Response(status.get('out'), 200, mimetype="text/plain")
-
-    @route('/getcontainerfolder/<id>/<container_service_name>', methods=['GET', 'POST'])
-    def get_folder_from_container(self, id, container_service_name):
-        id = id.strip()
-        container_service_name = container_service_name.strip()
-        docker_utils = DockerUtils()
-        http = HttpResponse()
-        header_key = 'Folder-Path'
-
-        folder_path = request.headers.get(f"{header_key}")
-        if not folder_path:
-            return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
-                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
-        container_id = id + "_" + container_service_name + "_1"
-        self.app.logger.debug({"msg": {"container_id": container_id}})
-        [out, err] = docker_utils.cp(id, container_service_name, folder_path)
-        self.app.logger.debug({"msg": {"out": out, "err": err}})
-        if "Cannot connect to the Docker daemon".lower() in err.lower():
-            return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING), err,
-                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
-        if "No such container".lower() in err.lower():
-            docker_utils.exec(container_id, f" rm -rf {id}")
-            return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        folder_path, container_id),
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        folder_path, container_id),
-                                                    err)), 404, mimetype="application/json")
-        elif "No such file".lower() in err.lower():
-            return Response(json.dumps(http.failure(Constants.GET_CONTAINER_FILE_FAILURE,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        folder_path, container_id),
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_FILE_FAILURE) % (
-                                                        folder_path, container_id),
-                                                    err)), 404, mimetype="application/json")
-        else:
-            pass
-
-        try:
-            path = f"/tmp/{id}/" + folder_path.split("/")[-1]
-            IOUtils.zip_file(id, path)
-        except FileNotFoundError as e:
-            result = "Exception({0})".format(e.__str__())
-            return Response(json.dumps(http.failure(Constants.GET_FILE_FAILURE,
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.GET_FILE_FAILURE), result,
-                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
-        except:
-            result = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.FOLDER_ZIP_FAILURE,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.FOLDER_ZIP_FAILURE), result,
-                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
-        return flask.send_file(
-            f"/tmp/{id}.zip",
-            mimetype='application/zip',
-            as_attachment=True), 200
-
     @route('/deploylogs/<id>', methods=['GET'])
     def deploy_logs(self, id):
         id = id.strip()
@@ -632,20 +522,20 @@ class DockerView(FlaskView, Routes):
                                                         status.get('err'),
                                                         status.get('err'))), 404, mimetype="application/json")
             deployer_network = status.get('out').strip()
-            [out, err] = docker_utils.network_connect(deployer_network, container_id)
+            status = docker_utils.network_connect(deployer_network, container_id)
 
-            if "already exists in network".lower() in err.lower():
+            if "already exists in network".lower() in status.get('err').lower():
                 return Response(json.dumps(http.success(Constants.SUCCESS,
                                                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
-                                                        "Success, already connected: " + err)), 200,
+                                                        "Success, already connected: " + status.get('err'))), 200,
                                 mimetype="application/json")
 
-            if "Error response from daemon".lower() in err.lower():
+            if "Error response from daemon".lower() in status.get('err').lower():
                 return Response(json.dumps(http.failure(Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED,
                                                         ErrorCodes.HTTP_CODE.get(
                                                             Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED),
-                                                        err,
-                                                        err)), 404, mimetype="application/json")
+                                                        status.get('err'),
+                                                        status.get('err'))), 404, mimetype="application/json")
         except Exception as e:
             exception = "Exception({0})".format(sys.exc_info()[0])
             return Response(json.dumps(http.failure(Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED,
@@ -653,8 +543,9 @@ class DockerView(FlaskView, Routes):
                                                         Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED),
                                                     exception,
                                                     exception)), 404, mimetype="application/json")
-        return Response(json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), out)),
-                        200, mimetype="application/json")
+        return Response(
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), status.get('out'))),
+            200, mimetype="application/json")
 
     @route('/testrunnernetdisconnect/<id>', methods=['GET'])
     def testrunner_docker_network_disconnect(self, id):
@@ -671,20 +562,20 @@ class DockerView(FlaskView, Routes):
                                                         status.get('err'),
                                                         status.get('err'))), 404, mimetype="application/json")
             deployer_network = status.get('out').strip()
-            [out, err] = docker_utils.network_disconnect(deployer_network, container_id)
+            status = docker_utils.network_disconnect(deployer_network, container_id)
 
-            if "is not connected to network".lower() in err.lower():
+            if "is not connected to network".lower() in status.get('err').lower():
                 return Response(json.dumps(http.success(Constants.SUCCESS,
                                                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
-                                                        "Success, already disconnected: " + err)), 200,
+                                                        "Success, already disconnected: " + status.get('err'))), 200,
                                 mimetype="application/json")
 
-            if "Error response from daemon".lower() in err.lower():
+            if "Error response from daemon".lower() in status.get('err').lower():
                 return Response(json.dumps(http.failure(Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED,
                                                         ErrorCodes.HTTP_CODE.get(
                                                             Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED),
-                                                        err,
-                                                        err)), 404, mimetype="application/json")
+                                                        status.get('err'),
+                                                        status.get('err'))), 404, mimetype="application/json")
         except Exception as e:
             exception = "Exception({0})".format(sys.exc_info()[0])
             return Response(json.dumps(http.failure(Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED,
@@ -692,8 +583,9 @@ class DockerView(FlaskView, Routes):
                                                         Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED),
                                                     exception,
                                                     exception)), 404, mimetype="application/json")
-        return Response(json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), out)),
-                        200, mimetype="application/json")
+        return Response(
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), status.get('out'))),
+            200, mimetype="application/json")
 
     # here the requests are redirected to the testrunner container
     # you can couple your own

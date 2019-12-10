@@ -2,6 +2,7 @@ import atexit
 import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 
 from rest.api.apiresponsehelpers.constants import Constants
 from rest.utils.docker_utils import DockerUtils
@@ -10,12 +11,12 @@ from rest.utils.docker_utils import DockerUtils
 class DockerCleanFolderScheduler:
 
     def __init__(self, path=Constants.DEPLOY_FOLDER_PATH, poll_interval=120, delete_period=60):
-        self.interval = poll_interval
+        self.poll_interval = poll_interval
         self.delete_period = delete_period
         self.path = path
-        self.scheduler = BackgroundScheduler(daemon=False)
-        self.scheduler.add_job(DockerUtils.folder_clean_up, args=[self.path, self.delete_period], trigger='interval',
-                               seconds=self.interval)
+        self.scheduler = BackgroundScheduler()
+        self.scheduler.add_job(DockerUtils.folder_clean_up, IntervalTrigger(seconds=self.poll_interval),
+                               args=[self.path, self.delete_period])
         logging.basicConfig()
         logging.getLogger('apscheduler').setLevel(logging.INFO)
 

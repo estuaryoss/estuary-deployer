@@ -2,6 +2,7 @@ import atexit
 import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.interval import IntervalTrigger
 from fluent import sender
 
 from rest.api.apiresponsehelpers.constants import Constants
@@ -18,14 +19,13 @@ class DockerEnvExpireScheduler:
                  poll_interval=120, env_expire_in=1440):
         self.fluentd_utils = fluentd_utils
         self.fluentd_tag = 'DockerEnvExpireScheduler'
-        self.interval = poll_interval
+        self.poll_interval = poll_interval
         self.env_expire_in = env_expire_in
         self.path = path
         self.message_dumper = MessageDumper()
-        self.scheduler = BackgroundScheduler(daemon=False)
-        self.scheduler.add_job(DockerUtils.env_clean_up, args=[self.fluentd_utils, self.path, self.env_expire_in],
-                               trigger='interval',
-                               seconds=self.interval)
+        self.scheduler = BackgroundScheduler()
+        self.scheduler.add_job(DockerUtils.env_clean_up, IntervalTrigger(seconds=self.poll_interval),
+                               args=[self.fluentd_utils, self.path, self.env_expire_in])
         logging.basicConfig()
         logging.getLogger('apscheduler').setLevel(logging.INFO)
 
