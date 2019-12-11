@@ -15,7 +15,7 @@ class Render:
         self.template = template
         self.variables = variables
         self.env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(templates_dir),
+            loader=jinja2.FileSystemLoader(searchpath=templates_dir),
             extensions=['jinja2.ext.autoescape', 'jinja2.ext.do', 'jinja2.ext.loopcontrols', 'jinja2.ext.with_'],
             autoescape=True,
             trim_blocks=True)

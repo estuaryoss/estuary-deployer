@@ -54,7 +54,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
 
-    @unittest.skipIf(os.environ.get('TEMPLATES_DIR').__contains__("inputs/templates"), "Skip on VM")
+    @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
     def test_swagger_endpoint(self):
         response = requests.get(self.server + "/api/docs")
 

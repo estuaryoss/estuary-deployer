@@ -1,18 +1,15 @@
 {%- set database=databases[environ('DATABASE')] -%}
-{%- set app=apps[environ('DATABASE')] -%}
+  {%- set app=apps[environ('DATABASE')] -%}
 
 version: '3'
 services:
-  {{environ('DATABASE')}}:
-    restart: {{database.restart}}
-    image: {{database.image}}
-    environment:
+    {{environ('DATABASE')}}:
+      restart: {{database.restart}}
+      image: {{database.image}}
+      environment:
         {% for item in database.environment %} {{ item | safe }}: '{{database.environment[item] }}'
         {% endfor %}
 
-    command: {{database.command}}
-    expose:
+      command: {{database.command}}
+      expose:
         - '{{database.expose[0]  | safe | trim}}'
-    volumes:
-        {%for item in database.volumes%} - {{item | trim}}
-        {% endfor %}

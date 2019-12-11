@@ -197,15 +197,6 @@ class DockerView(FlaskView, Routes):
                                                     ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
                                                     status.get('err'),
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
-
-        if os.environ.get("MAX_DEPLOY_MEMORY"):
-            if int(float(status.get('out').strip())) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
-                return Response(json.dumps(http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
-                                                        ErrorCodes.HTTP_CODE.get(
-                                                            Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
-                                                            "MAX_DEPLOY_MEMORY"),
-                                                        "Used memory: " + status.get('out').strip() + " percent",
-                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
         if os.environ.get("MAX_DEPLOYMENTS"):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
@@ -285,14 +276,6 @@ class DockerView(FlaskView, Routes):
                                                     ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
                                                     status.get('err'),
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
-        if os.environ.get("MAX_DEPLOY_MEMORY"):
-            if int(float(status.get('out').strip())) >= int(os.environ.get('MAX_DEPLOY_MEMORY')):
-                return Response(json.dumps(http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
-                                                        ErrorCodes.HTTP_CODE.get(
-                                                            Constants.MAX_DEPLOY_MEMORY_REACHED) % int(
-                                                            os.environ.get('MAX_DEPLOY_MEMORY')),
-                                                        "Used memory: " + status.get('out').strip() + " percent",
-                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
         if os.environ.get("MAX_DEPLOYMENTS"):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
@@ -346,14 +329,6 @@ class DockerView(FlaskView, Routes):
                                                     ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
                                                     status.get('err'),
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
-        if os.environ.get("MAX_DEPLOY_MEMORY"):
-            if int(float(status.get('out').strip())) >= int(os.environ.get("MAX_DEPLOY_MEMORY")):
-                return Response(json.dumps(http.failure(Constants.MAX_DEPLOY_MEMORY_REACHED,
-                                                        ErrorCodes.HTTP_CODE.get(
-                                                            Constants.MAX_DEPLOY_MEMORY_REACHED) % os.environ.get(
-                                                            "MAX_DEPLOY_MEMORY"),
-                                                        "Used memory: " + status.get('out').strip() + " percent",
-                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
         if os.environ.get("MAX_DEPLOYMENTS"):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):

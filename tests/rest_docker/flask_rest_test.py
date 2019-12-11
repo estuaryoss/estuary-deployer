@@ -74,7 +74,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
 
-    @unittest.skipIf(os.environ.get('TEMPLATES_DIR').__contains__("inputs/templates"), "Skip on VM")
+    @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
     def test_swagger_endpoint(self):
         response = requests.get(self.server + "/api/docs")
 
@@ -417,30 +417,6 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % dummy_env_id)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_LOGS_FAILED)
-        self.assertIsNotNone(body.get('time'))
-
-    @parameterized.expand([
-        ("mysql56.yml", "variables.yml")
-    ])
-    def test_max_deploy_memory_p(self, template, variables):
-        max_mem_procent = "4"
-        payload = {'DATABASE': 'mysql56', 'MAX_DEPLOY_MEMORY': max_mem_procent}
-        headers = {'Content-type': 'application/json'}
-        env_list = []
-        for i in list(range(50)):
-            response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
-                                     headers=headers)
-            if response.status_code == 200:
-                env_list.append(response.json().get("message"))
-            else:
-                break  # here max memory is met
-
-        body = yaml.load(response.text, Loader=yaml.Loader)
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOY_MEMORY_REACHED) % max_mem_procent)
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.MAX_DEPLOY_MEMORY_REACHED)
         self.assertIsNotNone(body.get('time'))
 
     @parameterized.expand([

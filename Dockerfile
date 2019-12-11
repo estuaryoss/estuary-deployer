@@ -49,7 +49,6 @@ ENV SCRIPTS_DIR /home/dev/scripts
 ENV OUT_DIR out
 ENV TEMPLATE alpine.yml
 ENV VARIABLES variables.yml
-ENV MAX_DEPLOY_MEMORY 80
 ENV DEPLOY_ON docker
 
 ENV TZ UTC

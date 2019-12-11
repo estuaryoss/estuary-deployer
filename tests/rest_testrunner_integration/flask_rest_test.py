@@ -112,8 +112,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
 
-    @unittest.skipIf(os.environ.get('TEMPLATES_DIR'),
-                     "inputs/templates")  # when service runs on VM only this is skipped
+    @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates",
+                     "Skip on VM")  # when service runs on VM only this is skipped
     def test_swagger_endpoint(self):
         response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/api/docs")
 

@@ -11,7 +11,6 @@ services:
 #      FLUENTD_IP_PORT: '10.133.14.238:24224'
       limit: 'sky' # example env var inserted. you can read it with environ('limit')
       MAX_DEPLOYMENTS: 3 # how many deployments to be done. Useful for VMs where user knows how much resources a docker-compose env use.
-      MAX_DEPLOY_MEMORY: 80 # % from total. tune this parameter after you measure how much a docker compose env consumes. E.g. 16 GB memory => docker will still compose new env if less than ~13.)
       #for eureka registering
       EUREKA_SERVER: http://eureka-server:8080/eureka/v2 #your eureka server
       APP_APPEND_ID: SR # this suffix will be added to the deployer service in order to differentiate between different services mapped on VM with specific resources
