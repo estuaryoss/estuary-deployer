@@ -272,6 +272,12 @@ jobs:
         - docker-compose down -v
 
     - stage: deploy
+      before_script:
+        - pip install -r requirements.txt
+        - pyinstaller --onefile main_flask.py
+        - ls -lrt dist
+        - cp dist/main_flask .
+        - ls -lrt
       deploy:
         provider: releases
         api_key: $GITHUB_TOKEN
