@@ -742,7 +742,7 @@ paths:
       parameters:
         - name: pod_name
           in: path
-          description: kubernetes pod id returned by getdeploymentinfo action
+          description: kubernetes pod name returned by getdeploymentinfo action
           required: true
           type: string
         - name: K8s-Namespace
