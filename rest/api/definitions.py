@@ -10,7 +10,7 @@ env_vars = {
     "PATH": os.environ.get('PATH')
 }
 
-docker_swagger_file_content='''
+docker_swagger_file_content = '''
 "swagger": '2.0'
 info:
   description: |
@@ -467,7 +467,7 @@ externalDocs:
   url: https://github.com/dinuta/estuary-deployer
 '''
 
-kubectl_swagger_file_content='''
+kubectl_swagger_file_content = '''
 "swagger": '2.0'
 info:
   description: |
@@ -675,20 +675,30 @@ paths:
           description: deploy success
         404:
           description: deploy failure
-  /deploystatus/{deployment_name}:
+  /deploystatus/{pod_name}:
     get:
       tags:
         - estuary-deployer
-      summary: gets the deployment status for a specific kubernetes deployment
+      summary: gets the status for all pods having mask pod_name
       consumes:
         - application/json
         - application/x-www-form-urlencoded
       produces:
         - application/json
       parameters:
-        - name: deployment_name
+        - name: pod_name
           in: path
-          description: kubernetes deployment id returned by the deploystart action.
+          description: kubernetes pod name returned by the getdeploymentinfo action
+          required: true
+          type: string
+        - name: Label-Selector
+          in: header
+          description: The label selector to filter the pods. E.g. k8s-app=alpine
+          required: true
+          type: string
+        - name: K8s-Namespace
+          in: header
+          description: The namespace in which the pods were deployed
           required: true
           type: string
       responses:
@@ -700,7 +710,18 @@ paths:
     get:
       tags:
         - estuary-deployer
-      summary: gets the active deployments from the deployer service.
+      summary: gets the active pods from the deployer service.
+      parameters:
+        - name: K8s-Namespace
+          in: header
+          description: The namespace in which the pods were deployed
+          required: true
+          type: string
+        - name: Label-Selector
+          in: header
+          description: The label selector to filter the pods. E.g. k8s-app=alpine
+          required: true
+          type: string
       produces:
         - application/json
       responses:
@@ -708,20 +729,25 @@ paths:
           description: get active deployments success.
         404:
           description: get active deployments failure
-  /deploylogs/{deployment_name}:
+  /deploylogs/{pod_name}:
     get:
       tags:
         - estuary-deployer
-      summary: gets the logs for the kubernetes deployment specified by deployment_name
+      summary: gets the logs for the kubernetes pod specified by pod_name
       consumes:
         - application/json
         - application/x-www-form-urlencoded
       produces:
         - application/json
       parameters:
-        - name: deployment_name
+        - name: pod_name
           in: path
-          description: kubernetes deployment id returned by the deploystart action.
+          description: kubernetes pod id returned by getdeploymentinfo action
+          required: true
+          type: string
+        - name: K8s-Namespace
+          in: header
+          description: The namespace in which the pods were deployed
           required: true
           type: string
       responses:
@@ -743,6 +769,11 @@ paths:
         - name: deployment_name
           in: path
           description: kubernetes deployment id returned by the deploystart action.
+          required: true
+          type: string
+        - name: K8s-Namespace
+          in: header
+          description: The namespace in which the deployment exists
           required: true
           type: string
       responses:
