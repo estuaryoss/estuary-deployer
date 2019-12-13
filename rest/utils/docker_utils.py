@@ -4,7 +4,7 @@ import os
 import shutil
 from pathlib import Path
 
-from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployments
+from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployment
 from rest.api.apiresponsehelpers.constants import Constants
 from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.utils.cmd_utils import CmdUtils
@@ -108,7 +108,7 @@ class DockerUtils(EnvCreation):
             container_list = DockerUtils.ps(item).get('out').split("\n")[1:-1]
             for container in container_list:
                 if item in container:
-                    active_deployments.append(ActiveDeployments.docker_deployment(item.strip(), container_list))
+                    active_deployments.append(ActiveDeployment.docker_deployment(item.strip(), container_list))
 
         return active_deployments
 

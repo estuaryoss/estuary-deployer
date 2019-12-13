@@ -15,7 +15,7 @@ from fluent import sender
 
 from about import properties
 from entities.render import Render
-from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployments
+from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployment
 from rest.api.apiresponsehelpers.constants import Constants
 from rest.api.apiresponsehelpers.error_codes import ErrorCodes
 from rest.api.apiresponsehelpers.http_response import HttpResponse
@@ -379,7 +379,7 @@ class DockerView(FlaskView, Routes):
             result = status.get('out').split("\n")[1:-1]
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
-                                        ActiveDeployments.docker_deployment(id, result))), 200,
+                                        ActiveDeployment.docker_deployment(id, result))), 200,
                 mimetype="application/json")
             self.app.logger.debug({"msg": status})
         except FileNotFoundError as e:

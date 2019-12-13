@@ -1,4 +1,4 @@
-class ActiveDeployments:
+class ActiveDeployment:
 
     # docker
     @staticmethod
@@ -8,11 +8,20 @@ class ActiveDeployments:
             "containers": containers,
         }
 
-    # k8s
+    # k8s pod
     @staticmethod
-    def k8s_deployment(namespace, name, deployment):
+    def k8s_pod(namespace, name, pod):
         return {
             "namespace": namespace,
             "name": name,
-            "deployment": deployment,
+            "pod": pod,
+        }
+
+    # k8s deployment
+    @staticmethod
+    def k8s_deployment(namespace, name, pod):
+        return {
+            "namespace": namespace,
+            "name": name,
+            "deployment": pod,
         }

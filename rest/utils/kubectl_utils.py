@@ -3,7 +3,7 @@ import os
 import re
 from pathlib import Path
 
-from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployments
+from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployment
 from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.env_creation import EnvCreation
@@ -24,9 +24,22 @@ class KubectlUtils(EnvCreation):
             ["kubectl", "-n", f"{namespace}", "delete", "deployment", f"{deployment}", "--insecure-skip-tls-verify"])
 
     @staticmethod
-    def logs(deployment, namespace):
+    def logs(pod, namespace):
         return CmdUtils.run_cmd(
-            ["kubectl", "-n", f"{namespace}", "logs", f"{deployment}", "--insecure-skip-tls-verify"])
+            ["kubectl", "-n", f"{namespace}", "logs", f"{pod}", "--insecure-skip-tls-verify"])
+
+    @staticmethod
+    def get_active_pods(label_selector, namespace):
+        active_pods = []
+        status = CmdUtils.run_cmd(
+            ["kubectl", "get", "pods", "-n", f"{namespace}", "-l", f"{label_selector}", "--insecure-skip-tls-verify"])
+        active_pods_list = status.get('out').split('\n')[1:-1]
+        for i in range(0, len(active_pods_list)):
+            active_pods_list[i] = ' '.join(active_pods_list[i].split())
+            active_pods.append(ActiveDeployment.k8s_pod(f'{namespace}',
+                                                        f'{active_pods_list[i].split()[0]}',
+                                                        active_pods_list[i]))
+        return active_pods
 
     @staticmethod
     def get_active_deployments():
@@ -35,20 +48,20 @@ class KubectlUtils(EnvCreation):
         active_deployments_list = status.get('out').split('\n')[1:-1]
         for i in range(0, len(active_deployments_list)):
             active_deployments_list[i] = ' '.join(active_deployments_list[i].split())
-            active_deployments.append(ActiveDeployments.k8s_deployment(f'{active_deployments_list[i].split()[0]}',
-                                                                       f'{active_deployments_list[i].split()[1]}',
-                                                                       active_deployments_list[i]))
+            active_deployments.append(ActiveDeployment.k8s_deployment(f'{active_deployments_list[i].split()[0]}',
+                                                                      f'{active_deployments_list[i].split()[1]}',
+                                                                      active_deployments_list[i]))
         return active_deployments
 
     @staticmethod
-    def get_active_deployment(deployment):
-        active_deployments = []
-        active_deployments_list = KubectlUtils.get_active_deployments()
-        for i in range(0, len(active_deployments_list)):
-            if deployment in active_deployments_list[i].get('deployment'):
-                active_deployments.append(active_deployments_list[i])
+    def get_active_pod(pod, label_selector, namespace):
+        active_pods = []
+        active_pods_list = KubectlUtils.get_active_pods(label_selector, namespace)
+        for i in range(0, len(active_pods_list)):
+            if pod in active_pods_list[i].get('pod'):
+                active_pods.append(active_pods_list[i])
 
-        return active_deployments
+        return active_pods
 
     @staticmethod
     def env_clean_up(fluentd_utils, env_expire_in=1440):  # 1 day
@@ -60,7 +73,7 @@ class KubectlUtils(EnvCreation):
             up_time = item.get('deployment').split()[-1]
             pattern = r'^((\d+)h)$'
             match = re.search(pattern, up_time)
-            if match.group(2):
+            if match:
                 hours_uptime = int(match.group(2))
                 if hours_uptime >= env_expire_in_hours:
                     result = KubectlUtils.down(item.get('name'), item.get('namespace'))

@@ -167,14 +167,27 @@ class KubectlView(FlaskView, Routes):
         return response
 
     @route('/getdeploymentinfo', methods=['GET'])
-    def get_active_deployments(self):
+    def get_deployment_info(self):
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
-        active_deployments = kubectl_utils.get_active_deployments()
-        self.app.logger.debug({"msg": {"active_deployments": f"{len(active_deployments)}"}})
+        header_keys = ["Label-Selector", 'K8s-Namespace']
+
+        for header_key in header_keys:
+            if not request.headers.get(f"{header_key}"):
+                return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                        str(traceback.format_exc()))), 404,
+                                mimetype="application/json")
+        label_selector = request.headers.get(f"{header_keys[0]}")
+        namespace = request.headers.get(f"{header_keys[1]}")
+        active_pods = kubectl_utils.get_active_pods(label_selector, namespace)
+        self.app.logger.debug({"msg": {"active_deployments": f"{len(active_pods)}"}})
         return Response(
             json.dumps(
-                http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), active_deployments)),
+                http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), active_pods)),
             200, mimetype="application/json")
 
     @route('/deploystart', methods=['POST'])
@@ -322,8 +335,16 @@ class KubectlView(FlaskView, Routes):
         header_key = 'K8s-Namespace'
         fluentd_tag = "deploy_stop"
 
+        if not request.headers.get(f"{header_key}"):
+            return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                    str(traceback.format_exc()))), 404,
+                            mimetype="application/json")
+
         try:
-            namespace = "default"
             if request.headers.get(f"{header_key}"):
                 namespace = request.headers.get(f"{header_key}")
             status = kubectl_utils.down(deployment, namespace)
@@ -346,13 +367,27 @@ class KubectlView(FlaskView, Routes):
 
         return response
 
-    @route('/deploystatus/<deployment>', methods=['GET'])
-    def deploy_status(self, deployment):
-        deployment = deployment.strip()
+    @route('/deploystatus/<pod>', methods=['GET'])
+    def deploy_status(self, pod):
+        pod = pod.strip()
         kubectl_utils = KubectlUtils()
         http = HttpResponse()
+        header_keys = ["Label-Selector", 'K8s-Namespace']
+
+        for header_key in header_keys:
+            if not request.headers.get(f"{header_key}"):
+                return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                        str(traceback.format_exc()))), 404,
+                                mimetype="application/json")
+
         try:
-            deployment = kubectl_utils.get_active_deployment(deployment)
+            label_selector = request.headers.get(f"{header_keys[0]}")
+            namespace = request.headers.get(f"{header_keys[1]}")
+            deployment = kubectl_utils.get_active_pod(pod, label_selector, namespace)
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
                                         deployment)), 200,
@@ -403,8 +438,16 @@ class KubectlView(FlaskView, Routes):
         http = HttpResponse()
         header_key = 'K8s-Namespace'
 
+        if not request.headers.get(f"{header_key}"):
+            return Response(json.dumps(http.failure(Constants.HTTP_HEADER_NOT_PROVIDED,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.HTTP_HEADER_NOT_PROVIDED) % header_key,
+                                                    str(traceback.format_exc()))), 404,
+                            mimetype="application/json")
+
         try:
-            namespace = "default"
             if request.headers.get(f"{header_key}"):
                 namespace = request.headers.get(f"{header_key}")
             status = kubectl_utils.logs(deployment, namespace)

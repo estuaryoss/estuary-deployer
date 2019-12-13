@@ -36,6 +36,7 @@ jobs:
         VARS_DIR: inputs/variables
         SCRIPTS_DIR: tests
         MAX_DEPLOYMENTS: 3
+        DEPLOY_ON: docker
         NGROK_TOKEN: 1RER6BUC3QNNwYWY5LcIBjrv3A8_24QccmopTEQJGMErG9uzw
       before_script:
         - docker pull alpine:3.9.4
@@ -48,7 +49,6 @@ jobs:
         - sudo chown -R travis:travis inputs
         - ls -lrt
       script:
-        - export DEPLOY_ON=docker
         - ./main_flask > /dev/null 2>&1 &
 #        - ./main_flask &
 #        - chmod +x ngrok.sh
@@ -72,7 +72,9 @@ jobs:
         TEMPLATES_DIR: inputs/templates
         VARS_DIR: inputs/variables
         SCRIPTS_DIR: tests
+        DEPLOY_ON: kubectl
       before_script:
+        - docker pull alpine:3.10.2
         - pip install -r requirements.txt
         - pyinstaller --onefile main_flask.py
         - ls -lrt dist
@@ -80,16 +82,19 @@ jobs:
         - chmod +x main_flask
         - sudo chown -R travis:travis inputs
         - ls -lrt
+        - curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.6.1/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
+        - kind create cluster
+        - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
       script:
-        - export DEPLOY_ON=kubectl
         - ./main_flask > /dev/null 2>&1 &
-        #  - ./ngrok.sh 8080 $NGROK_TOKEN
-        #  - sleep 3600
+#        - ./main_flask &
+#        - chmod +x ngrok.sh
+#        - ./ngrok.sh 8080 $NGROK_TOKEN
+#        - sleep 3600
         - PID="$!"
         - sleep 5
-        #  - ./ngrok.sh
-        #  - sleep 3600
         - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "flask_rest_test.py"
+        - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "k8s_integration_test.py"
         - ls -lrt /tmp
         - kill "$PID"
         - ps -ef

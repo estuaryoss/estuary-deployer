@@ -2,8 +2,8 @@
 import time
 import unittest
 
-from parameterized import parameterized
 import requests
+from parameterized import parameterized
 
 from tests.rest_kubectl.constants import Constants
 from tests.rest_kubectl.error_codes import ErrorCodes
@@ -13,37 +13,47 @@ class FlaskServerTestCase(unittest.TestCase):
     home = "http://localhost:8080/kubectl"
 
     expected_version = "4.0.0"
-    sleep_before_deployment_down = 5
-    # input_deployment_path ="tests/rest_kubectl/input"
-    input_deployment_path = "input"
+    inputs_deployment_path = "tests/rest_kubectl/inputs"
+    # inputs_deployment_path = "inputs"
+    templates_deployment_path = "inputs/templates" #os.environ.get('TEMPLATES_DIR'))
+    sleep_after_deploy_start = 10
 
     @classmethod
     def setUpClass(cls):
-        with open(f"{cls.input_deployment_path}/config.yml", closefd=True) as f:
-            payload = f.read()
-
-        headers = {'Content-Type': 'text/plain',
-                   'File-Path': "/root/.kube/config"}
-        response = requests.post(f"{FlaskServerTestCase.home}/uploadfile", data=payload, headers=headers)
+        k8s_context = "kind-kind"
+        # with open(f"{cls.inputs_deployment_path}/config.yml", closefd=True) as f:
+        #     payload = f.read()
+        #
+        # headers = {'Content-Type': 'text/plain',
+        #            'File-Path': "/root/.kube/config"}
         # here i upload the kubectl config
+        # requests.post(f"{FlaskServerTestCase.home}/uploadfile", data=payload, headers=headers)
+        # here i use context kind-kind
+        requests.post(f"{FlaskServerTestCase.home}/executecommand", data=f"kubectl config use-context {k8s_context}")
 
-        with open("input/k8snamespace.json", closefd=True) as f:
+        with open(f"{cls.inputs_deployment_path}/k8snamespace.json", closefd=True) as f:
             payload = f.read()
 
-        response = requests.post(f"{FlaskServerTestCase.home}/deploystart", data=payload, headers=headers)
         # here i deploy production namespace
+        requests.post(f"{FlaskServerTestCase.home}/deploystart", data=payload)
+        requests.get(f"{cls.home}/deploystart/k8sdeployment_alpine_up.yml/variables.yml")
+        time.sleep(60)
 
     def setUp(self):
         headers = {}
-        active_deployments = self.get_deployment_info()
+        active_deployments = self.get_deployment_info("k8s-app=alpine", "default")
         for deployment in active_deployments:
             headers["K8s-Namespace"] = deployment.get('namespace')
             requests.get(self.home + f"/deploystop/{deployment.get('name')}",
                          headers=headers)
-        time.sleep(self.sleep_before_deployment_down)
+        active_deployments = self.get_deployment_info("k8s-app=alpine", "production")
+        for deployment in active_deployments:
+            headers["K8s-Namespace"] = deployment.get('namespace')
+            requests.get(self.home + f"/deploystop/{deployment.get('name')}",
+                         headers=headers)
 
     def test_deploy_start_p(self):
-        with open(f"{self.input_deployment_path}/k8sdeployment_alpine_up.yml", closefd=True) as f:
+        with open(f"{self.inputs_deployment_path}/k8sdeployment_alpine_up.yml", closefd=True) as f:
             payload = f.read()
 
         response = requests.post(f"{self.home}/deploystart", data=payload)
@@ -120,7 +130,11 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploy_status_no_deployment_with_this_name_p(self):
         response = requests.get(f"{self.home}/deploystart/k8sdeployment_alpine_up.yml/variables.yml")
         self.assertEqual(response.status_code, 200)
-        response = requests.get(f"{self.home}/deploystatus/dummy")
+        headers = {
+            "K8s-namespace": "default",
+            "Label-Selector": "k8s-app=alpine"
+        }
+        response = requests.get(f"{self.home}/deploystatus/dummy", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body.get('message')), 0)
@@ -134,13 +148,17 @@ class FlaskServerTestCase(unittest.TestCase):
         deployment = "alpine"
         response = requests.get(f"{self.home}/deploystart/k8sdeployment_alpine_up.yml/variables.yml")
         self.assertEqual(response.status_code, 200)
-        response = requests.get(f"{self.home}/deploystatus/{deployment}")
+        headers = {
+            "K8s-namespace": "default",
+            "Label-Selector": "k8s-app=alpine"
+        }
+        response = requests.get(f"{self.home}/deploystatus/{deployment}", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(body.get('message')), 1)
-        self.assertEqual(body.get('message')[0].get('name'), deployment)
+        # self.assertEqual(len(body.get('message')), 1)
+        self.assertIn(deployment, body.get('message')[0].get('name'))
         self.assertEqual(body.get('message')[0].get('namespace'), "default")
-        self.assertIn(deployment, body.get('message')[0].get('deployment'))
+        self.assertIn(deployment, body.get('message')[0].get('pod'))
         self.assertEqual(body.get('description'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
@@ -151,7 +169,10 @@ class FlaskServerTestCase(unittest.TestCase):
         deployment = "alpine"
         response = requests.get(f"{self.home}/deploystart/k8sdeployment_alpine_up.yml/variables.yml")
         self.assertEqual(response.status_code, 200)
-        response = requests.get(f"{self.home}/deploylogs/{deployment}")
+        time.sleep(self.sleep_after_deploy_start)
+        message = self.get_deployment_info("k8s-app=alpine", "default")
+        response = requests.get(f"{self.home}/deploylogs/{message[0].get('name')}",
+                                headers={"K8s-Namespace": "default"})
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertIn(deployment, body.get('message'))
@@ -165,7 +186,10 @@ class FlaskServerTestCase(unittest.TestCase):
         deployment = "alpine"
         response = requests.get(f"{self.home}/deploystart/k8sdeployment_alpine_prod_up.yml/variables.yml")
         self.assertEqual(response.status_code, 200)
-        response = requests.get(f"{self.home}/deploylogs/{deployment}")
+        time.sleep(self.sleep_after_deploy_start)
+        message = self.get_deployment_info("k8s-app=alpine", "production")
+        response = requests.get(f"{self.home}/deploylogs/{message[0].get('name')}",
+                                headers={"K8s-Namespace": "production"})
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertIn(deployment, body.get('message'))
@@ -177,9 +201,8 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_deploy_logs_no_deployment_with_this_name_n(self):
         deployment = "whateverinvalid"
-        response = requests.get(f"{self.home}/deploystart/k8sdeployment_alpine_prod_up.yml/variables.yml")
-        self.assertEqual(response.status_code, 200)
-        response = requests.get(f"{self.home}/deploylogs/{deployment}")
+        headers = {"K8s-namespace": "default"}
+        response = requests.get(f"{self.home}/deploylogs/{deployment}", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('message'),
@@ -194,8 +217,10 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'K8s-Namespace': 'default'}
         response = requests.get(f"{self.home}/deploystart/k8sdeployment_alpine_up.yml/variables.yml")
         self.assertEqual(response.status_code, 200)
+        time.sleep(self.sleep_after_deploy_start)
         response = requests.get(f"{self.home}/deploystop/{deployment}", headers=headers)
         body = response.json()
+        time.sleep(self.sleep_after_deploy_start)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body.get('message')), 0)
         self.assertEqual(body.get('description'),
@@ -203,6 +228,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
+        headers = {'K8s-Namespace': 'default', "Label-Selector": "k8s-app=alpine"}
+        response = requests.get(f"{self.home}/getdeploymentinfo", headers=headers)
+        self.assertIn("Terminating", response.json().get('message')[0].get('pod'))
 
     def test_deploy_stop_production_namespace_p(self):
         deployment = "alpine"
@@ -222,8 +250,6 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploy_stop_no_deployment_with_this_name_n(self):
         deployment = "whateverinvalid"
         headers = {'K8s-Namespace': 'default'}
-        response = requests.get(f"{self.home}/deploystart/k8sdeployment_alpine_prod_up.yml/variables.yml")
-        self.assertEqual(response.status_code, 200)
         response = requests.get(f"{self.home}/deploystop/{deployment}", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -234,7 +260,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     def test_deploy_start_using_execute_command_p(self):
-        payload = "kubectl apply -f /data/k8sdeployment_alpine_prod_up.yml --insecure-skip-tls-verify"
+        payload = f"kubectl apply -f {self.templates_deployment_path}/k8sdeployment_alpine_prod_up.yml --insecure-skip-tls-verify"
 
         response = requests.post(f"{self.home}/executecommand", data=payload)
         body = response.json()
@@ -244,24 +270,15 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertIsNotNone(body.get('time'))
-        self.assertEqual(len(self.get_deployment_info()), 1)
-
-    def test_deploy_start_using_execute_command_no_certificate_n(self):
-        payload = "kubectl apply -f /data/k8sdeployment_alpine_prod_up.yml"
-
-        response = requests.post(f"{self.home}/executecommand", data=payload)
-        body = response.json()
-
-        self.assertEqual(response.status_code, 200)
-        self.assertGreater(body.get('message').get('command').get(payload).get('details').get('code'), 0)
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('version'), self.expected_version)
-        self.assertIsNotNone(body.get('time'))
-        self.assertEqual(len(self.get_deployment_info()), 0)
 
     @staticmethod
-    def get_deployment_info():
-        response = requests.get(f"{FlaskServerTestCase.home}/getdeploymentinfo")
+    def get_deployment_info(label_selector, namespace):
+        headers = {
+            "K8s-namespace": f"{namespace}",
+            "Label-Selector": f"{label_selector}"
+
+        }
+        response = requests.get(f"{FlaskServerTestCase.home}/getdeploymentinfo", headers=headers)
         return response.json().get('message')
 
 
