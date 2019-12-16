@@ -1,0 +1,12 @@
+version: '2.2'
+services:
+  alpine1:
+    restart: always
+    image: alpine:3.9.4
+    hostname: alpine
+    entrypoint: tail -f /etc/hostname
+  alpine2:
+    restart: always
+    image: alpine:3.9.4
+    hostname: alpine
+    entrypoint: tail -f /etc/hostname

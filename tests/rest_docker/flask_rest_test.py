@@ -36,6 +36,11 @@ class FlaskServerTestCase(unittest.TestCase):
 
         return active_deployments
 
+    def get_deployment_info_object(self):
+        response = requests.get(self.server + "/getdeploymentinfo")
+
+        return response.json().get('message')
+
     def test_env_endpoint(self):
         response = requests.get(self.server + "/env")
 
@@ -241,6 +246,29 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(len(body.get('message').get('containers')), 1)  # 1 container should be up and running
+        self.assertEqual(body.get('message').get('id'), compose_id)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertIsNotNone(body.get('time'))
+
+    @parameterized.expand([
+        ("alpine2containers.yml", "variables.yml")
+    ])
+    def test_deploystatus_p(self, template, variables):
+        headers = {'Content-type': 'application/json'}
+        response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
+        time.sleep(self.sleep_before_container_up)
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        compose_id = body.get('message')
+        self.assertEqual(len(self.get_deployment_info()), 1)
+        response = requests.get(self.server + f"/deploystatus/{compose_id}")
+
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(len(body.get('message').get('containers')), 2)  # 2 containers should be up and running
         self.assertEqual(body.get('message').get('id'), compose_id)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))

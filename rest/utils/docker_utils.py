@@ -109,6 +109,7 @@ class DockerUtils(EnvCreation):
             for container in container_list:
                 if item in container:
                     active_deployments.append(ActiveDeployment.docker_deployment(item.strip(), container_list))
+                    break
 
         return active_deployments
 
