@@ -17,7 +17,7 @@ class ErrorCodes:
         Constants.MISSING_PARAMETER_POST: "Body parameter '%s' sent in request missing. Please include parameter. E.g. {\"parameter\": \"value\"}",
         Constants.GET_LOGS_FAILED: "Getting logs for %s failed.",
         Constants.MAX_DEPLOYMENTS_REACHED: "Maximum deployments %s reached. Please stop some deployments, before starting new ones.",
-        Constants.TESTRUNNER_TIMEOUT: "Could not reach testrunner container. Did you started it? Is the service name in docker-compose.yml defined as 'testrunner'?",
+        Constants.CONTAINER_UNREACHABLE: "Could not reach %s container. Did you started it? Is the service name in docker-compose.yml defined as '%s'?",
         Constants.GET_DEPLOYER_NETWORK_FAILED: "Failed to get the docker network associated with the estuary-deployer service.",
         Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to connect the testrunner service to the docker network associated with the estuary-deployer service.",
         Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to disconnect the testrunner service to the docker network associated with the estuary-deployer service.",

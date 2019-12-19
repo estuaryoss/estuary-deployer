@@ -15,7 +15,7 @@ docker_swagger_file_content = '''
 info:
   description: |
     This is estuary-deployer with Docker.
-  version: "4.0.0"
+  version: "4.0.1"
   title: estuary-deployer
   termsOfService: http://swagger.io/terms/
   contact:
@@ -149,9 +149,13 @@ paths:
       produces:
         - application/json
       parameters:
+        - name: Eureka-Server
+          in: header
+          description: 'Override the eureka server address. The eureka server of the deployer will not be used anymore.'
+          required: false
         - name: docker-compose template
           in: body
-          description: 'version:'
+          description: 'docker-compose template'
           required: true
           schema:
             $ref: '#/definitions/template'
@@ -360,11 +364,11 @@ paths:
           description: The content of the file was uploaded successfully
         404:
           description: Failure, the file content could not be uploaded
-  /testrunnernetconnect/{compose_id}:
+  /containernetconnect/{compose_id}:
     get:
       tags:
         - estuary-deployer
-      summary: Connect the testrunner service found in docker-compose environment compose_id to the deloyer service network in order to be able to forward http requests needed for testing.
+      summary: Connect the container service found in docker-compose environment compose_id to the deployer service network in order to be able to forward http requests
       produces:
         - application/json
       parameters:
@@ -375,14 +379,14 @@ paths:
           type: string
       responses:
         200:
-          description: testrunner network connect success
+          description: container network connect success
         404:
-          description: testrunner network connect failure
-  /testrunner/{compose_id}/{testrunner_route}:
+          description: container network connect failure
+  /container/{compose_id}/{container_route}:
     get:
       tags:
         - estuary-deployer
-      summary: Forward the request to the testrunner service identified by docker-compose environment id 'compose_id' to route 'testrunner_route'. The user can plug in his custom implementation of the testrunner, the only condition is to be named 'testrunner' in docker-compose.yml
+      summary: Forward the request to the container service identified by docker-compose environment id 'compose_id' to route 'container_route'. The user can plug in his custom implementation of the container, the only condition is to be named 'container' in docker-compose.yml
       produces:
         - application/json
       parameters:
@@ -391,23 +395,23 @@ paths:
           description: docker-compose environment id returned by the deploystart action.
           required: true
           type: string
-        - name: testrunner_route
+        - name: container_route
           in: path
-          description: testrunner service route. Check the documentation of the estuary-testrunner service.
+          description: container service route. E.g. /container/ping
           required: true
           type: string
       responses:
         200:
-          description: testrunner network connect success
+          description: http request sent to the service container with success
         404:
           description: |
-            1. cannot find the estuary testrunner because the network is not yet connectedtestrunner
-            2. the request was forwarded to the estuary testrunner but did not find the route
-  /testrunnernetdisconnect/{compose_id}:
+            1. cannot find the container because the network is not yet connected to the estuary-deployer
+            2. the request was forwarded to the container but did not find the route
+  /containernetdisconnect/{compose_id}:
     get:
       tags:
         - estuary-deployer
-      summary: Disconnects the testrunner service from the docker-compose environment compose_id in order to clean up the environment.
+      summary: Disconnects the container service from the docker-compose environment compose_id in order to clean up the environment.
       produces:
         - application/json
       parameters:
@@ -418,9 +422,9 @@ paths:
           type: string
       responses:
         200:
-          description: testrunner network disconnect success
+          description: container network disconnect success
         404:
-          description: testrunner network disconnect failure
+          description: container network disconnect failure
   /executecommand:
     post:
       tags:

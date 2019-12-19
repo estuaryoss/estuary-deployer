@@ -16,31 +16,39 @@ from tests.rest_testrunner_integration.utils import Utils
 
 
 class FlaskServerTestCase(unittest.TestCase):
+    server_testrunner = "http://localhost:8080/docker/container"
     server = "http://localhost:8080/docker"
-
-    expected_version = "4.0.0"
+    script_path = "tests/rest_testrunner_integration/input"
+    # script_path = "input"
+    expected_version = "4.0.1"
     cleanup_count_safe = 5
     compose_id = ""
 
     @classmethod
     def setUpClass(cls):
-        with open("tests/rest_testrunner_integration/input/alpinetestrunner.yml", closefd=True) as f:
+        with open(f"{cls.script_path}/alpinetestrunner.yml", closefd=True) as f:
             payload = f.read()
 
         headers = {'Content-type': 'text/plain'}
         response = requests.post(f"{FlaskServerTestCase.server}/deploystart", data=payload, headers=headers)
         # print(dump.dump_all(response))
         time.sleep(60)  # wait until the env is up and running, including image download and container boot
-        compose_id = cls.get_deployment_info()[0]
-        print("Docker compose env_id: " + compose_id)
-        response = requests.get(f"{FlaskServerTestCase.server}/testrunnernetconnect/{compose_id}")
+        cls.compose_id = cls.get_deployment_info()[0]
+        print("Docker compose env_id: " + cls.compose_id)
+        response = requests.get(f"{FlaskServerTestCase.server}/containernetconnect/{cls.compose_id}")
         # print(dump.dump_all(response))
         print("Docker net connect response: " + json.dumps(response.json()))
 
     def setUp(self):
         self.compose_id = self.get_deployment_info()[0]
         for i in range(0, self.cleanup_count_safe):
-            requests.get(self.server + f"/testrunner/{self.compose_id}" + "/teststop")
+            requests.get(self.server + f"/container/{self.compose_id}" + "/teststop")
+
+    @classmethod
+    def tearDownClass(cls):
+        deployment_list = cls.get_deployment_info()
+        for item in deployment_list:
+            requests.get(f"{FlaskServerTestCase.server}/deploystop/{item}")
 
     @staticmethod
     def get_deployment_info():
@@ -55,7 +63,7 @@ class FlaskServerTestCase(unittest.TestCase):
         return active_deployments
 
     def test_env_endpoint(self):
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/env")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/env")
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
@@ -68,7 +76,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     def test_ping_endpoint(self):
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/ping")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/ping")
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
@@ -79,7 +87,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_getenv_endpoint_p(self):
         env_var = "VARS_DIR"
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/getenv/{env_var}")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/getenv/{env_var}")
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
@@ -91,7 +99,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_getenv_endpoint_n(self):
         env_var = "alabalaportocala"
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/getenv/{env_var}")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/getenv/{env_var}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -102,7 +110,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     def test_about_endpoint(self):
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/about")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/about")
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
@@ -115,14 +123,14 @@ class FlaskServerTestCase(unittest.TestCase):
     @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates",
                      "Skip on VM")  # when service runs on VM only this is skipped
     def test_swagger_endpoint(self):
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/api/docs")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/api/docs")
 
         body = response.text
         self.assertEqual(response.status_code, 200)
         self.assertTrue(body.find("html") >= 0)
 
     def test_swagger_yml_endpoint(self):
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/swagger/swagger.yml")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/swagger/swagger.yml")
 
         body = yaml.load(response.text, Loader=yaml.Loader)
         self.assertEqual(response.status_code, 200)
@@ -133,7 +141,7 @@ class FlaskServerTestCase(unittest.TestCase):
         ("yml.j2", "yml.yml")
     ])
     def test_rend_endpoint(self, template, variables):
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/rend/{template}/{variables}",
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/rend/{template}/{variables}",
                                 Loader=yaml.Loader)
 
         body = yaml.load(response.text)
@@ -148,7 +156,7 @@ class FlaskServerTestCase(unittest.TestCase):
         # expected = f"Exception([Errno 2] No such file or directory: \'/variables/{variables}\')"
         expected = f"Exception([Errno 2] No such file or directory:"
 
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/rend/{template}/{variables}")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/rend/{template}/{variables}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -162,7 +170,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_rend_endpoint(self, template, variables):
         expected = f"Exception({template})"
 
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/rend/{template}/{variables}")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/rend/{template}/{variables}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -176,7 +184,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'application/json'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/rendwithenv/{template}/{variables}",
+            self.server_testrunner + f"/{self.compose_id}" + f"/rendwithenv/{template}/{variables}",
             data=json.dumps(payload),
             headers=headers)
 
@@ -191,7 +199,7 @@ class FlaskServerTestCase(unittest.TestCase):
             'File-Path': '/etc/hostname'
         }
 
-        response = requests.post(self.server + f"/testrunner/{self.compose_id}" + f"/getfile", headers=headers)
+        response = requests.post(self.server_testrunner + f"/{self.compose_id}" + f"/getfile", headers=headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.text), 0)
@@ -202,7 +210,7 @@ class FlaskServerTestCase(unittest.TestCase):
             'File-Path': '/etc/dummy'
         }
 
-        response = requests.post(self.server + f"/testrunner/{self.compose_id}" + f"/getfile", headers=headers)
+        response = requests.post(self.server_testrunner + f"/{self.compose_id}" + f"/getfile", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -216,7 +224,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'application/json'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getfile", headers=headers)
+            self.server_testrunner + f"/{self.compose_id}" + f"/getfile", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -235,7 +243,7 @@ class FlaskServerTestCase(unittest.TestCase):
         }
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getfolder", headers=headers)
+            self.server_testrunner + f"/{self.compose_id}" + f"/getfolder", headers=headers)
 
         body = response.text
         self.assertEqual(response.status_code, 200)
@@ -253,7 +261,7 @@ class FlaskServerTestCase(unittest.TestCase):
         }
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getfolder", headers=headers)
+            self.server_testrunner + f"/{self.compose_id}" + f"/getfolder", headers=headers)
 
         body = response.json()
         print(dump.dump_all(response))
@@ -272,7 +280,7 @@ class FlaskServerTestCase(unittest.TestCase):
         }
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getfolder", headers=headers)
+            self.server_testrunner + f"/{self.compose_id}" + f"/getfolder", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -287,7 +295,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'application/json'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/getfolder", headers=headers)
+            self.server_testrunner + f"/{self.compose_id}" + f"/getfolder", headers=headers)
 
         body = response.json()
         print(dump.dump_all(response))
@@ -306,7 +314,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'text/plain'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/teststart/{test_id}",
+            self.server_testrunner + f"/{self.compose_id}" + f"/teststart/{test_id}",
             data=payload, headers=headers)
 
         body = response.json()
@@ -326,7 +334,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'text/plain'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/teststart/{test_id}",
+            self.server_testrunner + f"/{self.compose_id}" + f"/teststart/{test_id}",
             data=payload, headers=headers)
 
         body = response.json()
@@ -347,25 +355,25 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'text/plain'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/teststart/{test_id}",
+            self.server_testrunner + f"/{self.compose_id}" + f"/teststart/{test_id}",
             data=f"sleep {payload}", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'), test_id)
 
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestid")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/gettestid")
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'), test_id)
         time.sleep(int(payload) + 2)
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestid")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/gettestid")
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'), test_id)
 
     def test_gettestid_no_test_running_p(self):
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestid")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/gettestid")
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
@@ -386,14 +394,14 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'text/plain'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/teststart/{test_id}",
+            self.server_testrunner + f"/{self.compose_id}" + f"/teststart/{test_id}",
             data=f"{data_payload}", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'), test_id)
 
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestinfo")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/gettestinfo")
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message').get('id'), test_id)
@@ -403,12 +411,12 @@ class FlaskServerTestCase(unittest.TestCase):
             self.assertEqual(body.get('message').get("commands").get(value).get("status"), "scheduled")
             self.assertIsInstance(body.get('message').get("commands").get(value).get("details"), dict)
         time.sleep(int(payload) - 2)
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestinfo")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/gettestinfo")
         body = response.json()
         self.assertEqual(body.get('message').get("commands").get(commands[0]).get("status"), "in progress")
         self.assertIsInstance(body.get('message').get("commands").get(commands[0]).get("details"), dict)
         time.sleep(int(payload) + 2)
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestinfo")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/gettestinfo")
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message').get('id'), test_id)
@@ -431,7 +439,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'text/plain'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/teststart/{test_id}",
+            self.server_testrunner + f"/{self.compose_id}" + f"/teststart/{test_id}",
             data=f"{data_payload}", headers=headers)
 
         body = response.json()
@@ -439,7 +447,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message'), test_id)
         start = time.time()
         for i in range(1, repetitions):
-            response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestinfo")
+            response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/gettestinfo")
             self.assertEqual(response.status_code, 200)
         end = time.time()
         print(f"made {repetitions} gettestinfo repetitions in {end - start} s")
@@ -451,14 +459,14 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'text/plain'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/teststart/{test_id}",
+            self.server_testrunner + f"/{self.compose_id}" + f"/teststart/{test_id}",
             data=f"{data_payload}", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'), test_id)
         time.sleep(1)
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + f"/gettestinfo")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/gettestinfo")
         body = response.json()
         self.assertEqual(len(body.get('message').get("commands")), len(commands) - 1)
         self.assertEqual(body.get('message').get("commands").get(commands[1]).get("status"), "finished")
@@ -472,14 +480,14 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'text/plain'}
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/teststart/{test_id}",
+            self.server_testrunner + f"/{self.compose_id}" + f"/teststart/{test_id}",
             data=f"{data_payload}", headers=headers)
         print(dump.dump_all(response))
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'), test_id)
         time.sleep(2)
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/gettestinfo")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/gettestinfo")
         body = response.json()
         self.assertEqual(body.get('message').get("id"), f"{test_id}")
         self.assertEqual(body.get('message').get("started"), "true")
@@ -489,12 +497,12 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message').get("commands").get(commands[2]).get("status"), "scheduled")
         # for every command sent initially send a stop request
         for i in range(0, len(commands)):
-            response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/teststop")
+            response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/teststop")
             self.assertEqual(response.status_code, 200)
             body = response.json()
             self.assertEqual(body.get('message'), test_id)
 
-        response = requests.get(self.server + f"/testrunner/{self.compose_id}" + "/gettestinfo")
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/gettestinfo")
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 200)
         body = response.json()
@@ -510,7 +518,7 @@ class FlaskServerTestCase(unittest.TestCase):
         mandatory_header_key = 'File-Path'
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/uploadfile",
+            self.server_testrunner + f"/{self.compose_id}" + f"/uploadfile",
             data=payload, headers=headers)
 
         body = response.json()
@@ -532,7 +540,7 @@ class FlaskServerTestCase(unittest.TestCase):
         }
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/uploadfile",
+            self.server_testrunner + f"/{self.compose_id}" + f"/uploadfile",
             data=payload, headers=headers)
 
         body = response.json()
@@ -554,7 +562,7 @@ class FlaskServerTestCase(unittest.TestCase):
         }
 
         response = requests.post(
-            self.server + f"/testrunner/{self.compose_id}" + f"/uploadfile",
+            self.server_testrunner + f"/{self.compose_id}" + f"/uploadfile",
             data=payload, headers=headers)
 
         body = response.json()
@@ -565,6 +573,10 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
+
+    # def test_container_netdisconnect_p(self):
+    #     response = requests.get(f"{self.server}/containernetdisconnect/{self.compose_id}")
+    #     self.assertEqual(response.status_code, 200)
 
 
 if __name__ == '__main__':

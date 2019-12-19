@@ -185,10 +185,11 @@ class DockerView(FlaskView, Routes):
     def deploy_start(self):
         docker_utils = DockerUtils()
         http = HttpResponse()
-
         token = token_hex(8)
         dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
+        header_key = 'Eureka-Server'
+        eureka_server_header = request.headers.get(f"{header_key}")
 
         status = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
         self.app.logger.debug({"msg": {"memory_out": status.get('out'), "err": status.get('err')}})
@@ -216,13 +217,17 @@ class DockerView(FlaskView, Routes):
             IOUtils.create_dir(dir)
             os.environ['TEMPLATE'] = f"{template_file_name}"
             r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
-            # for testrunner deployed with deployer, other deployments will remain unchanged
-            if 'testrunner' in input_data and os.environ.get('EUREKA_SERVER') is not None:
+            if os.environ.get('EUREKA_SERVER') and os.environ.get('APP_IP_PORT'):
+                # if {{app_ip_port}} and {{eureka_server}} then register that instance too
                 if '{{app_ip_port}}' in input_data and '{{eureka_server}}' in input_data:
+                    eureka_server = os.environ.get('EUREKA_SERVER')
+                    # header value overwrite the eureka server
+                    if eureka_server_header:
+                        eureka_server = eureka_server_header
                     input_data = r.get_jinja2env().get_template(os.environ.get('TEMPLATE')).render(
                         {"deployment_id": f"{token}",
-                         "app_ip_port": os.environ.get('APP_IP_PORT').split("/")[0],
-                         "eureka_server": os.environ.get('EUREKA_SERVER')
+                         "eureka_server": eureka_server,
+                         "app_ip_port": os.environ.get('APP_IP_PORT').split("/")[0]
                          }
                     )
             self.app.logger.debug({"msg": {"file_content": f"{input_data}"}})
@@ -481,12 +486,13 @@ class DockerView(FlaskView, Routes):
                                     status.get('out').split("\n"))),
             200, mimetype="application/json")
 
-    # must connect the test runner to the deployer network to be able to send http req to the test runner which runs in a initial segregated net
-    @route('/testrunnernetconnect/<id>', methods=['GET'])
+    # must connect the container to the deployer network to be able to send http req to the test runner which runs in a initial segregated net
+    @route('/containernetconnect/<id>', methods=['GET'])
     def testrunner_docker_network_connect(self, id):
         docker_utils = DockerUtils()
         http = HttpResponse()
-        container_id = f"{id}_testrunner_1"
+        service_name = "container"
+        container_id = f"{id}_{service_name}_1"
         try:
             status = CmdUtils.run_cmd(["bash", "-c",
                                        r'''docker network ls | grep deployer | awk '{print $2}' | head -1'''])
@@ -522,11 +528,12 @@ class DockerView(FlaskView, Routes):
             json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), status.get('out'))),
             200, mimetype="application/json")
 
-    @route('/testrunnernetdisconnect/<id>', methods=['GET'])
+    @route('/containernetdisconnect/<id>', methods=['GET'])
     def testrunner_docker_network_disconnect(self, id):
         docker_utils = DockerUtils()
         http = HttpResponse()
-        container_id = f"{id}_estuary-testrunner_1"
+        service_name = "container"
+        container_id = f"{id}_{service_name}_1"
         try:
             status = CmdUtils.run_cmd(["bash", "-c",
                                        r'''docker network ls | grep deployer | awk '{print $2}' | head -1'''])
@@ -562,16 +569,16 @@ class DockerView(FlaskView, Routes):
             json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), status.get('out'))),
             200, mimetype="application/json")
 
-    # here the requests are redirected to the testrunner container
-    # you can couple your own
-    # url format: yourservicenameindockercompose/dockercomposeenvid/the_url
-    # E.g1 /testrunner/2a1c9aa0451add84/uploadtestconfig
-    # E.g2 /testrunner/yourcustomtestrunnerservice/yourownaction
-    @route('/testrunner/<id>/<path:text>', methods=['GET', 'POST'])
+    # here the requests are redirected to any container
+    # you can couple your own, just make sure the hostname is 'container'
+    # url format: container/dockercomposeenvid/the_url
+    # E.g1 /container/2a1c9aa0451add84/uploadtestconfig
+    @route('/container/<id>/<path:text>', methods=['GET', 'POST'])
     def testrunner_request(self, id, text):
         http = HttpResponse()
         elements = text.strip().split("/")
-        container_id = f"{id}_testrunner_1"
+        service_name = "container"
+        container_id = f"{id}_{service_name}_1"
         input_data = ""
         headers = {'Content-type': 'application/json'}
         try:
@@ -595,8 +602,9 @@ class DockerView(FlaskView, Routes):
 
         except Exception as e:
             exception = "Exception({0})".format(sys.exc_info()[0])
-            response = Response(json.dumps(http.failure(Constants.TESTRUNNER_TIMEOUT,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.TESTRUNNER_TIMEOUT),
+            response = Response(json.dumps(http.failure(Constants.CONTAINER_UNREACHABLE,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.CONTAINER_UNREACHABLE) % (service_name, service_name),
                                                         exception,
                                                         exception)), 404, mimetype="application/json")
         return response

@@ -173,6 +173,56 @@ jobs:
         - docker rm $(docker ps -a -q)
         - docker network prune -f
 
+    #run discovery integration tests
+    - language: python
+      python: 3.7
+      services:
+        - docker
+      env:
+        SCRIPTS_DIR: tests
+        ISOLATED: true
+      before_script:
+        - docker pull alpine:3.9.4
+        - docker pull mysql:5.6
+        - docker pull dinutac/estuary-testrunner:latest
+        - docker pull dinutac/estuary-discovery:latest
+        - docker pull dinutac/netflixoss-eureka:1.9.13
+        - docker build -t dinutac/estuary-deployer:latest .
+      script:
+        - docker network create estuarydeployer_default
+        - docker run -d
+          -p 8081:8080 dinutac/netflixoss-eureka:1.9.13
+        - IP_ADDR_STRING=$(hostname -I)
+        - IP_ADDR_ARRAY=($IP_ADDR_STRING)
+        - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
+        - echo "EUREKA_SERVER=$EUREKA_SERVER_LOCAL" >> .env
+        - echo "APP_IP_PORT=${IP_ADDR_ARRAY[0]}:8080" >> .env
+        - cat .env
+        - chmod +x wait-for-it.sh
+        - ./wait-for-it.sh -t 20 "http://${IP_ADDR_ARRAY[0]}:8081" -- echo "eureka running" && sleep 30
+        - docker run -d
+          -p 8080:8080
+          -v $PWD/inputs/templates:/data
+          -v $PWD/inputs/variables:/variables
+          -v /var/run/docker.sock:/var/run/docker.sock
+          --net=estuarydeployer_default
+          --name estuary-deployer
+          --env-file .env
+          dinutac/estuary-deployer:latest
+
+        #- docker network ls
+        #- echo "Deployer net is $(docker network ls | grep deployer | awk '{print $2}' | head -1)"
+        - sleep 10
+        - docker ps -a
+        - python3 -m unittest discover $SCRIPTS_DIR/rest_discovery_integration "*_test.py"
+        - docker ps -a
+        #- ./ngrok.sh 8080 $NGROK_TOKEN
+        #- docker logs -f estuary-deployer
+        #- docker logs $(docker ps -a | grep testrunner | awk '{print $13}')
+        - docker stop $(docker ps -a -q)
+        - docker rm $(docker ps -a -q)
+        - docker network prune -f
+
     #run docker tests - docker sock mount
     - language: python
       python: 3.7

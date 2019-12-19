@@ -17,10 +17,10 @@ Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/release
 [![](https://images.microbadger.com/badges/image/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own version badge on microbadger.com") ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)
 
 ## Api docs 
-https://app.swaggerhub.com/apis/dinuta/estuary-deployer/2.0.0     
 https://app.swaggerhub.com/apis/dinuta/estuary-deployer/3.0.0  
+https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.0  
 
-## Postman collection
+## Postman collection 
 Docker: https://documenter.getpostman.com/view/2360061/SVYjUNCG  
 Kubernetes: https://documenter.getpostman.com/view/2360061/SW15zGn2
 
@@ -78,7 +78,7 @@ Start your containers by specifying the full hostname or ip of the host machine 
             -e DEPLOY_ON="docker" -> on what the env to be deployed. Options: docker, kubectl
             -e ENV_EXPIRE_IN=1440 -> how long it will take before the env will be deleted. Default is 1440 min.
     Mandatory:
-        -p 8080:8080 -> port fwd from dokcer 8080 to host 8080
+        -p 8080:8080 -> port fwd from docker 8080 to host 8080
         -v /var/run/docker.sock:/var/run/docker.sock -> docker sock mount
         --net=estuarydeployer_default -> bind to this net prior created
 
