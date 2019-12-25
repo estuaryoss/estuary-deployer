@@ -153,6 +153,7 @@ paths:
           in: header
           description: 'Override the eureka server address. The eureka server of the deployer will not be used anymore.'
           required: false
+          type: string
         - name: docker-compose template
           in: body
           description: 'docker-compose template'
@@ -368,7 +369,7 @@ paths:
     get:
       tags:
         - estuary-deployer
-      summary: Connect the container service found in docker-compose environment compose_id to the deployer service network in order to be able to forward http requests
+      summary: Connect the container service found in compose environment compose_id to the deployer net in order to be able to forward http requests
       produces:
         - application/json
       parameters:
@@ -386,7 +387,8 @@ paths:
     get:
       tags:
         - estuary-deployer
-      summary: Forward the request to the container service identified by docker-compose environment id 'compose_id' to route 'container_route'. The user can plug in his custom implementation of the container, the only condition is to be named 'container' in docker-compose.yml
+      summary:  Forward the request to the container service identified by docker-compose environment id 'compose_id' to route 'container_route'. 
+                The user can plug in his custom implementation of the container, the only condition is to be named 'container' in docker-compose.yml
       produces:
         - application/json
       parameters:

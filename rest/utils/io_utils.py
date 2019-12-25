@@ -15,7 +15,7 @@ class IOUtils:
     def get_list_dir(path):
         file_path = Path(path)
         if file_path.exists():
-            dir_list = [directory for directory in os.listdir(path) if os.path.isdir(f"{path}{directory}")]
+            dir_list = [directory for directory in os.listdir(path) if os.path.isdir(path + directory)]
             return dir_list
         return []
 

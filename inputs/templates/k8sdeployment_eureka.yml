@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: netflixoss-eureka
-          image: dinutac/netflixoss-eureka:1.9.13
+          image: dinutac/netflixoss-eureka:1.9.15
 ---
 kind: Service
 apiVersion: v1

@@ -132,7 +132,6 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_swagger_yml_endpoint(self):
         response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/swagger/swagger.yml")
 
-        body = yaml.load(response.text, Loader=yaml.Loader)
         self.assertEqual(response.status_code, 200)
         # self.assertTrue(len(body.get('paths')) == 14)
 
@@ -144,7 +143,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/rend/{template}/{variables}",
                                 Loader=yaml.Loader)
 
-        body = yaml.load(response.text)
+        body = yaml.safe_load(response.text)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body), 3)
 
@@ -188,7 +187,7 @@ class FlaskServerTestCase(unittest.TestCase):
             data=json.dumps(payload),
             headers=headers)
 
-        body = yaml.load(response.text, Loader=yaml.Loader)
+        body = yaml.safe_load(response.text)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body.get("services")), 2)
         self.assertEqual(int(body.get("version")), 3)
@@ -513,7 +512,7 @@ class FlaskServerTestCase(unittest.TestCase):
     @parameterized.expand([
         "{\"file\": \"/dummy/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"
     ])
-    def test_uploadfile_n(self, payload):
+    def test_uploadfile_header_not_provided_n(self, payload):
         headers = {'Content-type': 'application/json'}
         mandatory_header_key = 'File-Path'
 
@@ -533,7 +532,7 @@ class FlaskServerTestCase(unittest.TestCase):
     @parameterized.expand([
         ""
     ])
-    def test_uploadfile_n(self, payload):
+    def test_uploadfile_empty_body_n(self, payload):
         headers = {
             'Content-type': 'application/json',
             'File-Path': '/tmp/config.properties'

@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 
 
 class MessageDumper:
@@ -16,7 +17,7 @@ class MessageDumper:
         try:
             body = json.loads(request.get_data())
             body["message"] = json.dumps(body.get("message"))
-        except Exception as e:
+        except JSONDecodeError:
             body = {"message": "NA"}
 
         return {

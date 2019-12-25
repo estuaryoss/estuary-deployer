@@ -19,8 +19,8 @@ class ErrorCodes:
         Constants.MAX_DEPLOYMENTS_REACHED: "Maximum deployments %s reached. Please stop some deployments, before starting new ones.",
         Constants.CONTAINER_UNREACHABLE: "Could not reach %s container. Did you started it? Is the service name in docker-compose.yml defined as '%s'?",
         Constants.GET_DEPLOYER_NETWORK_FAILED: "Failed to get the docker network associated with the estuary-deployer service.",
-        Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to connect the testrunner service to the docker network associated with the estuary-deployer service.",
-        Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED: "Failed to disconnect the testrunner service to the docker network associated with the estuary-deployer service.",
+        Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED: "Failed to connect the container to the docker net associated with the deployer service.",
+        Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED: "Failed to disconnect the container to the docker net associated with the deployer service.",
         Constants.GET_CONTAINER_ENV_VAR_FAILURE: "Getting env var %s from the container failed.",
         Constants.EMPTY_REQUEST_BODY_PROVIDED: "Empty request body provided.",
         Constants.UPLOAD_FILE_FAILURE: "Failed to upload file content.",
@@ -28,4 +28,3 @@ class ErrorCodes:
         Constants.EXEC_COMMAND_NOT_ALLOWED: "'rm' commands are filtered. Command '%s' was not executed.",
         Constants.KUBERNETES_SERVER_ERROR: "Error response from server: '%s'"
     }
-

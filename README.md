@@ -12,32 +12,33 @@ Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/release
 ## Build & Coverage
 [![Build Status](https://travis-ci.org/dinuta/estuary-deployer.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer)
 [![Coverage Status](https://coveralls.io/repos/github/dinuta/estuary-deployer/badge.svg?branch=master)](https://coveralls.io/github/dinuta/estuary-deployer?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/fd41fd77c2594a1f8211a5c1e8926117)](https://www.codacy.com/manual/dinuta/estuary-deployer?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dinuta/estuary-deployer&amp;utm_campaign=Badge_Grade)
 
 ## Docker Hub
 [![](https://images.microbadger.com/badges/image/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own version badge on microbadger.com") ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)
 
 ## Api docs 
-https://app.swaggerhub.com/apis/dinuta/estuary-deployer/3.0.0  
-https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.0  
+[3.0.0](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/3.0.0)   
+[4.0.0](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.0)  
 
 ## Postman collection 
-Docker: https://documenter.getpostman.com/view/2360061/SVYjUNCG  
-Kubernetes: https://documenter.getpostman.com/view/2360061/SW15zGn2
+[Docker](https://documenter.getpostman.com/view/2360061/SVYjUNCG)  
+[Kubernetes](https://documenter.getpostman.com/view/2360061/SW15zGn2)
 
 ## Wiki
-https://github.com/dinuta/estuary-deployer/wiki  
+[Wiki](https://github.com/dinuta/estuary-deployer/wiki)  
 
 ## Use cases
-- Debug accelerator. No more logs attached to Jira. QAs can push the related bug-ish image to registry. Then in a docker compose QA can deploy "the bug" on a developer's machine or on dedicated debug machine (security reason due to docker sock mounting). The dev will have all he needs
-- Testing as a service. A complete enevironment SUT/BD/Automation Framework can be deployed and tested
-- Bring up Docker containers remotely through HTTP
-- Templating with Jinja2
+-  Debug accelerator. No more logs attached to Jira. QAs can push the related bug-ish image to registry. Then in a docker compose QA can deploy "the bug" on a developer's machine or on dedicated debug machine (security reason due to docker sock mounting). The dev will have all he needs
+-  Testing as a service. A complete enevironment SUT/BD/Automation Framework can be deployed and tested
+-  Bring up Docker containers remotely through HTTP
+-  Templating with Jinja2
 
 ## Service run
-##### Docker compose
+### Docker compose
     docker-compose up
     
-##### Docker run - simple
+### Docker run - simple
    
     docker network create estuarydeployer_default
     docker run \ 
@@ -55,7 +56,7 @@ https://github.com/dinuta/estuary-deployer/wiki
     -v $PWD/inputs/templates:/data \ 
     -v $PWD/inputs/variables:/variables \
 
-##### Eureka registration
+### Eureka registration
 To have all your deployer instances in a central location we use netflix eureka. This means your client will discover
 all services used for your test and then spread the tests across all.  
 
@@ -63,7 +64,7 @@ Start Eureka server with docker:
 
     docker run -p 8080:8080 netflixoss/eureka:1.3.1  
     or
-    docker run -p 8080:8080 dinutac/netflixoss-eureka:1.9.13
+    docker run -p 8080:8080 dinutac/netflixoss-eureka:1.9.15
 
 Start your containers by specifying the full hostname or ip of the host machine on where your deployer service resides.  
     
@@ -95,7 +96,7 @@ Start your containers by specifying the full hostname or ip of the host machine 
     -v $PWD/inputs/templates:/data \ 
     -v $PWD/inputs/variables:/variables \
 
-##### Fluentd
+### Fluentd
 Please consult [Fluentd](https://github.com/fluent/fluentd) for logging setup.
 Estuary-deployer tags all logs in format ```estuary-deployer.**```
 
@@ -103,7 +104,7 @@ Matcher example:
 
 ```xml
 <match estuary*.**>
-  type stdout
+  @type stdout
 </match>
 ```
 Run example:  
@@ -116,7 +117,7 @@ Run example:
     --net=estuarydeployer_default \
     dinutac/estuary-deployer:<tag>
 
-## Api call examples:
+## Api call examples
 
     http://192.168.100.12:8083/kubectl/ping -> if DEPLOY_ON is kubernetes with kubectl. Kubernetes deployments are fully tested
     or

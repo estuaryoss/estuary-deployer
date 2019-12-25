@@ -18,37 +18,37 @@ class DockerUtils(EnvCreation):
     def up(file):
         file_path = Path(file)
         if not file_path.is_file():
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["docker-compose", "pull", "&&", "docker-compose", "-f", f"{file}", "up", "-d"])
+            raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
+        return CmdUtils.run_cmd(["docker-compose", "pull", "&&", "docker-compose", "-f", file, "up", "-d"])
 
     @staticmethod
     def down(file):
         file_path = Path(file)
         if not file_path.is_file():
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["docker-compose", "-f", f"{file}", "down", "-v"])
+            raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
+        return CmdUtils.run_cmd(["docker-compose", "-f", file, "down", "-v"])
 
     @staticmethod
     def start(file):
         file_path = Path(file)
         if not file_path.is_file():
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["docker-compose", "-f", f"{file}", "start"])
+            raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
+        return CmdUtils.run_cmd(["docker-compose", "-f", file, "start"])
 
     @staticmethod
     def stop(file):
         file_path = Path(file)
         if not file_path.is_file():
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["docker-compose", "-f", f"{file}", "stop"])
+            raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
+        return CmdUtils.run_cmd(["docker-compose", "-f", file, "stop"])
 
     @staticmethod
     def logs(file):
-        file_path = Path(f"{file}")
+        file_path = Path(file)
         if not file_path.is_file():
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
+            raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
         return CmdUtils.run_cmd(
-            ["docker-compose", "-f", f"{file}", "logs", "-t", f"--tail={Constants.DOCKER_LOGS_LINES}"])
+            ["docker-compose", "-f", file, "logs", "-t", "--tail=" + str(Constants.DOCKER_LOGS_LINES)])
 
     @staticmethod
     def ps(id):

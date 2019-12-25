@@ -13,15 +13,14 @@ class CleanFolderSchedulerTestCase(unittest.TestCase):
 
     def test_folder_clean_up(self):
         utils = IOUtils()
-        folder_path = f"{self.path}"
-        self.assertEqual(len(utils.get_list_dir(folder_path)), 0)
+        self.assertEqual(len(utils.get_list_dir(self.path)), 0)
         for i in range(1, 3):
-            utils.create_dir(f"{folder_path}{i}")
-            utils.write_to_file(f"{folder_path}{i}/{i}", "whatever")
-        self.assertEqual(len(utils.get_list_dir(folder_path)), 2)
+            utils.create_dir(self.path + str(i))
+            utils.write_to_file(self.path + str(i) + "/" + str(i), "whatever")
+        self.assertEqual(len(utils.get_list_dir(self.path)), 2)
         self.clean_folder_scheduler.start()
         time.sleep(70)
-        self.assertEqual(len(utils.get_list_dir(folder_path)), 0)
+        self.assertEqual(len(utils.get_list_dir(self.path)), 0)
 
     def tearDown(self):
         self.clean_folder_scheduler.stop()

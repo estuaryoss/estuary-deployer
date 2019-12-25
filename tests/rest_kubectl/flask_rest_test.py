@@ -76,7 +76,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_rend_endpoint(self, template, variables):
         response = requests.get(self.server + f"/rend/{template}/{variables}", Loader=yaml.Loader)
 
-        body = yaml.load(response.text)
+        body = yaml.safe_load(response.text)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body), 3)
 
@@ -116,7 +116,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/rendwithenv/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
 
-        body = yaml.load(response.text, Loader=yaml.Loader)
+        body = yaml.safe_load(response.text)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body.get("services")), 2)
         self.assertEqual(int(body.get("version")), 3)

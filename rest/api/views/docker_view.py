@@ -133,7 +133,6 @@ class DockerView(FlaskView, Routes):
         try:
             r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
             response = Response(r.rend_template(), 200, mimetype="text/plain")
-            # response = Response(json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200, mimetype="application/json")
         except Exception as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.JINJA2_RENDER_FAILURE,
@@ -237,7 +236,7 @@ class DockerView(FlaskView, Routes):
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), token)), 200,
                 mimetype="application/json")
-        except FileNotFoundError as e:
+        except OSError  as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
@@ -300,7 +299,7 @@ class DockerView(FlaskView, Routes):
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
                 mimetype="application/json")
-        except FileNotFoundError as e:
+        except OSError as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
@@ -354,7 +353,7 @@ class DockerView(FlaskView, Routes):
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
                 mimetype="application/json")
-        except FileNotFoundError as e:
+        except OSError as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
@@ -387,7 +386,7 @@ class DockerView(FlaskView, Routes):
                                         ActiveDeployment.docker_deployment(id, result))), 200,
                 mimetype="application/json")
             self.app.logger.debug({"msg": status})
-        except FileNotFoundError as e:
+        except OSError as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_STATUS_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_STATUS_FAILURE),
@@ -421,7 +420,7 @@ class DockerView(FlaskView, Routes):
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
                 mimetype="application/json")
-        except FileNotFoundError as e:
+        except OSError as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_STOP_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_STOP_FAILURE), result,
@@ -512,16 +511,16 @@ class DockerView(FlaskView, Routes):
                                 mimetype="application/json")
 
             if "Error response from daemon".lower() in status.get('err').lower():
-                return Response(json.dumps(http.failure(Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED,
+                return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED,
                                                         ErrorCodes.HTTP_CODE.get(
-                                                            Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED),
+                                                            Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED),
                                                         status.get('err'),
                                                         status.get('err'))), 404, mimetype="application/json")
         except Exception as e:
             exception = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED,
+            return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED,
                                                     ErrorCodes.HTTP_CODE.get(
-                                                        Constants.TESTRUNNER_CONNECT_TO_DEPLOYER_NETWORK_FAILED),
+                                                        Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED),
                                                     exception,
                                                     exception)), 404, mimetype="application/json")
         return Response(
@@ -553,16 +552,16 @@ class DockerView(FlaskView, Routes):
                                 mimetype="application/json")
 
             if "Error response from daemon".lower() in status.get('err').lower():
-                return Response(json.dumps(http.failure(Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED,
+                return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED,
                                                         ErrorCodes.HTTP_CODE.get(
-                                                            Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED),
+                                                            Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED),
                                                         status.get('err'),
                                                         status.get('err'))), 404, mimetype="application/json")
         except Exception as e:
             exception = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED,
+            return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED,
                                                     ErrorCodes.HTTP_CODE.get(
-                                                        Constants.TESTRUNNER_DISCONNECT_TO_DEPLOYER_NETWORK_FAILED),
+                                                        Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED),
                                                     exception,
                                                     exception)), 404, mimetype="application/json")
         return Response(
@@ -604,7 +603,8 @@ class DockerView(FlaskView, Routes):
             exception = "Exception({0})".format(sys.exc_info()[0])
             response = Response(json.dumps(http.failure(Constants.CONTAINER_UNREACHABLE,
                                                         ErrorCodes.HTTP_CODE.get(
-                                                            Constants.CONTAINER_UNREACHABLE) % (service_name, service_name),
+                                                            Constants.CONTAINER_UNREACHABLE) % (
+                                                        service_name, service_name),
                                                         exception,
                                                         exception)), 404, mimetype="application/json")
         return response

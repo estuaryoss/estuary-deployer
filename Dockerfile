@@ -21,10 +21,10 @@ RUN apk add --no-cache \
     curl
 
 RUN pip install \
-  docker-compose
+  docker-compose==1.25.0
 
 RUN apk add --no-cache python3 && \
-    pip3 install --upgrade pip setuptools --no-cache
+    pip3 install --upgrade pip==19.3.1 setuptools==42.0.2 --no-cache
 
 ## Kubectl
 ADD https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
@@ -53,9 +53,9 @@ ENV DEPLOY_ON docker
 
 ENV TZ UTC
 
-ADD ./ $SCRIPTS_DIR/
-ADD ./inputs/templates/ $TEMPLATES_DIR/
-ADD ./inputs/variables/ $VARS_DIR/
+COPY ./ $SCRIPTS_DIR/
+COPY ./inputs/templates/ $TEMPLATES_DIR/
+COPY ./inputs/variables/ $VARS_DIR/
 
 RUN chmod +x $SCRIPTS_DIR/*.py
 RUN chmod +x $SCRIPTS_DIR/*.sh

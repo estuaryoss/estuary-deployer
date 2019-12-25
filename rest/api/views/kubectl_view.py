@@ -130,7 +130,6 @@ class KubectlView(FlaskView, Routes):
         try:
             r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
             response = Response(r.rend_template(), 200, mimetype="text/plain")
-            # response = Response(json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200, mimetype="application/json")
         except Exception as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.JINJA2_RENDER_FAILURE,
@@ -214,7 +213,7 @@ class KubectlView(FlaskView, Routes):
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), token)), 200,
                 mimetype="application/json")
-        except FileNotFoundError as e:
+        except OSError  as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
@@ -267,7 +266,7 @@ class KubectlView(FlaskView, Routes):
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
                 mimetype="application/json")
-        except FileNotFoundError as e:
+        except OSError  as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
@@ -312,7 +311,7 @@ class KubectlView(FlaskView, Routes):
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
                 mimetype="application/json")
-        except FileNotFoundError as e:
+        except OSError  as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
@@ -392,7 +391,7 @@ class KubectlView(FlaskView, Routes):
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
                                         deployment)), 200,
                 mimetype="application/json")
-        except FileNotFoundError as e:
+        except OSError as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.DEPLOY_STATUS_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_STATUS_FAILURE),

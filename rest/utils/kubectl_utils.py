@@ -16,23 +16,23 @@ class KubectlUtils(EnvCreation):
         file_path = Path(file)
         if not file_path.is_file():
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["kubectl", "apply", "-f", f"{file}", "--insecure-skip-tls-verify"])
+        return CmdUtils.run_cmd(["kubectl", "apply", "-f", file, "--insecure-skip-tls-verify"])
 
     @staticmethod
     def down(deployment, namespace):
         return CmdUtils.run_cmd(
-            ["kubectl", "-n", f"{namespace}", "delete", "deployment", f"{deployment}", "--insecure-skip-tls-verify"])
+            ["kubectl", "-n", namespace, "delete", "deployment", deployment, "--insecure-skip-tls-verify"])
 
     @staticmethod
     def logs(pod, namespace):
         return CmdUtils.run_cmd(
-            ["kubectl", "-n", f"{namespace}", "logs", f"{pod}", "--insecure-skip-tls-verify"])
+            ["kubectl", "-n", namespace, "logs", pod, "--insecure-skip-tls-verify"])
 
     @staticmethod
     def get_active_pods(label_selector, namespace):
         active_pods = []
         status = CmdUtils.run_cmd(
-            ["kubectl", "get", "pods", "-n", f"{namespace}", "-l", f"{label_selector}", "--insecure-skip-tls-verify"])
+            ["kubectl", "get", "pods", "-n", namespace, "-l", label_selector, "--insecure-skip-tls-verify"])
         active_pods_list = status.get('out').split('\n')[1:-1]
         for i in range(0, len(active_pods_list)):
             active_pods_list[i] = ' '.join(active_pods_list[i].split())

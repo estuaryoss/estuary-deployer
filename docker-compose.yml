@@ -30,7 +30,7 @@ services:
 
   eureka-server:
     container_name: eureka-server
-    image: dinutac/netflixoss-eureka:1.9.13
+    image: dinutac/netflixoss-eureka:1.9.15
     hostname: eureka-server
 #    ports:
 #      - "8081:8080"
