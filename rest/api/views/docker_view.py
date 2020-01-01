@@ -190,8 +190,7 @@ class DockerView(FlaskView, Routes):
         header_key = 'Eureka-Server'
         eureka_server_header = request.headers.get(f"{header_key}")
 
-        status = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
-        self.app.logger.debug({"msg": {"memory_out": status.get('out'), "err": status.get('err')}})
+        status = CmdUtils.run_cmd(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
                                                     ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
@@ -230,7 +229,8 @@ class DockerView(FlaskView, Routes):
                          }
                     )
             self.app.logger.debug({"msg": {"file_content": f"{input_data}"}})
-            CmdUtils.run_cmd(["rm", "-rf", f"{template_file_path}"])
+            if os.path.exists(template_file_path):
+                os.remove(template_file_path)
             IOUtils.write_to_file(file, input_data)
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
             response = Response(
@@ -273,8 +273,7 @@ class DockerView(FlaskView, Routes):
         file = f"{dir}/{token}"
         http = HttpResponse()
 
-        status = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
-        self.app.logger.debug({"msg": {"memory_out": status.get('out'), "err": status.get('err')}})
+        status = CmdUtils.run_cmd(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
                                                     ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
@@ -326,8 +325,7 @@ class DockerView(FlaskView, Routes):
         dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
         file = f"{dir}/{token}"
 
-        status = docker_utils.stats(r"""| awk -F ' ' '{sum+=$7} END {print sum}'""")
-        self.app.logger.debug({"msg": {"memory_out": status.get('out'), "err": status.get('err')}})
+        status = CmdUtils.run_cmd(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
                                                     ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
@@ -493,8 +491,10 @@ class DockerView(FlaskView, Routes):
         service_name = "container"
         container_id = f"{id}_{service_name}_1"
         try:
-            status = CmdUtils.run_cmd(["bash", "-c",
-                                       r'''docker network ls | grep deployer | awk '{print $2}' | head -1'''])
+            # when creating deployer net, user must include 'deployer' in its name
+            # otherwise this method should have docker net param regex through http header
+            status = CmdUtils.run_cmd(
+                ["docker", "network", "ls", "--filter", "name={}".format("deployer")])
             self.app.logger.debug({"msg": status})
             if not status.get('out'):
                 return Response(json.dumps(http.failure(Constants.GET_DEPLOYER_NETWORK_FAILED,
@@ -534,8 +534,7 @@ class DockerView(FlaskView, Routes):
         service_name = "container"
         container_id = f"{id}_{service_name}_1"
         try:
-            status = CmdUtils.run_cmd(["bash", "-c",
-                                       r'''docker network ls | grep deployer | awk '{print $2}' | head -1'''])
+            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
             self.app.logger.debug({"msg": status})
             if not status.get('out'):
                 return Response(json.dumps(http.failure(Constants.GET_DEPLOYER_NETWORK_FAILED,
@@ -604,7 +603,7 @@ class DockerView(FlaskView, Routes):
             response = Response(json.dumps(http.failure(Constants.CONTAINER_UNREACHABLE,
                                                         ErrorCodes.HTTP_CODE.get(
                                                             Constants.CONTAINER_UNREACHABLE) % (
-                                                        service_name, service_name),
+                                                            service_name, service_name),
                                                         exception,
                                                         exception)), 404, mimetype="application/json")
         return response
@@ -676,8 +675,8 @@ class DockerView(FlaskView, Routes):
                                                         str(traceback.format_exc()))), 404, mimetype="application/json")
             command_dict = dict.fromkeys(cmd, {"details": {}})
             info_init["command"] = command_dict
-            status = cmd_utils.run_cmd(["bash", "-c", f'''{cmd[0]}'''])
-            info_init["command"][cmd[0]]["details"] = json.loads(json.dumps(status))
+            status = cmd_utils.run_cmd(cmd[0].strip())
+            info_init["command"][cmd[0].strip()]["details"] = json.loads(json.dumps(status))
         except Exception as e:
             exception = "Exception({0})".format(e.__str__())
             return Response(json.dumps(http.failure(Constants.COMMAND_EXEC_FAILURE,

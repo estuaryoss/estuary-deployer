@@ -52,7 +52,7 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def ps(id):
-        return CmdUtils.run_cmd(["docker", "ps", "--filter", f"name={id}"])
+        return CmdUtils.run_cmd(["docker", "ps", "--filter", "name={}".format(id)])
 
     @staticmethod
     def exec(container_id, command):
@@ -87,18 +87,9 @@ class DockerUtils(EnvCreation):
         return CmdUtils.run_cmd(container_exec_cmd)
 
     @staticmethod
-    def stats(command):
-        container_exec_cmd = r'''docker stats --no-stream ''' + command
-        return CmdUtils.run_cmd_shell_true(container_exec_cmd)
-
-    @staticmethod
     def clean_up():
         DockerUtils.network_prune()
         DockerUtils.volume_prune()
-
-    @staticmethod
-    def get_hostname_fqdn():
-        return CmdUtils.run_cmd(["hostname", "--fqdn"])
 
     @staticmethod
     def get_active_deployments():

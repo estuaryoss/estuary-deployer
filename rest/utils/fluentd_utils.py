@@ -1,5 +1,6 @@
 import datetime
 import os
+import platform
 
 from about import properties
 
@@ -43,8 +44,8 @@ class FluentdUtils:
         return {
             "name": properties.get('name'),
             "version": properties.get('version'),
-            "hostname": os.uname()[1],
-            "sysname": os.uname()[0],
+            "uname": list(platform.uname()),
+            "python": platform.python_version(),
             "pid": os.getpid(),
             "level_code": level_code,
             "msg": msg,

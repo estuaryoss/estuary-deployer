@@ -12,7 +12,7 @@ RUN apk add --no-cache \
     py-pip
 
 RUN apk add --no-cache \
-    python-dev \
+    python3-dev \
     libffi-dev \
     openssl-dev \
     gcc \
@@ -20,7 +20,7 @@ RUN apk add --no-cache \
     make \
     curl
 
-RUN pip install \
+RUN pip3 install \
   docker-compose==1.25.0
 
 RUN apk add --no-cache python3 && \
