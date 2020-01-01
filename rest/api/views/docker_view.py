@@ -493,15 +493,14 @@ class DockerView(FlaskView, Routes):
         try:
             # when creating deployer net, user must include 'deployer' in its name
             # otherwise this method should have docker net param regex through http header
-            status = CmdUtils.run_cmd(
-                ["docker", "network", "ls", "--filter", "name={}".format("deployer")])
+            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
             self.app.logger.debug({"msg": status})
             if not status.get('out'):
                 return Response(json.dumps(http.failure(Constants.GET_DEPLOYER_NETWORK_FAILED,
                                                         ErrorCodes.HTTP_CODE.get(Constants.GET_DEPLOYER_NETWORK_FAILED),
                                                         status.get('err'),
                                                         status.get('err'))), 404, mimetype="application/json")
-            deployer_network = status.get('out').strip()
+            deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
             status = docker_utils.network_connect(deployer_network, container_id)
 
             if "already exists in network".lower() in status.get('err').lower():
@@ -541,7 +540,7 @@ class DockerView(FlaskView, Routes):
                                                         ErrorCodes.HTTP_CODE.get(Constants.GET_DEPLOYER_NETWORK_FAILED),
                                                         status.get('err'),
                                                         status.get('err'))), 404, mimetype="application/json")
-            deployer_network = status.get('out').strip()
+            deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
             status = docker_utils.network_disconnect(deployer_network, container_id)
 
             if "is not connected to network".lower() in status.get('err').lower():
@@ -675,7 +674,7 @@ class DockerView(FlaskView, Routes):
                                                         str(traceback.format_exc()))), 404, mimetype="application/json")
             command_dict = dict.fromkeys(cmd, {"details": {}})
             info_init["command"] = command_dict
-            status = cmd_utils.run_cmd(cmd[0].strip())
+            status = cmd_utils.run_cmd_shell_true(cmd[0].strip())
             info_init["command"][cmd[0].strip()]["details"] = json.loads(json.dumps(status))
         except Exception as e:
             exception = "Exception({0})".format(e.__str__())

@@ -54,7 +54,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def get_deployment_info():
         active_deployments = []
         response = requests.get(f"{FlaskServerTestCase.server}/getdeploymentinfo")
-        # print(dump.dump_all(response))
+        print(dump.dump_all(response))
         body = response.json()
         active_deployments_objects = body.get('message')
         for item in active_deployments_objects:

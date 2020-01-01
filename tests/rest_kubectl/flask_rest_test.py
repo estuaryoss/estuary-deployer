@@ -266,7 +266,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message').get('command').get(command).get('details').get('out'), "")
         self.assertNotEqual(body.get('message').get('command').get(command).get('details').get('err'), "")
         self.assertGreater(body.get('message').get('command').get(command).get('details').get('pid'), 0)
-        self.assertIsInstance(body.get('message').get('command').get(command).get('details').get('args'), list)
+        self.assertIsInstance(body.get('message').get('command').get(command).get('details').get('args'), str)
         self.assertIsNotNone(body.get('time'))
 
     def test_executecommand_p(self):
@@ -287,7 +287,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertNotEqual(body.get('message').get('command').get(command).get('details').get('out'), "")
         self.assertEqual(body.get('message').get('command').get(command).get('details').get('err'), "")
         self.assertGreater(body.get('message').get('command').get(command).get('details').get('pid'), 0)
-        self.assertIsInstance(body.get('message').get('command').get(command).get('details').get('args'), list)
+        self.assertIsInstance(body.get('message').get('command').get(command).get('details').get('args'), str)
         self.assertIsNotNone(body.get('time'))
 
     def test_executecommand_rm_not_allowed_n(self):

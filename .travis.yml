@@ -44,13 +44,13 @@ jobs:
         - pip install -r requirements.txt
         - pyinstaller --onefile main_flask.py
         - ls -lrt dist
-        - cp dist/main_flask main_linux
-        - chmod +x main_linux
+        - cp dist/main_flask main-linux
+        - chmod +x main-linux
         - sudo chown -R travis:travis inputs
         - ls -lrt
       script:
-        - ./main_linux > /dev/null 2>&1 &
-#        - ./main_linux &
+        - ./main-linux > /dev/null 2>&1 &
+#        - ./main-linux &
 #        - chmod +x ngrok.sh
 #        - ./ngrok.sh 8080 $NGROK_TOKEN
 #        - sleep 3600
@@ -63,6 +63,33 @@ jobs:
         - kill "$PID"
         - ps -ef
         - sleep 5
+
+    #run docker tests - docker sock mount
+    - language: python
+      python: 3.7
+      services:
+        - docker
+      env:
+        MAX_DEPLOYMENTS: 3
+        SCRIPTS_DIR: tests
+        ISOLATED: true
+      before_script:
+        - docker pull alpine:3.9.4
+        - docker pull mysql:5.6
+        - docker build -t dinutac/estuary-deployer:latest .
+      script:
+        - docker network create estuarydeployer_default
+        - docker run -d
+          -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
+          -p 8080:8080
+          -v $PWD/inputs/templates:/data
+          -v $PWD/inputs/variables:/variables
+          -v /var/run/docker.sock:/var/run/docker.sock
+          --net=estuarydeployer_default
+          --name estuary-deployer
+          dinutac/estuary-deployer:latest
+        - sleep 10
+        - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
 
     #run executable tests - kubectl
     - language: python
@@ -78,16 +105,16 @@ jobs:
         - pip install -r requirements.txt
         - pyinstaller --onefile main_flask.py
         - ls -lrt dist
-        - cp dist/main_flask main_linux
-        - chmod +x main_linux
+        - cp dist/main_flask main-linux
+        - chmod +x main-linux
         - sudo chown -R travis:travis inputs
         - ls -lrt
         - curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.6.1/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
         - kind create cluster
         - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
       script:
-        - ./main_linux > /dev/null 2>&1 &
-#        - ./main_linux &
+        - ./main-linux > /dev/null 2>&1 &
+#        - ./main-linux &
 #        - chmod +x ngrok.sh
 #        - ./ngrok.sh 8080 $NGROK_TOKEN
 #        - sleep 3600
@@ -223,33 +250,6 @@ jobs:
         - docker rm $(docker ps -a -q)
         - docker network prune -f
 
-    #run docker tests - docker sock mount
-    - language: python
-      python: 3.7
-      services:
-        - docker
-      env:
-        MAX_DEPLOYMENTS: 3
-        SCRIPTS_DIR: tests
-        ISOLATED: true
-      before_script:
-        - docker pull alpine:3.9.4
-        - docker pull mysql:5.6
-        - docker build -t dinutac/estuary-deployer:latest .
-      script:
-        - docker network create estuarydeployer_default
-        - docker run -d
-          -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
-          -p 8080:8080
-          -v $PWD/inputs/templates:/data
-          -v $PWD/inputs/variables:/variables
-          -v /var/run/docker.sock:/var/run/docker.sock
-          --net=estuarydeployer_default
-          --name estuary-deployer
-          dinutac/estuary-deployer:latest
-        - sleep 10
-        - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
-
     #run kubectl tests - in docker container
     - language: python
       python: 3.7
@@ -331,12 +331,12 @@ jobs:
         - pip install -r requirements.txt
         - pyinstaller --onefile main_flask.py
         - ls -lrt dist
-        - cp dist/main_flask main_linux
+        - cp dist/main_flask main-linux
         - ls -lrt
       deploy:
         provider: releases
         api_key: $GITHUB_TOKEN
-        file: "main_linux"
+        file: "main-linux"
         skip_cleanup: true
         on:
           tags: true

@@ -4,6 +4,7 @@ import unittest
 
 import requests
 from flask import json
+from requests_toolbelt.utils import dump
 
 from tests.rest_testrunner_integration.constants import Constants
 from tests.rest_testrunner_integration.error_codes import ErrorCodes
@@ -38,9 +39,8 @@ class FlaskServerTestCase(unittest.TestCase):
             response = requests.get(f"{FlaskServerTestCase.server}/containernetconnect/{item.get('id')}")
             if "discovery" in item.get('containers')[0]:
                 cls.compose_id = item.get('id')
-        print("Docker compose env_id: " + cls.compose_id)
-        # print(dump.dump_all(response))
-        print("Docker net connect response: " + json.dumps(response.json()))
+                print("Docker compose env_id: " + cls.compose_id)
+                print("Docker net connect response: " + json.dumps(response.json()))
 
     @classmethod
     def tearDownClass(cls):
@@ -52,7 +52,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def get_deployment_info():
         active_deployments = []
         response = requests.get(f"{FlaskServerTestCase.server}/getdeploymentinfo")
-        # print(dump.dump_all(response))
+        print(dump.dump_all(response))
         return response.json().get('message')
 
     def test_about_endpoint_discovery_p(self):

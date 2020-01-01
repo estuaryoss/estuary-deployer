@@ -535,7 +535,7 @@ class KubectlView(FlaskView, Routes):
                                                         str(traceback.format_exc()))), 404, mimetype="application/json")
             command_dict = dict.fromkeys(cmd, {"details": {}})
             info_init["command"] = command_dict
-            status = cmd_utils.run_cmd(cmd[0].strip())
+            status = cmd_utils.run_cmd_shell_true(cmd[0].strip())
             info_init["command"][cmd[0].strip()]["details"] = json.loads(json.dumps(status))
         except Exception as e:
             exception = "Exception({0})".format(e.__str__())
