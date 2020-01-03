@@ -663,8 +663,8 @@ class DockerView(FlaskView, Routes):
                                                         Constants.EMPTY_REQUEST_BODY_PROVIDED),
                                                     str(traceback.format_exc()))), 404, mimetype="application/json")
         try:
-            cmd = io_utils.get_filtered_list_regex(input_data.split("\n")[0:1], re.compile(
-                r'(\s+|[^a-z]|^)rm\s+.*$'))  # supports only one command at a time
+            cmd = io_utils.get_filtered_list_regex(input_data.split("\n"), re.compile(
+                r'(\s+|[^a-z]|^)rm\s+.*$'))[0:1]  # supports only one command at a time
             if not cmd:
                 return Response(json.dumps(http.failure(Constants.EXEC_COMMAND_NOT_ALLOWED,
                                                         ErrorCodes.HTTP_CODE.get(

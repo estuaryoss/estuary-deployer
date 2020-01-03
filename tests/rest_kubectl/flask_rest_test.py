@@ -308,6 +308,25 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.EXEC_COMMAND_NOT_ALLOWED)
         self.assertIsNotNone(body.get('time'))
 
+    def test_executecommand_first_valid_is_executed_n(self):
+        command = "rm -rf /tmp\nls -lrt"
+        commands = command.split("\n")
+
+        response = requests.post(
+            self.server + f"/executecommand",
+            data=command)
+
+        body = response.json()
+        print(dump.dump_all(response))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description'),
+                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(len(body.get('message').get("command")), 1)  # only 1 cmd is executed
+        self.assertEqual(body.get('message').get("command").get(commands[1]).get('details').get('code'), 0)
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertIsNotNone(body.get('time'))
+
     def test_executecommand_timeout_from_client_n(self):
         command = "sleep 20"
 
