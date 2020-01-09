@@ -9,7 +9,7 @@ class ErrorCodes:
         Constants.DEPLOY_STOP_FAILURE: "deploy stop action failed",
         Constants.DEPLOY_STATUS_FAILURE: "deploy status action failed",
         Constants.DEPLOY_REPLAY_FAILURE: "deploy replay action failed",
-        Constants.GET_FILE_FAILURE: "Getting file from the estuary deployer service container failed",
+        Constants.GET_FILE_FAILURE: "Getting file from the estuary deployer service failed",
         Constants.COMMAND_EXEC_FAILURE: "Starting command '%s' failed",
         Constants.GET_CONTAINER_FILE_FAILURE: "Getting %s from the container %s failed",
         Constants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE: "Starting environment id %s failed. Environment it is active.",

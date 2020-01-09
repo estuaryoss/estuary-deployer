@@ -18,7 +18,7 @@ class FlaskServerTestCase(unittest.TestCase):
         ("alpine.yml", "variables.yml")
     ])
     def test_deploystart(self, template, variables):
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        response = requests.post(self.server + f"/deployments/{template}/{variables}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)

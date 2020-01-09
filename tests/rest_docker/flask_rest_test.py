@@ -24,11 +24,11 @@ class FlaskServerTestCase(unittest.TestCase):
         time.sleep(self.sleep_before_container_up)
         active_deployments = self.get_deployment_info()
         for item in active_deployments:
-            requests.get(self.server + f"/deploystop/{item}")
+            requests.delete(self.server + f"/deployments/{item}")
 
     def get_deployment_info(self):
         active_deployments = []
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
         body = response.json()
         active_deployments_objects = body.get('message')
         for item in active_deployments_objects:
@@ -37,7 +37,7 @@ class FlaskServerTestCase(unittest.TestCase):
         return active_deployments
 
     def get_deployment_info_object(self):
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
 
         return response.json().get('message')
 
@@ -46,7 +46,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(body.get('message')), 7)
+        self.assertGreaterEqual(len(body.get('message')), 7)
         self.assertIn("/variables", body.get('message')["VARS_DIR"])
         # self.assertIn("/data", body.get('message')["TEMPLATES_DIR"])
         self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
@@ -98,7 +98,7 @@ class FlaskServerTestCase(unittest.TestCase):
         ("yml.j2", "yml.yml")
     ])
     def test_rend_endpoint(self, template, variables):
-        response = requests.get(self.server + f"/rend/{template}/{variables}", Loader=yaml.Loader)
+        response = requests.get(self.server + f"/render/{template}/{variables}", Loader=yaml.Loader)
 
         body = yaml.safe_load(response.text)
         self.assertEqual(response.status_code, 200)
@@ -111,7 +111,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_rend_endpoint(self, template, variables):
         expected = f"Exception([Errno 2] No such file or directory:"
 
-        response = requests.get(self.server + f"/rend/{template}/{variables}")
+        response = requests.get(self.server + f"/render/{template}/{variables}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -124,7 +124,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_rend_endpoint(self, template, variables):
         expected = f"Exception({template})"
 
-        response = requests.get(self.server + f"/rend/{template}/{variables}")
+        response = requests.get(self.server + f"/render/{template}/{variables}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -137,7 +137,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'DATABASE': 'mysql56', 'IMAGE': 'latest'}
         headers = {'Content-type': 'application/json'}
 
-        response = requests.post(self.server + f"/rendwithenv/{template}/{variables}", data=json.dumps(payload),
+        response = requests.post(self.server + f"/render/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
 
         body = yaml.safe_load(response.text)
@@ -152,7 +152,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'DATABASE': 'dummy'}
         headers = {'Content-type': 'application/json'}
 
-        response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
 
         body = yaml.safe_load(response.text)
@@ -169,7 +169,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'DATABASE': 'mysql56'}
         headers = {'Content-type': 'application/json'}
 
-        response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
         time.sleep(self.sleep_before_container_up)
         body = response.json()
@@ -188,7 +188,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'DATABASE': 'mysql56'}
         headers = {'Content-type': 'application/json'}
 
-        response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -201,7 +201,7 @@ class FlaskServerTestCase(unittest.TestCase):
         ("alpine.yml", "variables.yml")
     ])
     def test_deploystart_p(self, template, variables):
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        response = requests.post(self.server + f"/deployments/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
         body = response.json()
         self.assertEqual(response.status_code, 200)
@@ -218,7 +218,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystart_n(self, template, variables):
         headers = {'Content-type': 'application/json'}
 
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -232,12 +232,12 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_deploystatus_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
         compose_id = response.json().get('message')
-        response = requests.get(self.server + f"/deploystatus/{compose_id}")
+        response = requests.get(self.server + f"/deployments/{compose_id}")
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
@@ -254,13 +254,13 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_deploystatus_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         body = response.json()
         compose_id = body.get('message')
         self.assertEqual(len(self.get_deployment_info()), 1)
-        response = requests.get(self.server + f"/deploystatus/{compose_id}")
+        response = requests.get(self.server + f"/deployments/{compose_id}")
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
@@ -277,14 +277,14 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_deploystatus_n(self, template, variables):
         headers = {'Content-type': 'application/json'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
         deploystart_body = response.json()
         id = "dummy"
 
-        response = requests.get(self.server + f"/deploystatus/{id}")
+        response = requests.get(self.server + f"/deployments/{id}")
         # for dummy interogation the list of containers is empty
         body = response.json()
         self.assertEqual(response.status_code, 200)
@@ -295,7 +295,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        requests.get(self.server + f"/deploystop/{deploystart_body.get('message')}")
+        requests.delete(self.server + f"/deployments/{deploystart_body.get('message')}")
 
     def test_getfile_p(self):
         headers = {
@@ -303,7 +303,7 @@ class FlaskServerTestCase(unittest.TestCase):
             'File-Path': '/etc/hostname'
         }
 
-        response = requests.post(self.server + f"/getfile", headers=headers)
+        response = requests.get(self.server + f"/file", headers=headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.text), 0)
@@ -314,7 +314,7 @@ class FlaskServerTestCase(unittest.TestCase):
             'File-Path': '/ec/dummy'
         }
 
-        response = requests.post(self.server + f"/getfile", headers=headers)
+        response = requests.get(self.server + f"/file", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -327,7 +327,7 @@ class FlaskServerTestCase(unittest.TestCase):
         header_key = 'File-Path'
         headers = {'Content-type': 'application/json'}
 
-        response = requests.post(self.server + f"/getfile", headers=headers)
+        response = requests.get(self.server + f"/file", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -339,7 +339,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystop_n(self):
         headers = {'Content-type': 'application/json'}
 
-        response = requests.get(self.server + f"/deploystop/dummy", headers=headers)
+        response = requests.delete(self.server + f"/deployments/dummy", headers=headers)
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -353,12 +353,12 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_deploystop_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}", headers=headers)
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         deploystart_body = response.json()
 
-        response = requests.get(self.server + f"/deploystop/{deploystart_body.get('message')}")
+        response = requests.delete(self.server + f"/deployments/{deploystart_body.get('message')}")
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
@@ -374,7 +374,7 @@ class FlaskServerTestCase(unittest.TestCase):
             payload = f.read()
         headers = {'Content-type': 'text/plain'}
 
-        response = requests.post(self.server + f"/deploystart", data=payload,
+        response = requests.post(self.server + f"/deployments", data=payload,
                                  headers=headers)
         time.sleep(self.sleep_before_container_up)
         body = response.json()
@@ -390,7 +390,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = "dummy_yml_will_not_work \n alabalaportocala"
         headers = {'Content-type': 'text/plain'}
         # it will respond with 200 because it is async now. However later checks can reveal that no containers are up for this env_id
-        response = requests.post(self.server + f"/deploystart", data=payload,
+        response = requests.post(self.server + f"/deployments", data=payload,
                                  headers=headers)
         body = response.json()
         env_id = body.get('message')
@@ -409,13 +409,13 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_get_logs_p(self, template, variables):
         payload = {'DATABASE': 'mysql56'}
         headers = {'Content-type': 'application/json'}
-        response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
         time.sleep(self.sleep_before_container_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("message")
 
-        response = requests.get(self.server + f"/deploylogs/{env_id}")
+        response = requests.get(self.server + f"/deployments/logs/{env_id}")
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'),
@@ -431,13 +431,12 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_get_logs_id_not_found_n(self, template, variables):
         payload = {'DATABASE': 'mysql56'}
         headers = {'Content-type': 'application/json'}
-        response = requests.post(self.server + f"/deploystartenv/{template}/{variables}", data=json.dumps(payload),
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
         self.assertEqual(response.status_code, 200)
-        env_id = response.json().get("message")
         dummy_env_id = response.json().get("message") + "dummy"
 
-        response = requests.get(self.server + f"/deploylogs/{dummy_env_id}")
+        response = requests.get(self.server + f"/deployments/logs/{dummy_env_id}")
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -450,14 +449,14 @@ class FlaskServerTestCase(unittest.TestCase):
         ("alpine.yml", "variables.yml")
     ])
     def test_getdeploymentinfo_p(self, template, variables):
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('message')), 0)
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        response = requests.post(self.server + f"/deployments/{template}/{variables}")
         time.sleep(self.sleep_before_container_up)
         compose_id = response.json().get('message')
         self.assertEqual(response.status_code, 200)
 
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json().get('message')), 1)
@@ -468,16 +467,16 @@ class FlaskServerTestCase(unittest.TestCase):
         ("alpine.yml", "variables.yml")
     ])
     def test_deploystart_max_deployments_p(self, template, variables):
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('message')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
-            response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+            response = requests.post(self.server + f"/deployments/{template}/{variables}")
             time.sleep(self.sleep_before_container_up)
             self.assertEqual(response.status_code, 200)
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
 
-        response = requests.get(self.server + f"/deploystart/{template}/{variables}")
+        response = requests.post(self.server + f"/deployments/{template}/{variables}")
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -493,16 +492,16 @@ class FlaskServerTestCase(unittest.TestCase):
         ("alpine.yml", "variables.yml")
     ])
     def test_deploystartenv_max_deployments_p(self, template, variables):
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('message')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
-            response = requests.post(self.server + f"/deploystartenv/{template}/{variables}")
+            response = requests.post(self.server + f"/deployments/{template}/{variables}")
             self.assertEqual(response.status_code, 200)
             time.sleep(self.sleep_before_container_up)
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
 
-        response = requests.post(self.server + f"/deploystartenv/{template}/{variables}")
+        response = requests.post(self.server + f"/deployments/{template}/{variables}")
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -519,16 +518,16 @@ class FlaskServerTestCase(unittest.TestCase):
             payload = f.read()
         headers = {'Content-type': 'text/plain'}
 
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('message')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
-            response = requests.post(self.server + f"/deploystart", data=payload, headers=headers)
+            response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
             time.sleep(self.sleep_before_container_up)
             self.assertEqual(response.status_code, 200)
-        response = requests.get(self.server + "/getdeploymentinfo")
+        response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
 
-        response = requests.post(self.server + f"/deploystart", data=payload, headers=headers)
+        response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -542,7 +541,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_getenv_endpoint_p(self):
         env_var = "VARS_DIR"
-        response = requests.get(self.server + f"/getenv/{env_var}")
+        response = requests.get(self.server + f"/env/{env_var}")
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
@@ -554,7 +553,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_getenv_endpoint_n(self):
         env_var = "alabalaportocala"
-        response = requests.get(self.server + f"/getenv/{env_var}")
+        response = requests.get(self.server + f"/env/{env_var}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -571,8 +570,8 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'application/json'}
         mandatory_header_key = 'File-Path'
 
-        response = requests.post(
-            self.server + f"/uploadfile",
+        response = requests.put(
+            self.server + f"/file",
             data=payload, headers=headers)
 
         body = response.json()
@@ -594,7 +593,7 @@ class FlaskServerTestCase(unittest.TestCase):
         }
 
         response = requests.post(
-            self.server + f"/uploadfile",
+            self.server + f"/file",
             data=payload, headers=headers)
 
         body = response.json()
@@ -616,7 +615,7 @@ class FlaskServerTestCase(unittest.TestCase):
         }
 
         response = requests.post(
-            self.server + f"/uploadfile",
+            self.server + f"/file",
             data=payload, headers=headers)
 
         body = response.json()
@@ -632,7 +631,7 @@ class FlaskServerTestCase(unittest.TestCase):
         command = "abracadabra"  # not working on linux
 
         response = requests.post(
-            self.server + f"/executecommand",
+            self.server + f"/command",
             data=command)
 
         body = response.json()
@@ -653,7 +652,7 @@ class FlaskServerTestCase(unittest.TestCase):
         command = "cat /etc/hostname"
 
         response = requests.post(
-            self.server + f"/executecommand",
+            self.server + f"/command",
             data=command)
 
         body = response.json()
@@ -674,7 +673,7 @@ class FlaskServerTestCase(unittest.TestCase):
         command = "rm -rf /tmp"
 
         response = requests.post(
-            self.server + f"/executecommand",
+            self.server + f"/command",
             data=command)
 
         body = response.json()
@@ -693,7 +692,7 @@ class FlaskServerTestCase(unittest.TestCase):
         commands = command.split("\n")
 
         response = requests.post(
-            self.server + f"/executecommand",
+            self.server + f"/command",
             data=command)
 
         body = response.json()
@@ -712,7 +711,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         try:
             requests.post(
-                self.server + f"/executecommand",
+                self.server + f"/command",
                 data=command, timeout=2)
         except Exception as e:
             self.assertIsInstance(e, requests.exceptions.ReadTimeout)

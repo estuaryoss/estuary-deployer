@@ -14,7 +14,7 @@ from rest.api.views.kubectl_view import KubectlView
 if __name__ == "__main__":
 
     app_append_id = ""
-    deploy_on = "docker"  # default runs on docker
+    deploy_on = "kubectl"  # default runs on docker
     env_expire_in = 1440  # minutes
 
     if os.environ.get('APP_APPEND_ID'):

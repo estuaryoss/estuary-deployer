@@ -18,8 +18,8 @@ Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/release
 [![](https://images.microbadger.com/badges/image/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own version badge on microbadger.com") ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)
 
 ## Api docs 
-[3.0.0](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/3.0.0)   
-[4.0.0](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.0)  
+[4.0.1 docker](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.1)  
+[4.0.1 kubectl](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.1-kubectl)  
 
 ## Postman collection 
 [Docker](https://documenter.getpostman.com/view/2360061/SVYjUNCG)  

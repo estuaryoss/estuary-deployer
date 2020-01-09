@@ -23,7 +23,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(body.get('message')), 7)
+        self.assertGreaterEqual(len(body.get('message')), 7)
         self.assertIn("/variables", body.get('message')["VARS_DIR"])
         # self.assertEqual(body.get('message')["TEMPLATES_DIR"], "/data")
         self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
@@ -74,7 +74,7 @@ class FlaskServerTestCase(unittest.TestCase):
         ("yml.j2", "yml.yml")
     ])
     def test_rend_endpoint(self, template, variables):
-        response = requests.get(self.server + f"/rend/{template}/{variables}", Loader=yaml.Loader)
+        response = requests.get(self.server + f"/render/{template}/{variables}", Loader=yaml.Loader)
 
         body = yaml.safe_load(response.text)
         self.assertEqual(response.status_code, 200)
@@ -87,7 +87,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_rend_endpoint(self, template, variables):
         expected = f"Exception([Errno 2] No such file or directory:"
 
-        response = requests.get(self.server + f"/rend/{template}/{variables}")
+        response = requests.get(self.server + f"/render/{template}/{variables}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -100,7 +100,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_rend_endpoint(self, template, variables):
         expected = f"Exception({template})"
 
-        response = requests.get(self.server + f"/rend/{template}/{variables}")
+        response = requests.get(self.server + f"/render/{template}/{variables}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -113,7 +113,7 @@ class FlaskServerTestCase(unittest.TestCase):
         payload = {'DATABASE': 'mysql56', 'IMAGE': 'latest'}
         headers = {'Content-type': 'application/json'}
 
-        response = requests.post(self.server + f"/rendwithenv/{template}/{variables}", data=json.dumps(payload),
+        response = requests.post(self.server + f"/render/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
 
         body = yaml.safe_load(response.text)
@@ -127,7 +127,7 @@ class FlaskServerTestCase(unittest.TestCase):
             'File-Path': '/etc/hostname'
         }
 
-        response = requests.post(self.server + f"/getfile", headers=headers)
+        response = requests.get(self.server + f"/file", headers=headers)
 
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.text), 0)
@@ -138,7 +138,7 @@ class FlaskServerTestCase(unittest.TestCase):
             'File-Path': '/etc/dummy'
         }
 
-        response = requests.post(self.server + f"/getfile", headers=headers)
+        response = requests.get(self.server + f"/file", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -151,7 +151,7 @@ class FlaskServerTestCase(unittest.TestCase):
         header_key = 'File-Path'
         headers = {'Content-type': 'application/json'}
 
-        response = requests.post(self.server + f"/getfile", headers=headers)
+        response = requests.post(self.server + f"/file", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
@@ -162,7 +162,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_getenv_endpoint_p(self):
         env_var = "VARS_DIR"
-        response = requests.get(self.server + f"/getenv/{env_var}")
+        response = requests.get(self.server + f"/env/{env_var}")
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
@@ -174,7 +174,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     def test_getenv_endpoint_n(self):
         env_var = "alabalaportocala"
-        response = requests.get(self.server + f"/getenv/{env_var}")
+        response = requests.get(self.server + f"/env/{env_var}")
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
@@ -192,7 +192,7 @@ class FlaskServerTestCase(unittest.TestCase):
         mandatory_header_key = 'File-Path'
 
         response = requests.post(
-            self.server + f"/uploadfile",
+            self.server + f"/file",
             data=payload, headers=headers)
 
         body = response.json()
@@ -214,7 +214,7 @@ class FlaskServerTestCase(unittest.TestCase):
         }
 
         response = requests.post(
-            self.server + f"/uploadfile",
+            self.server + f"/file",
             data=payload, headers=headers)
 
         body = response.json()
@@ -235,8 +235,8 @@ class FlaskServerTestCase(unittest.TestCase):
             'File-Path': '/tmp/config.properties'
         }
 
-        response = requests.post(
-            self.server + f"/uploadfile",
+        response = requests.put(
+            self.server + f"/file",
             data=payload, headers=headers)
 
         body = response.json()
@@ -252,7 +252,7 @@ class FlaskServerTestCase(unittest.TestCase):
         command = "abracadabra"  # not working on linux
 
         response = requests.post(
-            self.server + f"/executecommand",
+            self.server + f"/command",
             data=command)
 
         body = response.json()
@@ -273,7 +273,7 @@ class FlaskServerTestCase(unittest.TestCase):
         command = "cat /etc/hostname"
 
         response = requests.post(
-            self.server + f"/executecommand",
+            self.server + f"/command",
             data=command)
 
         body = response.json()
@@ -294,7 +294,7 @@ class FlaskServerTestCase(unittest.TestCase):
         command = "rm -rf /tmp"
 
         response = requests.post(
-            self.server + f"/executecommand",
+            self.server + f"/command",
             data=command)
 
         body = response.json()
@@ -313,7 +313,7 @@ class FlaskServerTestCase(unittest.TestCase):
         commands = command.split("\n")
 
         response = requests.post(
-            self.server + f"/executecommand",
+            self.server + f"/command",
             data=command)
 
         body = response.json()
@@ -332,7 +332,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         try:
             response = requests.post(
-                self.server + f"/executecommand",
+                self.server + f"/command",
                 data=command, timeout=2)
         except Exception as e:
             self.assertIsInstance(e, requests.exceptions.ReadTimeout)

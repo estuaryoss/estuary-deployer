@@ -27,16 +27,16 @@ class FlaskServerTestCase(unittest.TestCase):
             payload = f.read()
 
         headers = {'Content-type': 'text/plain'}
-        requests.post(f"{FlaskServerTestCase.server}/deploystart", data=payload, headers=headers)
+        requests.post(f"{FlaskServerTestCase.server}/deployments", data=payload, headers=headers)
         with open(f"{cls.script_path}/alpinediscovery.yml", closefd=True) as f:
             payload = f.read()
         headers = {'Content-type': 'text/plain'}
-        requests.post(f"{FlaskServerTestCase.server}/deploystart", data=payload, headers=headers)
+        requests.post(f"{FlaskServerTestCase.server}/deployments", data=payload, headers=headers)
 
         # print(dump.dump_all(response))
         time.sleep(60)  # wait until the env is up and running, including image download and container boot
         for item in cls.get_deployment_info():
-            response = requests.get(f"{FlaskServerTestCase.server}/containernetconnect/{item.get('id')}")
+            response = requests.post(f"{FlaskServerTestCase.server}/deployments/network/{item.get('id')}")
             if "discovery" in item.get('containers')[0]:
                 cls.compose_id = item.get('id')
                 print("Docker compose env_id: " + cls.compose_id)
@@ -50,8 +50,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     @staticmethod
     def get_deployment_info():
-        active_deployments = []
-        response = requests.get(f"{FlaskServerTestCase.server}/getdeploymentinfo")
+        response = requests.get(f"{FlaskServerTestCase.server}/deployments")
         print(dump.dump_all(response))
         return response.json().get('message')
 

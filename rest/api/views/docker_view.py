@@ -19,17 +19,16 @@ from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeploy
 from rest.api.apiresponsehelpers.constants import Constants
 from rest.api.apiresponsehelpers.error_codes import ErrorCodes
 from rest.api.apiresponsehelpers.http_response import HttpResponse
-from rest.api.definitions import env_vars, docker_swagger_file_content
+from rest.api.definitions import unmodifiable_env_vars, docker_swagger_file_content
 from rest.api.flask_config import Config
 from rest.api.logginghelpers.message_dumper import MessageDumper
-from rest.api.views.routes_abc import Routes
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.docker_utils import DockerUtils
 from rest.utils.fluentd_utils import FluentdUtils
 from rest.utils.io_utils import IOUtils
 
 
-class DockerView(FlaskView, Routes):
+class DockerView(FlaskView):
 
     def __init__(self):
         self.app = Flask(__name__, instance_relative_config=False)
@@ -89,7 +88,7 @@ class DockerView(FlaskView, Routes):
     def get_env_vars(self):
         http = HttpResponse()
         return Response(
-            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), env_vars)),
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), dict(os.environ))),
             200, mimetype="application/json")
 
     @route('/ping')
@@ -107,47 +106,30 @@ class DockerView(FlaskView, Routes):
                 http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), properties["name"])),
             200, mimetype="application/json")
 
-    @route('/getenv/<envvar>', methods=['GET'])
-    def get_env_var(self, envvar):
-        envvar = envvar.upper().strip()
+    @route('/env/<env_var>', methods=['GET'])
+    def get_env_var(self, env_var):
+        env_var = env_var.upper().strip()
         http = HttpResponse()
         try:
             response = Response(json.dumps(
-                http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), os.environ[f"{envvar}"])),
+                http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), os.environ[env_var])),
                 200,
                 mimetype="application/json")
         except Exception as e:
             result = "Exception({0})".format(e.__str__())
             response = Response(json.dumps(http.failure(Constants.GET_CONTAINER_ENV_VAR_FAILURE,
                                                         ErrorCodes.HTTP_CODE.get(
-                                                            Constants.GET_CONTAINER_ENV_VAR_FAILURE) % f"{envvar}",
+                                                            Constants.GET_CONTAINER_ENV_VAR_FAILURE) % f"{env_var}",
                                                         result,
                                                         str(traceback.format_exc()))), 404, mimetype="application/json")
         return response
 
-    @route('/rend/<template>/<variables>', methods=['GET'])
-    def get_content(self, template, variables):
-        os.environ['TEMPLATE'] = template.strip()
-        os.environ['VARIABLES'] = variables.strip()
-        http = HttpResponse()
-        try:
-            r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
-            response = Response(r.rend_template(), 200, mimetype="text/plain")
-        except Exception as e:
-            result = "Exception({0})".format(e.__str__())
-            response = Response(json.dumps(http.failure(Constants.JINJA2_RENDER_FAILURE,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.JINJA2_RENDER_FAILURE),
-                                                        result,
-                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
-
-        return response
-
-    @route('/rendwithenv/<template>/<variables>', methods=['POST'])
+    @route('/render/<template>/<variables>', methods=['GET', 'POST'])
     def get_content_with_env(self, template, variables):
         try:
             input_json = request.get_json(force=True)
             for key, value in input_json.items():
-                if key not in env_vars:
+                if key not in unmodifiable_env_vars:
                     os.environ[str(key)] = str(value)
         except:
             pass
@@ -168,7 +150,7 @@ class DockerView(FlaskView, Routes):
 
         return response
 
-    @route('/getdeploymentinfo', methods=['GET'])
+    @route('/deployments', methods=['GET'])
     def get_active_deployments(self):
         docker_utils = DockerUtils()
         http = HttpResponse()
@@ -180,7 +162,7 @@ class DockerView(FlaskView, Routes):
                 http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), active_deployments)),
             200, mimetype="application/json")
 
-    @route('/deploystart', methods=['POST'])
+    @route('/deployments', methods=['POST'])
     def deploy_start(self):
         docker_utils = DockerUtils()
         http = HttpResponse()
@@ -253,13 +235,13 @@ class DockerView(FlaskView, Routes):
 
         return response
 
-    @route('/deploystartenv/<template>/<variables>', methods=['POST'])
+    @route('/deployments/<template>/<variables>', methods=['POST'])
     def deploy_start_env(self, template, variables):
         docker_utils = DockerUtils()
         try:
             input_json = request.get_json(force=True)
             for key, value in input_json.items():
-                if key not in env_vars:
+                if key not in unmodifiable_env_vars:
                     os.environ[str(key)] = str(value)
         except:
             pass
@@ -313,66 +295,13 @@ class DockerView(FlaskView, Routes):
 
         return response
 
-    @route('/deploystart/<template>/<variables>', methods=['GET'])
-    def deploy_start_from_server(self, template, variables):
-        docker_utils = DockerUtils()
-        http = HttpResponse()
-        os.environ['TEMPLATE'] = template.strip()
-        os.environ['VARIABLES'] = variables.strip()
-        self.app.logger.debug({"msg": {"template_file": os.environ.get('TEMPLATE')}})
-        self.app.logger.debug({"msg": {"variables_file": os.environ.get('VARIABLES')}})
-        token = token_hex(8)
-        dir = f"{Constants.DEPLOY_FOLDER_PATH}{token}"
-        file = f"{dir}/{token}"
-
-        status = CmdUtils.run_cmd(["docker", "ps"])
-        if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
-            return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
-                                                    status.get('err'),
-                                                    str(traceback.format_exc()))), 404, mimetype="application/json")
-        if os.environ.get("MAX_DEPLOYMENTS"):
-            active_deployments = docker_utils.get_active_deployments()
-            if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
-                return Response(json.dumps(http.failure(Constants.MAX_DEPLOYMENTS_REACHED,
-                                                        ErrorCodes.HTTP_CODE.get(
-                                                            Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
-                                                            "MAX_DEPLOYMENTS"), active_deployments,
-                                                        f"Active deployments: {str(len(active_deployments))}")), 404,
-                                mimetype="application/json")
-        try:
-            r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
-            IOUtils.create_dir(dir)
-            IOUtils.write_to_file(file)
-            IOUtils.write_to_file(file, r.rend_template())
-            CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
-            # [out, err] = docker_utils.docker_up(file)
-            result = str(token)
-            response = Response(
-                json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
-                mimetype="application/json")
-        except OSError as e:
-            result = "Exception({0})".format(e.__str__())
-            response = Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
-                                                        result,
-                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
-        except:
-            result = "Exception({0})".format(sys.exc_info()[0])
-            response = Response(json.dumps(http.failure(Constants.DEPLOY_START_FAILURE,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE),
-                                                        result,
-                                                        str(traceback.format_exc()))), 404, mimetype="application/json")
-
-        return response
-
-    @route('/deploystatus/<id>', methods=['GET'])
-    def deploy_status(self, id):
-        id = id.strip()
+    @route('/deployments/<env_id>', methods=['GET'])
+    def deploy_status(self, env_id):
+        env_id = env_id.strip()
         docker_utils = DockerUtils()
         http = HttpResponse()
         try:
-            status = docker_utils.ps(id)
+            status = docker_utils.ps(env_id)
             if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
                 return Response(json.dumps(http.failure(Constants.DOCKER_DAEMON_NOT_RUNNING,
                                                         ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING),
@@ -381,7 +310,7 @@ class DockerView(FlaskView, Routes):
             result = status.get('out').split("\n")[1:-1]
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
-                                        ActiveDeployment.docker_deployment(id, result))), 200,
+                                        ActiveDeployment.docker_deployment(env_id, result))), 200,
                 mimetype="application/json")
             self.app.logger.debug({"msg": status})
         except OSError as e:
@@ -399,11 +328,11 @@ class DockerView(FlaskView, Routes):
 
         return response
 
-    @route('/deploystop/<id>', methods=['GET'])
-    def deploy_stop(self, id):
-        id = id.strip()
+    @route('/deployments/<env_id>', methods=['DELETE'])
+    def deploy_stop(self, env_id):
+        env_id = env_id.strip()
         docker_utils = DockerUtils()
-        file = f"{Constants.DEPLOY_FOLDER_PATH}{id}/{id}"
+        file = f"{Constants.DEPLOY_FOLDER_PATH}{env_id}/{env_id}"
         http = HttpResponse()
         try:
             status = docker_utils.down(file)
@@ -413,7 +342,7 @@ class DockerView(FlaskView, Routes):
                                                         status.get('err'),
                                                         str(traceback.format_exc()))), 404, mimetype="application/json")
             self.app.logger.debug({"msg": status})
-            status = docker_utils.ps(id)
+            status = docker_utils.ps(env_id)
             result = status.get('out').split("\n")[1:-1]
             response = Response(
                 json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), result)), 200,
@@ -431,7 +360,7 @@ class DockerView(FlaskView, Routes):
 
         return response
 
-    @route('/getfile', methods=['GET', 'POST'])
+    @route('/file', methods=['GET'])
     def get_file(self):
         http = HttpResponse()
         header_key = 'File-Path'
@@ -456,158 +385,7 @@ class DockerView(FlaskView, Routes):
                                                       str(traceback.format_exc()))), 404, mimetype="application/json")
         return result
 
-    @route('/deploylogs/<id>', methods=['GET'])
-    def deploy_logs(self, id):
-        id = id.strip()
-        dir = f"{Constants.DEPLOY_FOLDER_PATH}{id}"
-        file = f"{dir}/{id}"
-        docker_utils = DockerUtils()
-        http = HttpResponse()
-
-        try:
-            status = docker_utils.logs(file)
-            self.app.logger.debug({"msg": status})
-            if status.get('err'):
-                return Response(json.dumps(http.failure(Constants.GET_LOGS_FAILED,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % id,
-                                                        status.get('err'),
-                                                        status.get('err'))), 404, mimetype="application/json")
-        except:
-            exception = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.GET_LOGS_FAILED,
-                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % id, exception,
-                                                    exception)), 404, mimetype="application/json")
-
-        return Response(
-            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
-                                    status.get('out').split("\n"))),
-            200, mimetype="application/json")
-
-    # must connect the container to the deployer network to be able to send http req to the test runner which runs in a initial segregated net
-    @route('/containernetconnect/<id>', methods=['GET'])
-    def testrunner_docker_network_connect(self, id):
-        docker_utils = DockerUtils()
-        http = HttpResponse()
-        service_name = "container"
-        container_id = f"{id}_{service_name}_1"
-        try:
-            # when creating deployer net, user must include 'deployer' in its name
-            # otherwise this method should have docker net param regex through http header
-            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
-            self.app.logger.debug({"msg": status})
-            if not status.get('out'):
-                return Response(json.dumps(http.failure(Constants.GET_DEPLOYER_NETWORK_FAILED,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.GET_DEPLOYER_NETWORK_FAILED),
-                                                        status.get('err'),
-                                                        status.get('err'))), 404, mimetype="application/json")
-            deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
-            status = docker_utils.network_connect(deployer_network, container_id)
-
-            if "already exists in network".lower() in status.get('err').lower():
-                return Response(json.dumps(http.success(Constants.SUCCESS,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
-                                                        "Success, already connected: " + status.get('err'))), 200,
-                                mimetype="application/json")
-
-            if "Error response from daemon".lower() in status.get('err').lower():
-                return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED,
-                                                        ErrorCodes.HTTP_CODE.get(
-                                                            Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED),
-                                                        status.get('err'),
-                                                        status.get('err'))), 404, mimetype="application/json")
-        except Exception as e:
-            exception = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED,
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED),
-                                                    exception,
-                                                    exception)), 404, mimetype="application/json")
-        return Response(
-            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), status.get('out'))),
-            200, mimetype="application/json")
-
-    @route('/containernetdisconnect/<id>', methods=['GET'])
-    def testrunner_docker_network_disconnect(self, id):
-        docker_utils = DockerUtils()
-        http = HttpResponse()
-        service_name = "container"
-        container_id = f"{id}_{service_name}_1"
-        try:
-            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
-            self.app.logger.debug({"msg": status})
-            if not status.get('out'):
-                return Response(json.dumps(http.failure(Constants.GET_DEPLOYER_NETWORK_FAILED,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.GET_DEPLOYER_NETWORK_FAILED),
-                                                        status.get('err'),
-                                                        status.get('err'))), 404, mimetype="application/json")
-            deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
-            status = docker_utils.network_disconnect(deployer_network, container_id)
-
-            if "is not connected to network".lower() in status.get('err').lower():
-                return Response(json.dumps(http.success(Constants.SUCCESS,
-                                                        ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
-                                                        "Success, already disconnected: " + status.get('err'))), 200,
-                                mimetype="application/json")
-
-            if "Error response from daemon".lower() in status.get('err').lower():
-                return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED,
-                                                        ErrorCodes.HTTP_CODE.get(
-                                                            Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED),
-                                                        status.get('err'),
-                                                        status.get('err'))), 404, mimetype="application/json")
-        except Exception as e:
-            exception = "Exception({0})".format(sys.exc_info()[0])
-            return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED,
-                                                    ErrorCodes.HTTP_CODE.get(
-                                                        Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED),
-                                                    exception,
-                                                    exception)), 404, mimetype="application/json")
-        return Response(
-            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), status.get('out'))),
-            200, mimetype="application/json")
-
-    # here the requests are redirected to any container
-    # you can couple your own, just make sure the hostname is 'container'
-    # url format: container/dockercomposeenvid/the_url
-    # E.g1 /container/2a1c9aa0451add84/uploadtestconfig
-    @route('/container/<id>/<path:text>', methods=['GET', 'POST'])
-    def testrunner_request(self, id, text):
-        http = HttpResponse()
-        elements = text.strip().split("/")
-        service_name = "container"
-        container_id = f"{id}_{service_name}_1"
-        input_data = ""
-        headers = {'Content-type': 'application/json'}
-        try:
-            input_data = request.get_data()
-            headers = request.headers
-        except:
-            pass
-
-        try:
-            self.app.logger.debug(
-                {"msg": {"uri": f'http://{container_id}:8080/{"/".join(elements)}', "method": request.method}})
-            if request.method == 'GET':
-                r = requests.get(f'http://{container_id}:8080/{"/".join(elements)}', timeout=5)
-            elif request.method == 'POST':
-                r = requests.post(f'http://{container_id}:8080/{"/".join(elements)}', data=input_data,
-                                  headers=headers, timeout=5)
-            else:
-                pass
-
-            response = Response(r.text, r.status_code, mimetype="application/json")
-
-        except Exception as e:
-            exception = "Exception({0})".format(sys.exc_info()[0])
-            response = Response(json.dumps(http.failure(Constants.CONTAINER_UNREACHABLE,
-                                                        ErrorCodes.HTTP_CODE.get(
-                                                            Constants.CONTAINER_UNREACHABLE) % (
-                                                            service_name, service_name),
-                                                        exception,
-                                                        exception)), 404, mimetype="application/json")
-        return response
-
-    @route('/uploadfile', methods=['POST'])
+    @route('/file', methods=['POST', 'PUT'])
     def upload_file(self):
         io_utils = IOUtils()
         http = HttpResponse()
@@ -647,7 +425,163 @@ class DockerView(FlaskView, Routes):
                         200,
                         mimetype="application/json")
 
-    @route('/executecommand', methods=['POST'])
+    @route('/deployments/logs/<env_id>', methods=['GET'])
+    def deploy_logs(self, env_id):
+        env_id = env_id.strip()
+        env_id_dir = Constants.DEPLOY_FOLDER_PATH + env_id
+        file = f"{env_id_dir}/{env_id}"
+        docker_utils = DockerUtils()
+        http = HttpResponse()
+
+        try:
+            status = docker_utils.logs(file)
+            self.app.logger.debug({"msg": status})
+            if status.get('err'):
+                return Response(json.dumps(http.failure(Constants.GET_LOGS_FAILED,
+                                                        ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % env_id,
+                                                        status.get('err'),
+                                                        status.get('err'))), 404, mimetype="application/json")
+        except:
+            exception = "Exception({0})".format(sys.exc_info()[0])
+            return Response(json.dumps(http.failure(Constants.GET_LOGS_FAILED,
+                                                    ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % env_id,
+                                                    exception,
+                                                    exception)), 404, mimetype="application/json")
+
+        return Response(
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
+                                    status.get('out').split("\n"))),
+            200, mimetype="application/json")
+
+    # must connect the container to the deployer network to be able to send http req to the test runner which runs in a initial segregated net
+    @route('/deployments/network/<env_id>', methods=['POST', 'PUT'])
+    def container_docker_network_connect(self, env_id):
+        docker_utils = DockerUtils()
+        http = HttpResponse()
+        service_name = "container"
+        container_id = f"{env_id}_{service_name}_1"
+        try:
+            # when creating deployer net, user must include 'deployer' in its name
+            # otherwise this method should have docker net param regex through http header
+            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
+            self.app.logger.debug({"msg": status})
+            if not status.get('out'):
+                return Response(json.dumps(http.failure(Constants.GET_DEPLOYER_NETWORK_FAILED,
+                                                        ErrorCodes.HTTP_CODE.get(Constants.GET_DEPLOYER_NETWORK_FAILED),
+                                                        status.get('err'),
+                                                        status.get('err'))), 404, mimetype="application/json")
+            deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
+            status = docker_utils.network_connect(deployer_network, container_id)
+
+            if "already exists in network".lower() in status.get('err').lower():
+                return Response(json.dumps(http.success(Constants.SUCCESS,
+                                                        ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
+                                                        "Success, already connected: " + status.get('err'))), 200,
+                                mimetype="application/json")
+
+            if "Error response from daemon".lower() in status.get('err').lower():
+                return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED),
+                                                        status.get('err'),
+                                                        status.get('err'))), 404, mimetype="application/json")
+        except Exception as e:
+            exception = "Exception({0})".format(sys.exc_info()[0])
+            return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED),
+                                                    exception,
+                                                    exception)), 404, mimetype="application/json")
+        return Response(
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), status.get('out'))),
+            200, mimetype="application/json")
+
+    @route('/deployments/network/<env_id>', methods=['DELETE'])
+    def container_docker_network_disconnect(self, env_id):
+        docker_utils = DockerUtils()
+        http = HttpResponse()
+        service_name = "container"
+        container_id = f"{env_id}_{service_name}_1"
+        try:
+            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
+            self.app.logger.debug({"msg": status})
+            if not status.get('out'):
+                return Response(json.dumps(http.failure(Constants.GET_DEPLOYER_NETWORK_FAILED,
+                                                        ErrorCodes.HTTP_CODE.get(Constants.GET_DEPLOYER_NETWORK_FAILED),
+                                                        status.get('err'),
+                                                        status.get('err'))), 404, mimetype="application/json")
+            deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
+            status = docker_utils.network_disconnect(deployer_network, container_id)
+
+            if "is not connected to network".lower() in status.get('err').lower():
+                return Response(json.dumps(http.success(Constants.SUCCESS,
+                                                        ErrorCodes.HTTP_CODE.get(Constants.SUCCESS),
+                                                        "Success, already disconnected: " + status.get('err'))), 200,
+                                mimetype="application/json")
+
+            if "Error response from daemon".lower() in status.get('err').lower():
+                return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED),
+                                                        status.get('err'),
+                                                        status.get('err'))), 404, mimetype="application/json")
+        except Exception as e:
+            exception = "Exception({0})".format(sys.exc_info()[0])
+            return Response(json.dumps(http.failure(Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED,
+                                                    ErrorCodes.HTTP_CODE.get(
+                                                        Constants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED),
+                                                    exception,
+                                                    exception)), 404, mimetype="application/json")
+        return Response(
+            json.dumps(http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), status.get('out'))),
+            200, mimetype="application/json")
+
+    # here the requests are redirected to any container
+    # you can couple your own, just make sure the hostname is 'container'
+    # url format: container/dockercomposeenvid/the_url
+    # E.g1 /container/2a1c9aa0451add84/uploadtestconfig
+    @route('/container/<env_id>/<path:text>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+    def container_request(self, env_id, text):
+        http = HttpResponse()
+        elements = text.strip().split("/")
+        service_name = "container"
+        container_id = f"{env_id}_{service_name}_1"
+        input_data = ""
+        headers = request.headers
+        try:
+            input_data = request.get_data()
+        except:
+            pass
+
+        try:
+            self.app.logger.debug(
+                {"msg": {"uri": f'http://{container_id}:8080/{"/".join(elements)}', "method": request.method}})
+            if request.method == 'GET':
+                r = requests.get(f'http://{container_id}:8080/{"/".join(elements)}', headers=headers, timeout=5)
+            elif request.method == 'POST':
+                r = requests.post(f'http://{container_id}:8080/{"/".join(elements)}', data=input_data,
+                                  headers=headers, timeout=5)
+            elif request.method == 'PUT':
+                r = requests.put(f'http://{container_id}:8080/{"/".join(elements)}', data=input_data,
+                                 headers=headers, timeout=5)
+            elif request.method == 'DELETE':
+                r = requests.delete(f'http://{container_id}:8080/{"/".join(elements)}', headers=headers, timeout=5)
+            else:
+                pass
+
+            response = Response(r.text, r.status_code, mimetype="application/json")
+
+        except Exception as e:
+            exception = "Exception({0})".format(sys.exc_info()[0])
+            response = Response(json.dumps(http.failure(Constants.CONTAINER_UNREACHABLE,
+                                                        ErrorCodes.HTTP_CODE.get(
+                                                            Constants.CONTAINER_UNREACHABLE) % (
+                                                            service_name, service_name),
+                                                        exception,
+                                                        exception)), 404, mimetype="application/json")
+        return response
+
+    @route('/command', methods=['POST', 'PUT'])
     def execute_command(self):
         io_utils = IOUtils()
         cmd_utils = CmdUtils()
