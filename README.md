@@ -125,7 +125,7 @@ Run example:
     docker run \
     -e HTTP_AUTH_TOKEN=mysecret
     -p 8080:8080
-    dinutac/estuary-testrunner:<tag>
+    dinutac/estuary-deployer:<tag>
 
 Then, access the Http Api. Call example:
   
