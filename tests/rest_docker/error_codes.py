@@ -26,5 +26,6 @@ class ErrorCodes:
         Constants.UPLOAD_FILE_FAILURE: "Failed to upload file content.",
         Constants.HTTP_HEADER_NOT_PROVIDED: "Http header value not provided: '%s'",
         Constants.EXEC_COMMAND_NOT_ALLOWED: "'rm' commands are filtered. Command '%s' was not executed.",
-        Constants.KUBERNETES_SERVER_ERROR: "Error response from server: '%s'"
+        Constants.KUBERNETES_SERVER_ERROR: "Error response from server: '%s'",
+        Constants.UNAUTHORIZED: "Unauthorized",
     }

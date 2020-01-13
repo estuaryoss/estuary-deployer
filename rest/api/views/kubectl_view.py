@@ -41,15 +41,29 @@ class KubectlView(FlaskView):
 
     def before_request(self, name, *args, **kwargs):
         ctx = self.app.app_context()
-        ctx.g.cid = token_hex(8)
-        self.message_dumper.set_correlation_id(ctx.g.cid)
+        ctx.g.xid = token_hex(8)
+        http = HttpResponse()
+        request_uri = request.environ.get("REQUEST_URI")
+        # add here your custom header to be logged with fluentd
+        self.message_dumper.set_header("X-Request-ID", request.headers.get('X-Request-ID') if request.headers.get('X-Request-ID') else ctx.g.xid)
+        self.message_dumper.set_header("Request-Uri", request_uri)
 
         response = self.fluentd_utils.debug(tag="api", msg=self.message_dumper.dump(request=request))
         self.app.logger.debug(f"{response}")
+        if not str(request.headers.get("Token")) == str(os.environ.get("HTTP_AUTH_TOKEN")):
+            if not ("/api/docs" in request_uri or "/swagger/swagger.yml" in request_uri):  # exclude swagger
+                headers = {
+                    'X-Request-ID': self.message_dumper.get_header("X-Request-ID")
+                }
+                return Response(json.dumps(http.failure(Constants.UNAUTHORIZED,
+                                                        ErrorCodes.HTTP_CODE.get(Constants.UNAUTHORIZED),
+                                                        "Invalid Token",
+                                                        str(traceback.format_exc()))), 401, mimetype="application/json",
+                                headers=headers)
 
     def after_request(self, name, http_response):
         headers = dict(http_response.headers)
-        headers['Correlation-Id'] = self.message_dumper.get_correlation_id()
+        headers['X-Request-ID'] = self.message_dumper.get_header("X-Request-ID")
         http_response.headers = headers
 
         response = self.fluentd_utils.debug(tag="api", msg=self.message_dumper.dump(http_response))

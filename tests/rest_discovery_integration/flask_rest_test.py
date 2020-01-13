@@ -66,8 +66,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('time'))
 
     def test_about_endpoint_discovery_broadcast_to_testrunner_p(self):
-        response = requests.get(self.server_discovery + f"/{self.compose_id}/testrunner/about")
+        response = requests.get(self.server_discovery + f"/{self.compose_id}/testrunners/about")
 
+        print(dump.dump_response(response))
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message')[0].get('message'), "estuary-testrunner")

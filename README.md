@@ -117,6 +117,20 @@ Run example:
     --net=estuarydeployer_default \
     dinutac/estuary-deployer:<tag>
 
+### Authentication
+For auth set HTTP_AUTH_TOKEN env variable.  
+
+Run example:
+
+    docker run \
+    -e HTTP_AUTH_TOKEN=mysecret
+    -p 8080:8080
+    dinutac/estuary-testrunner:<tag>
+
+Then, access the Http Api. Call example:
+  
+    curl -i -H 'Token:mysecret' http:localhost:8080/about
+    
 ## Api call examples
 
     http://192.168.100.12:8083/kubectl/ping -> if DEPLOY_ON is kubernetes with kubectl. Kubernetes deployments are fully tested

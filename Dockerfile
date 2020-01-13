@@ -45,6 +45,9 @@ VOLUME ["/variables"]
 
 ENV TEMPLATES_DIR /data
 ENV VARS_DIR /variables
+ENV HTTP_AUTH_TOKEN None
+ENV PORT 8080
+
 ENV SCRIPTS_DIR /home/dev/scripts
 ENV OUT_DIR out
 ENV TEMPLATE alpine.yml

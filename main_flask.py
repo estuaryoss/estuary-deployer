@@ -14,8 +14,12 @@ from rest.api.views.kubectl_view import KubectlView
 if __name__ == "__main__":
 
     app_append_id = ""
-    deploy_on = "kubectl"  # default runs on docker
+    deploy_on = "docker"  # default runs on docker
     env_expire_in = 1440  # minutes
+    host = '0.0.0.0'
+    port = properties["port"]
+    fluentd_tag = "startup"
+    message_dumper = MessageDumper()
 
     if os.environ.get('APP_APPEND_ID'):
         app_append_id = os.environ.get('APP_APPEND_ID').lower()
@@ -25,26 +29,19 @@ if __name__ == "__main__":
         deploy_on = os.environ.get("DEPLOY_ON")
     if os.environ.get('ENV_EXPIRE_IN'):
         env_expire_in = int(os.environ.get("ENV_EXPIRE_IN"))
-
-    host = '0.0.0.0'
-    port = properties["port"]
-    fluentd_tag = "startup"
-    message_dumper = MessageDumper()
+    if os.environ.get('PORT'):
+        port = int(os.environ.get("PORT"))  # override port  if set from env
 
     if "docker" in deploy_on:
         # start schedulers
         view = DockerView()
-
         DockerScheduler().start()
         DockerEnvExpireScheduler(fluentd_utils=view.get_view_fluentd_utils(),
                                  env_expire_in=env_expire_in).start()  # minutes
         DockerCleanFolderScheduler().start()
-
-
     elif "kubectl" in deploy_on:
         # start schedulers
         view = KubectlView()
-
         KubectlEnvExpireScheduler(fluentd_utils=view.get_view_fluentd_utils(),
                                   env_expire_in=env_expire_in).start()
     else:

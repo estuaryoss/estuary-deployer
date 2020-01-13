@@ -120,6 +120,21 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
 
+    def test_about_endpoint_xid_set_by_client(self):
+        xid = 'whatever'
+        headers = {'X-Request-ID': xid}
+        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/about", headers=headers)
+
+        body = response.json()
+        headers = response.headers
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('message'), "estuary-testrunner")
+        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(headers.get('X-Request-ID'), xid)
+
     @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates",
                      "Skip on VM")  # when service runs on VM only this is skipped
     def test_swagger_endpoint(self):

@@ -37,6 +37,11 @@ paths:
       summary: Print env vars
       produces:
         - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
       responses:
         200:
           description: List the env vars in key value pairs
@@ -48,11 +53,15 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: env_name
-          in: path
-          description: The name of the env var wanted
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: env_name
+        in: path
+        description: The name of the env var wanted
+        required: true
+        type: string
       responses:
         200:
           description: Get env var success
@@ -65,6 +74,11 @@ paths:
       summary: Ping endpoint which replies with pong
       produces:
         - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
       responses:
         200:
           description: Ping endpoint which replies with pong. Useful to check if the service is up and running.
@@ -75,6 +89,11 @@ paths:
       summary: Information about the service.
       produces:
         - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
       responses:
         200:
           description: Prints the name, version of the application.
@@ -89,22 +108,26 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: template
-          in: path
-          description: Template file
-          required: true
-          type: string
-        - name: variables
-          in: path
-          description: Variables file
-          required: true
-          type: string
-        - name: EnvVars
-          in: body
-          description: List of env vars by key-value pair
-          required: false
-          schema:
-            $ref: '#/definitions/envvar'
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: template
+        in: path
+        description: Template file
+        required: true
+        type: string
+      - name: variables
+        in: path
+        description: Variables file
+        required: true
+        type: string
+      - name: EnvVars
+        in: body
+        description: List of env vars by key-value pair
+        required: false
+        schema:
+          $ref: '#/definitions/envvar'
       responses:
         200:
           description: template rendered with success
@@ -117,6 +140,11 @@ paths:
       summary: gets the active deployments from the deployer service.
       produces:
         - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
       responses:
         200:
           description: get active deployments success.
@@ -131,12 +159,16 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: template
-          in: body
-          description: 'version:'
-          required: true
-          schema:
-            $ref: '#/definitions/template'
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: template
+        in: body
+        description: 'version:'
+        required: true
+        schema:
+          $ref: '#/definitions/template'
       responses:
         200:
           description: deploy success
@@ -153,22 +185,26 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: template
-          in: path
-          description: Template file
-          required: true
-          type: string
-        - name: variables
-          in: path
-          description: Variables file
-          required: true
-          type: string
-        - name: EnvVars
-          in: body
-          description: List of env vars by key-value pair
-          required: false
-          schema:
-            $ref: '#/definitions/envvar'
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: template
+        in: path
+        description: Template file
+        required: true
+        type: string
+      - name: variables
+        in: path
+        description: Variables file
+        required: true
+        type: string
+      - name: EnvVars
+        in: body
+        description: List of env vars by key-value pair
+        required: false
+        schema:
+          $ref: '#/definitions/envvar'
       responses:
         200:
           description: deploy success
@@ -185,11 +221,15 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: env_id
-          in: path
-          description: environment id
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: env_id
+        in: path
+        description: environment id
+        required: true
+        type: string
       responses:
         200:
           description: get deploy status success
@@ -205,11 +245,15 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: env_id
-          in: path
-          description: environment id
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: env_id
+        in: path
+        description: environment id
+        required: true
+        type: string
       responses:
         200:
           description: deploy stop success
@@ -227,11 +271,15 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: env_id
-          in: path
-          description: environment id
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: env_id
+        in: path
+        description: environment id
+        required: true
+        type: string
       responses:
         200:
           description: get environment logs success
@@ -245,11 +293,15 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: env_id
-          in: path
-          description: environment id
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: env_id
+        in: path
+        description: environment id
+        required: true
+        type: string
       responses:
         200:
           description: container network connect success
@@ -262,11 +314,15 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: env_id
-          in: path
-          description:  environment id 
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: env_id
+        in: path
+        description:  environment id 
+        required: true
+        type: string
       responses:
         200:
           description: container network disconnect success
@@ -283,11 +339,15 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: File-Path
-          type: string
-          in: header
-          description: File path on the disk
-          required: true
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: File-Path
+        type: string
+        in: header
+        description: File path on the disk
+        required: true
       responses:
         200:
           description: get file content success
@@ -303,16 +363,20 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: content
-          in: body
-          description: The content of the file
-          required: true
-          schema:
-            $ref: '#/definitions/filecontent'
-        - in: header
-          name: File-Path
-          type: string
-          required: true
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: content
+        in: body
+        description: The content of the file
+        required: true
+        schema:
+          $ref: '#/definitions/filecontent'
+      - in: header
+        name: File-Path
+        type: string
+        required: true
       responses:
         200:
           description: The content of the file was uploaded successfully
@@ -326,16 +390,20 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: env_id
-          in: path
-          description: environment id
-          required: true
-          type: string
-        - name: container_route
-          in: path
-          description: container service route. E.g. ping
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: env_id
+        in: path
+        description: environment id
+        required: true
+        type: string
+      - name: container_route
+        in: path
+        description: container service route. E.g. ping
+        required: true
+        type: string
       responses:
         200:
           description: http request sent to the service container with success
@@ -351,12 +419,16 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: command
-          in: body
-          description: The command to be executed on remote service.
-          required: true
-          schema:
-            $ref: '#/definitions/command'
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: command
+        in: body
+        description: The command to be executed on remote service.
+        required: true
+        schema:
+          $ref: '#/definitions/command'
       responses:
         200:
           description: command execution success
@@ -420,6 +492,11 @@ paths:
       summary: Print env vars
       produces:
         - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
       responses:
         200:
           description: List of env vars in key value pairs
@@ -431,11 +508,15 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: env_name
-          in: path
-          description: The name of the env var
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: env_name
+        in: path
+        description: The name of the env var
+        required: true
+        type: string
       responses:
         200:
           description: Get env var success
@@ -448,6 +529,11 @@ paths:
       summary: Ping endpoint which replies with pong
       produces:
         - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
       responses:
         200:
           description: Ping endpoint which replies with pong. Useful for checking the alive status
@@ -458,6 +544,11 @@ paths:
       summary: Information about the application.
       produces:
         - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
       responses:
         200:
           description: Prints the name, version of the application.
@@ -472,22 +563,26 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: template
-          in: path
-          description: Template file
-          required: true
-          type: string
-        - name: variables
-          in: path
-          description: Variables file
-          required: true
-          type: string
-        - name: EnvVars
-          in: body
-          description: List of env vars by key-value pair
-          required: false
-          schema:
-            $ref: '#/definitions/envvar'
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: template
+        in: path
+        description: Template file
+        required: true
+        type: string
+      - name: variables
+        in: path
+        description: Variables file
+        required: true
+        type: string
+      - name: EnvVars
+        in: body
+        description: List of env vars by key-value pair
+        required: false
+        schema:
+          $ref: '#/definitions/envvar'
       responses:
         200:
           description: jinja2 rendered template, success
@@ -499,16 +594,20 @@ paths:
         - estuary-deployer
       summary: gets the active pods from the deployer service.
       parameters:
-        - name: K8s-Namespace
-          in: header
-          description: The namespace in which the pods were deployed
-          required: true
-          type: string
-        - name: Label-Selector
-          in: header
-          description: The label selector to filter the pods. E.g. k8s-app=alpine
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: K8s-Namespace
+        in: header
+        description: The namespace in which the pods were deployed
+        required: true
+        type: string
+      - name: Label-Selector
+        in: header
+        description: The label selector to filter the pods. E.g. k8s-app=alpine
+        required: true
+        type: string
       produces:
         - application/json
       responses:
@@ -525,12 +624,16 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: kubernetes template
-          in: body
-          description: 'version:'
-          required: true
-          schema:
-            $ref: '#/definitions/template'
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: kubernetes template
+        in: body
+        description: 'version:'
+        required: true
+        schema:
+          $ref: '#/definitions/template'
       responses:
         200:
           description: deploy success
@@ -547,22 +650,26 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: template
-          in: path
-          description: Template file
-          required: true
-          type: string
-        - name: variables
-          in: path
-          description: Variables file
-          required: true
-          type: string
-        - name: EnvVars
-          in: body
-          description: List of env vars by key-value pair
-          required: false
-          schema:
-            $ref: '#/definitions/envvar'
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: template
+        in: path
+        description: Template file
+        required: true
+        type: string
+      - name: variables
+        in: path
+        description: Variables file
+        required: true
+        type: string
+      - name: EnvVars
+        in: body
+        description: List of env vars by key-value pair
+        required: false
+        schema:
+          $ref: '#/definitions/envvar'
       responses:
         200:
           description: deploy success
@@ -579,21 +686,25 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: name
-          in: path
-          description: kubernetes pod name returned by the getdeploymentinfo action
-          required: true
-          type: string
-        - name: Label-Selector
-          in: header
-          description: The label selector to filter the pods. E.g. k8s-app=alpine
-          required: true
-          type: string
-        - name: K8s-Namespace
-          in: header
-          description: The namespace in which the pods were deployed
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: name
+        in: path
+        description: kubernetes pod name returned by the getdeploymentinfo action
+        required: true
+        type: string
+      - name: Label-Selector
+        in: header
+        description: The label selector to filter the pods. E.g. k8s-app=alpine
+        required: true
+        type: string
+      - name: K8s-Namespace
+        in: header
+        description: The namespace in which the pods were deployed
+        required: true
+        type: string
       responses:
         200:
           description: get deploy status success
@@ -609,16 +720,20 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: name
-          in: path
-          description: kubernetes deployment name
-          required: true
-          type: string
-        - name: K8s-Namespace
-          in: header
-          description: The namespace in which the deployment exists
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: name
+        in: path
+        description: kubernetes deployment name
+        required: true
+        type: string
+      - name: K8s-Namespace
+        in: header
+        description: The namespace in which the deployment exists
+        required: true
+        type: string
       responses:
         200:
           description: deploy stop success
@@ -635,16 +750,20 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: pod_name
-          in: path
-          description: kubernetes pod name returned by getdeploymentinfo action
-          required: true
-          type: string
-        - name: K8s-Namespace
-          in: header
-          description: The namespace in which the pods were deployed
-          required: true
-          type: string
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: pod_name
+        in: path
+        description: kubernetes pod name returned by getdeploymentinfo action
+        required: true
+        type: string
+      - name: K8s-Namespace
+        in: header
+        description: The namespace in which the pods were deployed
+        required: true
+        type: string
       responses:
         200:
           description: get compose environment logs success
@@ -662,11 +781,15 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: File-Path
-          type: string
-          in: header
-          description: File path on the disk
-          required: true
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: File-Path
+        type: string
+        in: header
+        description: File path on the disk
+        required: true
       responses:
         200:
           description: get file content success
@@ -682,16 +805,20 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: content
-          in: body
-          description: The content of the file
-          required: true
-          schema:
-            $ref: '#/definitions/filecontent'
-        - in: header
-          name: File-Path
-          type: string
-          required: true
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: content
+        in: body
+        description: The content of the file
+        required: true
+        schema:
+          $ref: '#/definitions/filecontent'
+      - in: header
+        name: File-Path
+        type: string
+        required: true
       responses:
         200:
           description: The content of the file was uploaded successfully
@@ -706,12 +833,16 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: command
-          in: body
-          description: The command to be executed on the service
-          required: true
-          schema:
-            $ref: '#/definitions/command'
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - name: command
+        in: body
+        description: The command to be executed on the service
+        required: true
+        schema:
+          $ref: '#/definitions/command'
       responses:
         200:
           description: command execution, success

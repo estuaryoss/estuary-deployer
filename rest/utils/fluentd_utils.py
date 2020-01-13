@@ -43,6 +43,7 @@ class FluentdUtils:
     def log(self, level_code, msg):
         return {
             "name": properties.get('name'),
+            "port": os.environ.get('PORT') if os.environ.get('PORT') else properties.get('port'),
             "version": properties.get('version'),
             "uname": list(platform.uname()),
             "python": platform.python_version(),

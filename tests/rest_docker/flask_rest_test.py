@@ -64,7 +64,21 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
-        self.assertEqual(len(headers.get('Correlation-Id')), 16)
+        self.assertEqual(len(headers.get('X-Request-ID')), 16)
+
+    def test_ping_endpoint_xid_set_by_client(self):
+        xid = 'whatever'
+        headers = {'X-Request-ID': xid}
+        response = requests.get(self.server + "/ping", headers=headers)
+
+        body = json.loads(response.text)
+        headers = response.headers
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('message'), "pong")
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertIsNotNone(body.get('time'))
+        self.assertEqual(headers.get('X-Request-ID'), xid)
 
     def test_about_endpoint(self):
         response = requests.get(self.server + "/about")
@@ -79,9 +93,33 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
 
+    def test_about_endpoint_unauthorized(self):
+        headers = {'Token': "invalidtoken"}
+        response = requests.get(self.server + "/about", headers=headers)
+        service_name = "estuary-deployer"
+        body = response.json()
+        headers = response.headers
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(body.get('message'), "Invalid Token")
+        self.assertEqual(body.get('name'), service_name)
+        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.UNAUTHORIZED))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.UNAUTHORIZED)
+        self.assertIsNotNone(body.get('time'))
+        self.assertEqual(len(headers.get('X-Request-ID')), 16)
+
     @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
     def test_swagger_endpoint(self):
         response = requests.get(self.server + "/api/docs")
+
+        body = response.text
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(body.find("html") >= 0)
+
+    @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
+    def test_swagger_endpoint_swagger_still_accesible(self):
+        headers = {'Token': 'whateverinvalid'}
+        response = requests.get(self.server + "/api/docs", headers=headers)
 
         body = response.text
         self.assertEqual(response.status_code, 200)
@@ -91,7 +129,12 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server + "/swagger/swagger.yml")
 
         self.assertEqual(response.status_code, 200)
-        # self.assertTrue(len(body.get('paths')) == 14)
+
+    def test_swagger_yml_swagger_still_accesible(self):
+        headers = {'Token': 'whateverinvalid'}
+        response = requests.get(self.server + "/swagger/swagger.yml", headers=headers)
+
+        self.assertEqual(response.status_code, 200)
 
     @parameterized.expand([
         ("json.j2", "json.json"),
@@ -156,11 +199,13 @@ class FlaskServerTestCase(unittest.TestCase):
                                  headers=headers)
 
         body = yaml.safe_load(response.text)
+        headers = response.headers
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
         self.assertIsNotNone(body.get('time'))
+        self.assertEqual(len(headers.get('X-Request-ID')), 16)
 
     @parameterized.expand([
         ("mysql56.yml", "variables.yml")
