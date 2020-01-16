@@ -1,6 +1,6 @@
 dist: bionic
 language: python
-python: 3.7
+python: 3.6
 script: skip
 
 env:
@@ -11,7 +11,7 @@ jobs:
     - stage: test
     #run unit tests for render
     - language: python
-      python: 3.7
+      python: 3.6
       env:
         TEMPLATES_DIR: inputs/templates
         VARS_DIR: inputs/variables
@@ -28,7 +28,7 @@ jobs:
 
     #run executable tests - docker
     - language: python
-      python: 3.7
+      python: 3.6
       services: docker
       env:
         ISOLATED: true
@@ -66,7 +66,7 @@ jobs:
 
     #run docker tests - docker sock mount
     - language: python
-      python: 3.7
+      python: 3.6
       services:
         - docker
       env:
@@ -93,7 +93,7 @@ jobs:
 
     #run executable tests - kubectl
     - language: python
-      python: 3.7
+      python: 3.6
       env:
         ISOLATED: true
         TEMPLATES_DIR: inputs/templates
@@ -129,7 +129,7 @@ jobs:
 
     #run templating tests
     - language: python
-      python: 3.7
+      python: 3.6
       services: docker
       env:
         ISOLATED: true
@@ -153,7 +153,7 @@ jobs:
 
     #run testrunner integration tests
     - language: python
-      python: 3.7
+      python: 3.6
       services:
         - docker
       env:
@@ -202,7 +202,7 @@ jobs:
 
     #run discovery integration tests
     - language: python
-      python: 3.7
+      python: 3.6
       services:
         - docker
       env:
@@ -252,7 +252,7 @@ jobs:
 
     #run kubectl tests - in docker container
     - language: python
-      python: 3.7
+      python: 3.6
       services:
         - docker
       env:
@@ -282,7 +282,7 @@ jobs:
 
         #run schedulers, eureka tests and others
     - language: python
-      python: 3.7
+      python: 3.6
       services:
         - docker
       env:
