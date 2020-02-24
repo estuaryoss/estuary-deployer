@@ -333,7 +333,6 @@ jobs:
       before_deploy:
         - pip3 install -r requirements.txt
         - pyinstaller --onefile main_flask.py
-        - pyinstaller --onefile start.py
         - ls -lrt dist
         - cp dist/main_flask main-linux
         - ls -lrt
