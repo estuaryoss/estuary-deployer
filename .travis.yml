@@ -342,13 +342,13 @@ jobs:
       deploy:
         - provider: script
           script: bash docker_push_tag.sh
-          cleanup: false
+          skip_cleanup: true
           on:
             tags: true
 
         - provider: script
           script: bash docker_push_master.sh
-          cleanup: false
+          skip_cleanup: true
           on:
             branch: master
 
@@ -356,6 +356,6 @@ jobs:
           token: $GITHUB_TOKEN
           file:
             - "main-linux"
-          cleanup: false
+          skip_cleanup: true
           on:
             tags: true
