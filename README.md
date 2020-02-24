@@ -9,7 +9,7 @@ Support project: <a href="https://paypal.me/catalindinuta?locale.x=en_US"><img s
 Estuary docker deployer service which will run your containers and/or your tests.   
 Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/releases/tag/2.0.0) the estuary-deployer service can run your tests using the [estuary-testrunner](https://github.com/dinuta/estuary-testrunner) service. Check-out the wiki !  
 
-##Coverage & code quality
+## Coverage & code quality
 [![Coverage Status](https://coveralls.io/repos/github/dinuta/estuary-deployer/badge.svg?branch=master)](https://coveralls.io/github/dinuta/estuary-deployer?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/fd41fd77c2594a1f8211a5c1e8926117)](https://www.codacy.com/manual/dinuta/estuary-deployer?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dinuta/estuary-deployer&amp;utm_campaign=Badge_Grade)
 
