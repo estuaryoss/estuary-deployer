@@ -44,10 +44,7 @@ Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/release
 ### Docker run - simple
    
     docker network create estuarydeployer_default
-    docker run \ 
-    -p 8080:8080
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    --net=estuarydeployer_default \
+    docker run -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock --net=estuarydeployer_default \
     dinutac/estuary-deployer:<tag>
     
     Jinja2 templating can be done, just add:

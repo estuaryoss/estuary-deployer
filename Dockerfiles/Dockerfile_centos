@@ -1,0 +1,20 @@
+FROM centos:latest
+
+ENV TZ UTC
+ENV PORT 8080
+ENV SCRIPTS_DIR /root/deployer
+ENV WORKSPACE $SCRIPTS_DIR
+ENV TEMPLATES_DIR $WORKSPACE/templates
+ENV VARS_DIR $WORKSPACE/variables
+
+WORKDIR $SCRIPTS_DIR
+
+COPY inputs/templates/ $TEMPLATES_DIR/
+COPY inputs/variables/ $VARS_DIR/
+
+COPY main-linux $SCRIPTS_DIR
+# ADD https://github.com/dinuta/estuary-deployer/releases/download/4.0.1/main-linux $SCRIPTS_DIR
+
+RUN chmod +x $SCRIPTS_DIR/main-linux
+
+CMD ["/root/deployer/main-linux"]
