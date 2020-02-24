@@ -1,6 +1,5 @@
-class Constants:
-    DEPLOY_FOLDER_PATH = "/tmp/"
-    DOCKER_LOGS_LINES = 200
+class ApiConstants:
+    DOCKER_LOGS_LINES = 500
 
     SUCCESS = "1000"
     JINJA2_RENDER_FAILURE = "1001"

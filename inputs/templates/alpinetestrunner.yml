@@ -11,7 +11,6 @@ services:
     hostname: testrunner
     #    entrypoint: tail -f /etc/alpine-release
     #    entrypoint: bash -c "/home/dev/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 10 && python3 /home/dev/scripts/main_flask.py"
-    entrypoint: python3 /home/dev/scripts/main_flask.py
     environment:
       limit: 'sky' #example env var inserted. you can read it with environ('limit') in your jinja2 template
       #      EUREKA_SERVER: http://eureka-server:8080/eureka/v2 #your eureka server

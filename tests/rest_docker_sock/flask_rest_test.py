@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import os
 import unittest
 
 import requests
@@ -12,7 +11,7 @@ from tests.rest_docker_sock.error_codes import ErrorCodes
 class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
 
-    expected_version = "4.0.1"
+    expected_version = "4.0.2"
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")

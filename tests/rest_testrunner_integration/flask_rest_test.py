@@ -20,7 +20,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     script_path = "tests/rest_testrunner_integration/input"
     # script_path = "input"
-    expected_version = "4.0.1"
+    expected_version = "4.0.2"
     cleanup_count_safe = 5
     compose_id = ""
 
@@ -360,51 +360,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.EMPTY_REQUEST_BODY_PROVIDED)
         self.assertIsNotNone(body.get('time'))
-
-    @parameterized.expand([
-        "4"
-    ])
-    def test_gettestinfo_p(self, payload):
-        test_id = "103"
-        data_payload = f" sleep {payload} \n invalid_command"
-        commands = list(map(lambda x: x.strip(), data_payload.split("\n")))
-        headers = {'Content-type': 'text/plain'}
-
-        response = requests.post(
-            self.server_testrunner + f"/{self.compose_id}" + f"/test/{test_id}",
-            data=f"{data_payload}", headers=headers)
-
-        body = response.json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message'), test_id)
-
-        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/test")
-        body = response.json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message').get('id'), test_id)
-        self.assertEqual(body.get('message').get('started'), "true")
-        self.assertEqual(body.get('message').get('finished'), "false")
-        for value in commands:
-            self.assertEqual(body.get('message').get("commands").get(value).get("status"), "scheduled")
-            self.assertIsInstance(body.get('message').get("commands").get(value).get("details"), dict)
-        time.sleep(int(payload) - 2)
-        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/test")
-        body = response.json()
-        self.assertEqual(body.get('message').get("commands").get(commands[0]).get("status"), "in progress")
-        self.assertIsInstance(body.get('message').get("commands").get(commands[0]).get("details"), dict)
-        time.sleep(int(payload) + 2)
-        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + f"/test")
-        body = response.json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message').get('id'), test_id)
-        self.assertEqual(body.get('message').get('started'), "false")
-        self.assertEqual(body.get('message').get('finished'), "true")
-        self.assertGreaterEqual(len(body.get('message').get('processes')), 1)
-        self.assertEqual(body.get('message').get("commands").get(commands[0]).get("status"), "finished")
-        self.assertIsInstance(body.get('message').get("commands").get(commands[0]).get("details"), dict)
-        self.assertEqual(body.get('message').get("commands").get(commands[1]).get("status"), "finished")
-        self.assertIn("invalid_command: not found\n",
-                      body.get('message').get("commands").get(commands[1]).get("details").get("err"))
 
     @parameterized.expand([
         "3"

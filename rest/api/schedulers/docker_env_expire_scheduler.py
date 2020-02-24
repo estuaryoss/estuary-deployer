@@ -5,7 +5,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from fluent import sender
 
-from rest.api.apiresponsehelpers.constants import Constants
+from rest.api.constants.env_constants import EnvConstants
 from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.utils.docker_utils import DockerUtils
 from rest.utils.fluentd_utils import FluentdUtils
@@ -15,7 +15,7 @@ class DockerEnvExpireScheduler:
 
     def __init__(self, fluentd_utils=FluentdUtils(sender.FluentSender('estuary', host='127.0.0.1',
                                                                       port=24224)),
-                 path=Constants.DEPLOY_FOLDER_PATH,
+                 path=EnvConstants.DEPLOY_PATH,
                  poll_interval=120, env_expire_in=1440):
         self.fluentd_utils = fluentd_utils
         self.fluentd_tag = 'DockerEnvExpireScheduler'

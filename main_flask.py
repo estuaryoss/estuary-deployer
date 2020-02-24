@@ -1,7 +1,9 @@
 #!/usr/bin/python3
 import os
+from pathlib import Path
 
 from about import properties
+from rest.api.constants.env_constants import EnvConstants
 from rest.api.eureka_registrator import EurekaRegistrator
 from rest.api.logginghelpers.message_dumper import MessageDumper
 from rest.api.schedulers.docker_clean_folder_scheduler import DockerCleanFolderScheduler
@@ -10,6 +12,7 @@ from rest.api.schedulers.docker_scheduler import DockerScheduler
 from rest.api.schedulers.kubectl_env_expire_scheduler import KubectlEnvExpireScheduler
 from rest.api.views.docker_view import DockerView
 from rest.api.views.kubectl_view import KubectlView
+from rest.utils.io_utils import IOUtils
 
 if __name__ == "__main__":
 
@@ -20,6 +23,7 @@ if __name__ == "__main__":
     port = properties["port"]
     fluentd_tag = "startup"
     message_dumper = MessageDumper()
+    io_utils = IOUtils()
 
     if os.environ.get('APP_APPEND_ID'):
         app_append_id = os.environ.get('APP_APPEND_ID').lower()
@@ -31,6 +35,10 @@ if __name__ == "__main__":
         env_expire_in = int(os.environ.get("ENV_EXPIRE_IN"))
     if os.environ.get('PORT'):
         port = int(os.environ.get("PORT"))  # override port  if set from env
+
+    io_utils.create_dir(Path(EnvConstants.DEPLOY_PATH))
+    io_utils.create_dir(Path(EnvConstants.TEMPLATES_PATH))
+    io_utils.create_dir(Path(EnvConstants.VARIABLES_PATH))
 
     if "docker" in deploy_on:
         # start schedulers

@@ -15,8 +15,8 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     script_path = "tests/rest_discovery_integration/input"
     # script_path = "input"
-    discovery_expected_version = "4.0.1"
-    testrunner_expected_version = "4.0.1"
+    discovery_expected_version = "4.0.2"
+    testrunner_expected_version = "4.0.2"
     cleanup_count_safe = 5
     compose_id = ""
 

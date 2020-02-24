@@ -4,7 +4,7 @@ import unittest
 import requests
 from parameterized import parameterized
 
-from rest.api.apiresponsehelpers.constants import Constants
+from rest.api.constants.env_constants import EnvConstants
 from rest.api.schedulers.docker_env_expire_scheduler import DockerEnvExpireScheduler
 
 
@@ -12,7 +12,7 @@ class EnvExpireSchedulerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
 
     def setUp(self):
-        self.path = f"{Constants.DEPLOY_FOLDER_PATH}"
+        self.path = f"{EnvConstants.DEPLOY_PATH}"
         self.env_expire_scheduler = DockerEnvExpireScheduler(path=self.path, poll_interval=10, env_expire_in=1)
 
     @parameterized.expand([

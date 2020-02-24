@@ -17,7 +17,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     # server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "4.0.1"
+    expected_version = "4.0.2"
     sleep_before_container_up = 6
 
     def setUp(self):
@@ -518,6 +518,7 @@ class FlaskServerTestCase(unittest.TestCase):
             response = requests.post(self.server + f"/deployments/{template}/{variables}")
             time.sleep(self.sleep_before_container_up)
             self.assertEqual(response.status_code, 200)
+        time.sleep(3)
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('message')), int(os.environ.get('MAX_DEPLOYMENTS')))
 

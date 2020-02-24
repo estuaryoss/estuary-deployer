@@ -1,4 +1,4 @@
-FROM alpine:3.10
+FROM alpine:3.11
 
 RUN apk add --no-cache python
 
@@ -24,7 +24,7 @@ RUN pip3 install \
   docker-compose==1.25.0
 
 RUN apk add --no-cache python3 && \
-    pip3 install --upgrade pip==19.3.1 setuptools==42.0.2 --no-cache
+    pip3 install --upgrade pip==20.0.2 setuptools==42.0.2 --no-cache
 
 ## Kubectl
 ADD https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
@@ -40,15 +40,17 @@ RUN rm -rf /var/cache/apk/*
 RUN mkdir /data/
 
 ## Expose some volumes
-VOLUME ["/data"]
-VOLUME ["/variables"]
+VOLUME ["/home/dev/scripts/inputs/templates"]
+VOLUME ["/home/dev/scripts/inputs/variables"]
 
-ENV TEMPLATES_DIR /data
-ENV VARS_DIR /variables
+ENV TEMPLATES_DIR /home/dev/scripts/inputs/templates
+ENV VARS_DIR /home/dev/scripts/inputs/variables
 ENV HTTP_AUTH_TOKEN None
 ENV PORT 8080
 
 ENV SCRIPTS_DIR /home/dev/scripts
+ENV WORKSPACE $SCRIPTS_DIR/inputs
+ENV DEPLOY_PATH $WORKSPACE/deployments
 ENV OUT_DIR out
 ENV TEMPLATE alpine.yml
 ENV VARIABLES variables.yml

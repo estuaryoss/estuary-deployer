@@ -2,6 +2,7 @@ dist: xenial
 language: python
 python: 3.6
 script: skip
+os: linux
 
 env:
   NGROK_TOKEN: 1RER6BUC3QNNwYWY5LcIBjrv3A8_24QccmopTEQJGMErG9uzw
@@ -18,7 +19,8 @@ jobs:
         SCRIPTS_DIR: tests
         ISOLATED: true
       before_install:
-        - pip install -r requirements.txt
+        - pip3 install -r requirements.txt
+        - pip3 install coveralls
       before_script:
         - py.test $SCRIPTS_DIR/render_test.py --cov=entities
       script:
@@ -139,17 +141,17 @@ jobs:
       script:
         #check template render
         - docker run -i
-          -v $TRAVIS_BUILD_DIR/inputs/templates:/data
-          -v $TRAVIS_BUILD_DIR/inputs/variables:/variables  -e TEMPLATE=standalone.yml
-          -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest --entrypoint python3 dinutac/estuary-deployer:latest
+          -v $TRAVIS_BUILD_DIR/inputs/templates:/home/dev/scripts/inputs/templates
+          -v $TRAVIS_BUILD_DIR/inputs/variables:/home/dev/scripts/inputs/variables  -e TEMPLATE=standalone.yml
+          -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest --entrypoint python3 dinutac/estuary-testrunner:latest
           $DOCKER_SCRIPTS_DIR/main.py
 
         #check template render
         - docker run --entrypoint jinja2
-          -v $TRAVIS_BUILD_DIR/inputs/templates:/data
-          -v $TRAVIS_BUILD_DIR/inputs/variables:/variables
-          dinutac/estuary-deployer:latest
-          /data/json.j2 /variables/json.json --format=json
+          -v $TRAVIS_BUILD_DIR/inputs/templates:/home/dev/scripts/inputs/templates
+          -v $TRAVIS_BUILD_DIR/inputs/variables:/home/dev/scripts/inputs/variables
+          dinutac/estuary-testrunner:latest
+          /home/dev/scripts/inputs/templates/json.j2 /home/dev/scripts/inputs/variables/json.json --format=json
 
     #run testrunner integration tests
     - language: python
@@ -327,16 +329,34 @@ jobs:
         - docker-compose down -v
 
     - stage: deploy
-      before_script:
-        - pip install -r requirements.txt
+      services: docker
+      before_deploy:
+        - pip3 install -r requirements.txt
         - pyinstaller --onefile main_flask.py
+        - pyinstaller --onefile start.py
         - ls -lrt dist
         - cp dist/main_flask main-linux
         - ls -lrt
+        - rm -rf dist
+        - rm -rf build
+        - chmod +x *.sh
       deploy:
-        provider: releases
-        api_key: $GITHUB_TOKEN
-        file: "main-linux"
-        skip_cleanup: true
-        on:
-          tags: true
+        - provider: script
+          script: bash docker_push_tag.sh
+          cleanup: false
+          on:
+            tags: true
+
+        - provider: script
+          script: bash docker_push_master.sh
+          cleanup: false
+          on:
+            branch: master
+
+        - provider: releases
+          token: $GITHUB_TOKEN
+          file:
+            - "main-linux"
+          cleanup: false
+          on:
+            tags: true

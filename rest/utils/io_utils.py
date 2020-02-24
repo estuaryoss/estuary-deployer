@@ -13,11 +13,13 @@ class IOUtils:
 
     @staticmethod
     def get_list_dir(path):
+        dir_list = []
         file_path = Path(path)
         if file_path.exists():
-            dir_list = [directory for directory in os.listdir(path) if os.path.isdir(path + directory)]
-            return dir_list
-        return []
+            for directory in list(os.listdir(path)):
+                if os.path.isdir(path + "/{}".format(directory)):
+                    dir_list.append(directory)
+        return dir_list
 
     @staticmethod
     def write_to_file(file, content=""):

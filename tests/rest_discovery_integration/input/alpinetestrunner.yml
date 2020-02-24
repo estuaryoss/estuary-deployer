@@ -5,16 +5,15 @@ services:
     hostname: container
     #    entrypoint: tail -f /etc/alpine-release
     #    entrypoint: bash -c "/home/dev/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 10 && python3 /home/dev/scripts/main_flask.py"
-    entrypoint: python3 /home/dev/scripts/main_flask.py
     environment:
       limit: 'sky' #example env var inserted. you can read it with environ('limit') in your jinja2 template
       EUREKA_SERVER: "{{eureka_server}}"
       APP_IP_PORT: "{{app_ip_port}}/docker/container/{{deployment_id}}"
-    volumes:
-      - type: volume
-        source: sharedcontent
-        target: /testrunnersources
-#      - ./inputs/variables:/variables
+    #    volumes:
+    #      - type: volume
+    #        source: sharedcontent
+    #        target: /testrunnersources
+    #      - ./inputs/variables:/variables
     #      - ./:/home/dev/scripts/
     #      - ./tmp:/tmp
     #    ports:
@@ -22,13 +21,13 @@ services:
 
     expose:
       - "8080"
-volumes:
-  sharedcontent:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-#      device: /host_mnt/c/Users/catal/IdeaProjects/estuary-testrunner #on windows
-      device: /tmp #on linux
+#volumes:
+#  sharedcontent:
+#    driver: local
+#    driver_opts:
+#      o: bind
+#      type: none
+##      device: /host_mnt/c/Users/catal/IdeaProjects/estuary-testrunner #on windows
+#      device: /tmp #on linux
 
 

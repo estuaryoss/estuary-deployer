@@ -9,13 +9,16 @@ Support project: <a href="https://paypal.me/catalindinuta?locale.x=en_US"><img s
 Estuary docker deployer service which will run your containers and/or your tests.   
 Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/releases/tag/2.0.0) the estuary-deployer service can run your tests using the [estuary-testrunner](https://github.com/dinuta/estuary-testrunner) service. Check-out the wiki !  
 
-## Build & Coverage
-[![Build Status](https://travis-ci.org/dinuta/estuary-deployer.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer)
+##Coverage & code quality
 [![Coverage Status](https://coveralls.io/repos/github/dinuta/estuary-deployer/badge.svg?branch=master)](https://coveralls.io/github/dinuta/estuary-deployer?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/fd41fd77c2594a1f8211a5c1e8926117)](https://www.codacy.com/manual/dinuta/estuary-deployer?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dinuta/estuary-deployer&amp;utm_campaign=Badge_Grade)
 
+## Linux status
+[![Build Status](https://travis-ci.org/dinuta/estuary-deployer.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer)
+
 ## Docker Hub
-[![](https://images.microbadger.com/badges/image/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own image badge on microbadger.com") [![](https://images.microbadger.com/badges/version/dinutac/estuary-deployer.svg)](https://microbadger.com/images/dinutac/estuary-deployer "Get your own version badge on microbadger.com") ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)
+[alpine](https://hub.docker.com/r/dinutac/estuary-deployer)  ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer.svg)  
+[centos](https://hub.docker.com/r/dinutac/estuary-deployer-centos)  ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer-centos.svg)
 
 ## Api docs 
 [4.0.1 docker](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.1)  
@@ -142,3 +145,6 @@ Then, access the Http Api. Call example:
 [Estuary testrunner](https://github.com/dinuta/estuary-testrunner)  
 [Estuary discovery](https://github.com/dinuta/estuary-discovery)  
 [Estuary viewer](https://github.com/dinuta/estuary-viewer)  
+
+## Templating service
+[Jinja2Docker](https://github.com/dinuta/jinja2docker)  
