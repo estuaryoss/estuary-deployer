@@ -46,3 +46,7 @@ class Render:
 
     def get_jinja2env(self):
         return self.env
+
+
+if __name__ == '__main__':
+    render = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES')).rend_template()

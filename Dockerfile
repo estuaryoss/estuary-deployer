@@ -1,10 +1,7 @@
 FROM alpine:3.11
 
-RUN apk add --no-cache python
-
-RUN apk add --no-cache \
-  build-base \
-  sshpass
+RUN apk add --no-cache python3 && \
+    pip3 install --upgrade pip==20.1 setuptools==46.2.0 --no-cache
 
 RUN apk add --no-cache \
     bash \
@@ -21,13 +18,10 @@ RUN apk add --no-cache \
     curl
 
 RUN pip3 install \
-  docker-compose==1.25.0
-
-RUN apk add --no-cache python3 && \
-    pip3 install --upgrade pip==20.0.2 setuptools==42.0.2 --no-cache
+  docker-compose==1.25.5
 
 ## Kubectl
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.16.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod +x /usr/local/bin/kubectl
 RUN mkdir /root/.kube
 
@@ -40,15 +34,15 @@ RUN rm -rf /var/cache/apk/*
 RUN mkdir /data/
 
 ## Expose some volumes
-VOLUME ["/home/dev/scripts/inputs/templates"]
-VOLUME ["/home/dev/scripts/inputs/variables"]
+VOLUME ["/scripts/inputs/templates"]
+VOLUME ["/scripts/inputs/variables"]
 
-ENV TEMPLATES_DIR /home/dev/scripts/inputs/templates
-ENV VARS_DIR /home/dev/scripts/inputs/variables
+ENV TEMPLATES_DIR /scripts/inputs/templates
+ENV VARS_DIR /scripts/inputs/variables
 ENV HTTP_AUTH_TOKEN None
 ENV PORT 8080
 
-ENV SCRIPTS_DIR /home/dev/scripts
+ENV SCRIPTS_DIR /scripts
 ENV WORKSPACE $SCRIPTS_DIR/inputs
 ENV DEPLOY_PATH $WORKSPACE/deployments
 ENV OUT_DIR out
@@ -69,4 +63,4 @@ WORKDIR $SCRIPTS_DIR
 
 RUN pip3 install -r $SCRIPTS_DIR/requirements.txt
 
-CMD ["python3", "/home/dev/scripts/main_flask.py"]
+CMD ["python3", "/scripts/main_flask.py"]

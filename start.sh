@@ -1,3 +1,3 @@
 #!/bin/sh
-cd /home/dev/bin/
+cd /scripts/
 python3 main_flask.py

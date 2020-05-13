@@ -4,7 +4,7 @@ services:
     image: dinutac/estuary-testrunner:latest
     hostname: container
     #    entrypoint: tail -f /etc/alpine-release
-    #    entrypoint: bash -c "/home/dev/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 10 && python3 /home/dev/scripts/main_flask.py"
+    #    entrypoint: bash -c "/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 10 && python3 /scripts/main_flask.py"
     environment:
       limit: 'sky' #example env var inserted. you can read it with environ('limit') in your jinja2 template
       EUREKA_SERVER: "{{eureka_server}}"
@@ -14,7 +14,7 @@ services:
         source: sharedcontent
         target: /testrunnersources
 #      - ./inputs/variables:/variables
-    #      - ./:/home/dev/scripts/
+    #      - ./:/scripts/
     #      - ./tmp:/tmp
     #    ports:
     #      - "8080:8080"
