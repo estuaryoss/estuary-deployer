@@ -486,6 +486,8 @@ class DockerView(FlaskView):
         docker_utils = DockerUtils()
         http = HttpResponse()
         service_name = "container"
+        if request.args.get('service') is not None:
+            service_name = request.args.get('service')
         container_id = f"{env_id}_{service_name}_1"
         try:
             # when creating deployer net, user must include 'deployer' in its name
@@ -530,6 +532,8 @@ class DockerView(FlaskView):
         docker_utils = DockerUtils()
         http = HttpResponse()
         service_name = "container"
+        if request.args.get('service') is not None:
+            service_name = request.args.get('service')
         container_id = f"{env_id}_{service_name}_1"
         try:
             status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
@@ -569,41 +573,36 @@ class DockerView(FlaskView):
 
     # here the requests are redirected to any container
     # you can couple your own, just make sure the hostname is 'container'
-    # url format: container/dockercomposeenvid/the_url
-    # E.g1 /container/2a1c9aa0451add84/uploadtestconfig
-    @route('/container/<env_id>/<path:text>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+    # url format: container/dockercomposeenvid/the_url?port=8080&service=container
+    # E.g.1 /container/2a1c9aa0451add84/uploadtestconfig
+    @route('/container/<env_id>/<path:text>',
+           methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'])
     def container_request(self, env_id, text):
         http = HttpResponse()
-        elements = text.strip().split("/")
-        service_name = "container"
-        container_id = f"{env_id}_{service_name}_1"
-        input_data = ""
+        container_url = text.strip()
         headers = request.headers
+
+        service_name = "container"
+        if request.args.get('service') is not None:
+            service_name = request.args.get('service')
+        container_id = f"{env_id}_{service_name}_1"
+
+        container_port = 8080
+        if request.args.get('port') is not None:
+            container_port = request.args.get('port')
+
+        input_data = None
         try:
             input_data = request.get_data()
         except:
             pass
 
+        complete_url = f"http://{container_id}:{container_port}/{container_url}"
         try:
-            self.app.logger.debug(
-                {"msg": {"uri": f'http://{container_id}:8080/{"/".join(elements)}', "method": request.method}})
-            if request.method == 'GET':
-                r = requests.get(f'http://{container_id}:8080/{"/".join(elements)}', headers=headers, timeout=5)
-            elif request.method == 'POST':
-                r = requests.post(f'http://{container_id}:8080/{"/".join(elements)}', data=input_data,
-                                  headers=headers, timeout=5)
-            elif request.method == 'PUT':
-                r = requests.put(f'http://{container_id}:8080/{"/".join(elements)}', data=input_data,
-                                 headers=headers, timeout=5)
-            elif request.method == 'DELETE':
-                r = requests.delete(f'http://{container_id}:8080/{"/".join(elements)}', headers=headers, timeout=5)
-            else:
-                pass
-
-            response = Response(r.text, r.status_code, mimetype="application/json")
-
+            r = requests.request(url=complete_url, method=request.method, data=input_data, headers=headers, timeout=5)
+            response = Response(r.text, r.status_code)
         except Exception as e:
-            exception = "Exception({0})".format(sys.exc_info()[0])
+            exception = "Exception({})".format(e.__str__())
             response = Response(json.dumps(http.failure(ApiConstants.CONTAINER_UNREACHABLE,
                                                         ErrorCodes.HTTP_CODE.get(
                                                             ApiConstants.CONTAINER_UNREACHABLE) % (
