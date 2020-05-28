@@ -20,7 +20,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     script_path = "tests/rest_testrunner_integration/input"
     # script_path = "input"
-    expected_version = "4.0.2"
+    expected_version = "4.0.3"
     cleanup_count_safe = 5
     compose_id = ""
 
@@ -299,9 +299,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.GET_ESTUARY_TESTRUNNER_FILE_FAILURE))
+                         ErrorCodes.HTTP_CODE.get(Constants.FOLDER_ZIP_FAILURE) % container_folder)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.GET_ESTUARY_TESTRUNNER_FILE_FAILURE)
+        self.assertEqual(body.get('code'), Constants.FOLDER_ZIP_FAILURE)
         self.assertIsNotNone(body.get('time'))
 
     def test_getcontainerfolder_folder_param_missing_n(self):
@@ -404,43 +404,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message').get("commands").get(commands[1]).get("status"), "finished")
         self.assertIsInstance(body.get('message').get("commands").get(commands[1]).get("details"), dict)
         self.assertEqual(body.get('message').get("commands").get(commands[2]).get("status"), "finished")
-
-    def test_teststop_p(self):
-        test_id = "100"
-        data_payload = f"sleep 7 \n sleep 3600 \n sleep 3601"
-        commands = list(map(lambda x: x.strip(), data_payload.split("\n")))
-        headers = {'Content-type': 'text/plain'}
-
-        response = requests.post(
-            self.server_testrunner + f"/{self.compose_id}" + f"/test/{test_id}",
-            data=f"{data_payload}", headers=headers)
-        print(dump.dump_all(response))
-        body = response.json()
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message'), test_id)
-        time.sleep(2)
-        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/test")
-        body = response.json()
-        self.assertEqual(body.get('message').get("id"), f"{test_id}")
-        self.assertEqual(body.get('message').get("started"), "true")
-        self.assertEqual(body.get('message').get("finished"), "false")
-        self.assertEqual(body.get('message').get("commands").get(commands[0]).get("status"), "in progress")
-        self.assertEqual(body.get('message').get("commands").get(commands[1]).get("status"), "scheduled")
-        self.assertEqual(body.get('message').get("commands").get(commands[2]).get("status"), "scheduled")
-        # for every command sent initially send a stop request
-        for i in range(0, len(commands)):
-            response = requests.delete(self.server_testrunner + f"/{self.compose_id}" + "/test")
-            self.assertEqual(response.status_code, 200)
-            body = response.json()
-            self.assertEqual(body.get('message'), test_id)
-
-        response = requests.get(self.server_testrunner + f"/{self.compose_id}" + "/test")
-        print(dump.dump_all(response))
-        self.assertEqual(response.status_code, 200)
-        body = response.json()
-        # self.assertEqual(body.get('message').get("finished"), "true")
-        self.assertEqual(body.get('message').get("id"), f"{test_id}")
-        # self.assertEqual(body.get('message').get("started"), "false")
 
     @parameterized.expand([
         "{\"file\": \"/dummy/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"

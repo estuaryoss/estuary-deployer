@@ -30,12 +30,12 @@ class DockerEnvExpireScheduler:
         logging.getLogger('apscheduler').setLevel(logging.INFO)
 
     def start(self):
-        self.fluentd_utils.debug(self.fluentd_tag,
-                                 self.message_dumper.dump_message("Starting docker env expire scheduler"))
+        self.fluentd_utils.emit(tag=self.fluentd_tag,
+                                 msg=self.message_dumper.dump_message("Starting docker env expire scheduler"))
         atexit.register(lambda: self.scheduler.shutdown(wait=False))
         self.scheduler.start()
 
     def stop(self):
-        self.fluentd_utils.debug(self.fluentd_tag,
-                                 self.message_dumper.dump_message("Stopping docker env expire scheduler"))
+        self.fluentd_utils.emit(tag=self.fluentd_tag,
+                                 msg=self.message_dumper.dump_message("Stopping docker env expire scheduler"))
         self.scheduler.shutdown(wait=False)

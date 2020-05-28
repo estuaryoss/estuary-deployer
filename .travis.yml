@@ -62,9 +62,7 @@ jobs:
         #  - sleep 3600
         - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
         - ls -lrt /tmp
-        - kill "$PID"
         - ps -ef
-        - sleep 5
 
     #run docker tests - docker sock mount
     - language: python
@@ -84,12 +82,45 @@ jobs:
         - docker run -d
           -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
           -p 8080:8080
-          -v $PWD/inputs/templates:/data
-          -v $PWD/inputs/variables:/variables
+          -v $PWD/inputs/templates:/scripts/inputs/templates
+          -v $PWD/inputs/variables:/scripts/inputs/variables
           -v /var/run/docker.sock:/var/run/docker.sock
           --net=estuarydeployer_default
           --name estuary-deployer
           dinutac/estuary-deployer:latest
+        - sleep 10
+        - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
+
+    #run docker tests - docker sock mount CENTOS
+    - language: python
+      python: 3.6
+      services:
+        - docker
+      env:
+        TEST_ENV: centos
+        MAX_DEPLOYMENTS: 3
+        SCRIPTS_DIR: tests
+        ISOLATED: true
+      before_script:
+        - pip3 install -r requirements.txt
+        - pyinstaller --onefile main_flask.py
+        - ls -lrt dist
+        - cp dist/main_flask main-linux
+        - docker pull centos:8
+        - docker pull mysql:5.6
+        - docker pull alpine:3.9.4
+        - docker build -t dinutac/estuary-deployer-centos:latest -f Dockerfiles/Dockerfile_centos .
+      script:
+        - docker network create estuarydeployer_default
+        - docker run -d
+          -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
+          -p 8080:8080
+          -v $PWD/inputs/templates:/scripts/inputs/templates
+          -v $PWD/inputs/variables:/scripts/inputs/variables
+          -v /var/run/docker.sock:/var/run/docker.sock
+          --net=estuarydeployer_default
+          --name estuary-deployer
+          dinutac/estuary-deployer-centos:latest
         - sleep 10
         - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
 
@@ -125,9 +156,7 @@ jobs:
         - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "flask_rest_test.py"
         - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "k8s_integration_test.py"
         - ls -lrt /tmp
-        - kill "$PID"
         - ps -ef
-        - sleep 5
 
     #run templating tests
     - language: python
@@ -158,24 +187,23 @@ jobs:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
         - docker pull dinutac/estuary-testrunner:latest
-        - docker pull dinutac/netflixoss-eureka:1.9.15
+        - docker pull dinutac/netflixoss-eureka:1.9.21
         - docker build -t dinutac/estuary-deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 dinutac/netflixoss-eureka:1.9.15
+          -p 8081:8080 dinutac/netflixoss-eureka:1.9.21
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
         - echo "EUREKA_SERVER=$EUREKA_SERVER_LOCAL" >> .env
         - echo "APP_IP_PORT=${IP_ADDR_ARRAY[0]}:8080" >> .env
         - cat .env
-        - chmod +x wait-for-it.sh
-        - ./wait-for-it.sh -t 20 "http://${IP_ADDR_ARRAY[0]}:8081" -- echo "eureka running" && sleep 30
+        - sleep 30
         - docker run -d
           -p 8080:8080
-          -v $PWD/inputs/templates:/data
-          -v $PWD/inputs/variables:/variables
+          -v $PWD/inputs/templates:/scripts/inputs/templates
+          -v $PWD/inputs/variables:/scripts/inputs/variables
           -v /var/run/docker.sock:/var/run/docker.sock
           --net=estuarydeployer_default
           --name estuary-deployer
@@ -191,9 +219,6 @@ jobs:
         #- ./ngrok.sh 8080 $NGROK_TOKEN
         #- docker logs -f estuary-deployer
         #- docker logs $(docker ps -a | grep testrunner | awk '{print $13}')
-        - docker stop $(docker ps -a -q)
-        - docker rm $(docker ps -a -q)
-        - docker network prune -f
 
     #run discovery integration tests
     - language: python
@@ -208,24 +233,23 @@ jobs:
         - docker pull mysql:5.6
         - docker pull dinutac/estuary-testrunner:latest
         - docker pull dinutac/estuary-discovery:latest
-        - docker pull dinutac/netflixoss-eureka:1.9.15
+        - docker pull dinutac/netflixoss-eureka:1.9.21
         - docker build -t dinutac/estuary-deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 dinutac/netflixoss-eureka:1.9.15
+          -p 8081:8080 dinutac/netflixoss-eureka:1.9.21
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
         - echo "EUREKA_SERVER=$EUREKA_SERVER_LOCAL" >> .env
         - echo "APP_IP_PORT=${IP_ADDR_ARRAY[0]}:8080" >> .env
         - cat .env
-        - chmod +x wait-for-it.sh
-        - ./wait-for-it.sh -t 20 "http://${IP_ADDR_ARRAY[0]}:8081" -- echo "eureka running" && sleep 30
+        - sleep 30
         - docker run -d
           -p 8080:8080
-          -v $PWD/inputs/templates:/data
-          -v $PWD/inputs/variables:/variables
+          -v $PWD/inputs/templates:/scripts/inputs/templates
+          -v $PWD/inputs/variables:/scripts/inputs/variables
           -v /var/run/docker.sock:/var/run/docker.sock
           --net=estuarydeployer_default
           --name estuary-deployer
@@ -241,9 +265,6 @@ jobs:
         #- ./ngrok.sh 8080 $NGROK_TOKEN
         #- docker logs -f estuary-deployer
         #- docker logs $(docker ps -a | grep testrunner | awk '{print $13}')
-        - docker stop $(docker ps -a -q)
-        - docker rm $(docker ps -a -q)
-        - docker network prune -f
 
     #run kubectl tests - in docker container
     - language: python
@@ -262,18 +283,14 @@ jobs:
           -e DEPLOY_ON=kubectl
           -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
           -p 8080:8080
-          -v $PWD/inputs/templates:/data
-          -v $PWD/inputs/variables:/variables
+          -v $PWD/inputs/templates:/scripts/inputs/templates
+          -v $PWD/inputs/variables:/scripts/inputs/variables
           -v /var/run/docker.sock:/var/run/docker.sock
           --net=estuarydeployer_default
           --name estuary-deployer
           dinutac/estuary-deployer:latest
         - sleep 10
         - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "flask_rest_test.py"
-        #- python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "k8s_integration_test.py" #must see how i can deploy a k8s env, until then this will remain commented
-        - docker stop $(docker ps -a -q)
-        - docker rm $(docker ps -a -q)
-        - docker network prune -f
 
         #run schedulers, eureka tests and others
     - language: python
@@ -290,8 +307,8 @@ jobs:
         - docker network create estuarydeployer_default
         - docker run -d
           -p 8080:8080
-          -v $PWD/inputs/templates:/data
-          -v $PWD/inputs/variables:/variables
+          -v $PWD/inputs/templates:/scripts/inputs/templates
+          -v $PWD/inputs/variables:/scripts/inputs/variables
           --net=estuarydeployer_default
           --name estuary-deployer
           dinutac/estuary-deployer:latest
@@ -303,7 +320,7 @@ jobs:
 
         #run eureka registration tests
         - docker-compose up -d
-        - sleep 45
+        - sleep 30
         - docker ps
         - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/rest_eureka "*_test.py"
         - docker-compose down -v
@@ -316,10 +333,9 @@ jobs:
 
         # run env_expire scheduler
         - docker-compose up -d
-        - sleep 45
+        - sleep 30
         - docker ps
         - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/env_expire_scheduler "*_test.py"
-        - docker-compose down -v
 
     - stage: deploy
       services: docker

@@ -2,69 +2,54 @@
 import os
 from pathlib import Path
 
+from fluent import sender
+
 from about import properties
 from rest.api.constants.env_constants import EnvConstants
 from rest.api.eureka_registrator import EurekaRegistrator
 from rest.api.logginghelpers.message_dumper import MessageDumper
-from rest.api.schedulers.docker_clean_folder_scheduler import DockerCleanFolderScheduler
-from rest.api.schedulers.docker_env_expire_scheduler import DockerEnvExpireScheduler
-from rest.api.schedulers.docker_scheduler import DockerScheduler
-from rest.api.schedulers.kubectl_env_expire_scheduler import KubectlEnvExpireScheduler
+from rest.api.schedulers.scheduler_aggregator import SchedulerAggregator
+from rest.api.views import app
 from rest.api.views.docker_view import DockerView
 from rest.api.views.kubectl_view import KubectlView
+from rest.utils.env_startup import EnvStartup
+from rest.utils.fluentd_utils import FluentdUtils
 from rest.utils.io_utils import IOUtils
+
+DockerView.register(app=app)
+KubectlView.register(app=app)
 
 if __name__ == "__main__":
 
-    app_append_id = ""
-    deploy_on = "docker"  # default runs on docker
-    env_expire_in = 1440  # minutes
-    host = '0.0.0.0'
-    port = properties["port"]
     fluentd_tag = "startup"
+    host = '0.0.0.0'
     message_dumper = MessageDumper()
     io_utils = IOUtils()
 
-    if os.environ.get('APP_APPEND_ID'):
-        app_append_id = os.environ.get('APP_APPEND_ID').lower()
-    if os.environ.get('EUREKA_SERVER'):
-        EurekaRegistrator(os.environ.get('EUREKA_SERVER')).register_app(os.environ.get("APP_IP_PORT"), app_append_id)
-    if os.environ.get('DEPLOY_ON'):
-        deploy_on = os.environ.get("DEPLOY_ON")
-    if os.environ.get('ENV_EXPIRE_IN'):
-        env_expire_in = int(os.environ.get("ENV_EXPIRE_IN"))
-    if os.environ.get('PORT'):
-        port = int(os.environ.get("PORT"))  # override port  if set from env
+    if EnvStartup.get_instance().get("eureka_server"):
+        EurekaRegistrator(EnvStartup.get_instance().get("eureka_server")).register_app(
+            EnvStartup.get_instance().get("app_ip_port"),
+            EnvStartup.get_instance().get("app_append_id"))
 
     io_utils.create_dir(Path(EnvConstants.DEPLOY_PATH))
     io_utils.create_dir(Path(EnvConstants.TEMPLATES_PATH))
     io_utils.create_dir(Path(EnvConstants.VARIABLES_PATH))
 
-    if "docker" in deploy_on:
-        # start schedulers
-        view = DockerView()
-        DockerScheduler().start()
-        DockerEnvExpireScheduler(fluentd_utils=view.get_view_fluentd_utils(),
-                                 env_expire_in=env_expire_in).start()  # minutes
-        DockerCleanFolderScheduler().start()
-    elif "kubectl" in deploy_on:
-        # start schedulers
-        view = KubectlView()
-        KubectlEnvExpireScheduler(fluentd_utils=view.get_view_fluentd_utils(),
-                                  env_expire_in=env_expire_in).start()
-    else:
-        raise NotImplementedError("Deploy on '%s' option is not supported" % deploy_on)
-
-    app = view.get_view_app()
-    fluentd_utils = view.get_view_fluentd_utils()
-    view.register(app)
+    SchedulerAggregator(env_expire_in=EnvStartup.get_instance().get("env_expire_in")).start()
 
     environ_dump = message_dumper.dump_message(dict(os.environ))
-    ip_port_dump = message_dumper.dump_message({"host": host, "port": port})
+    ip_port_dump = message_dumper.dump_message({"host": host, "port": EnvStartup.get_instance().get("port")})
 
     app.logger.debug({"msg": environ_dump})
     app.logger.debug({"msg": ip_port_dump})
+    app.logger.debug({"msg": EnvStartup.get_instance()})
 
-    fluentd_utils.debug(fluentd_tag, environ_dump)
+    logger = \
+        sender.FluentSender(tag=properties.get('name'),
+                            host=EnvStartup.get_instance().get("fluentd_ip_port").split(":")[0],
+                            port=int(EnvStartup.get_instance().get("fluentd_ip_port").split(":")[1])) \
+            if EnvStartup.get_instance().get("fluentd_ip_port") else None
+    fluentd_utils = FluentdUtils(logger)
+    fluentd_utils.emit(tag=fluentd_tag, msg=environ_dump)
 
-    app.run(host=host, port=port)
+    app.run(host=host, port=EnvStartup.get_instance().get("port"))

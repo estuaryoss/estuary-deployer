@@ -1,0 +1,24 @@
+from rest.api.schedulers.docker_clean_folder_scheduler import DockerCleanFolderScheduler
+from rest.api.schedulers.docker_env_expire_scheduler import DockerEnvExpireScheduler
+from rest.api.schedulers.docker_scheduler import DockerScheduler
+from rest.api.schedulers.kubectl_env_expire_scheduler import KubectlEnvExpireScheduler
+from rest.api.views.docker_view import DockerView
+from rest.api.views.kubectl_view import KubectlView
+from rest.utils.env_startup import EnvStartup
+
+
+class SchedulerAggregator:
+    def __init__(self, env_expire_in):
+        self.env_expire_in = env_expire_in
+
+    def start(self):
+        if "docker" in EnvStartup.get_instance().get("deploy_on"):
+            DockerScheduler().start()
+            DockerEnvExpireScheduler(fluentd_utils=DockerView.fluentd_utils,
+                                     env_expire_in=self.env_expire_in).start()  # minutes
+            DockerCleanFolderScheduler().start()
+        elif "kubectl" in EnvStartup.get_instance().get("deploy_on"):
+            KubectlEnvExpireScheduler(fluentd_utils=KubectlView.fluentd_utils,
+                                      env_expire_in=self.env_expire_in).start()
+        else:
+            raise NotImplementedError("Deploy on '%s' option is not supported" % EnvStartup.get_instance().get("deploy_on"))

@@ -15,7 +15,7 @@ from tests.rest_docker.error_codes import ErrorCodes
 class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/kubectl"
 
-    expected_version = "4.0.2"
+    expected_version = "4.0.3"
     sleep_before_container_up = 5
 
     def test_env_endpoint(self):
@@ -87,7 +87,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
     def test_swagger_endpoint(self):
-        response = requests.get(self.server + "/api/docs")
+        response = requests.get(self.server + "/api/docs/")
 
         body = response.text
         self.assertEqual(response.status_code, 200)
@@ -96,7 +96,7 @@ class FlaskServerTestCase(unittest.TestCase):
     @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
     def test_swagger_endpoint_swagger_still_accesible(self):
         headers = {'Token': 'whateverinvalid'}
-        response = requests.get(self.server + "/api/docs", headers=headers)
+        response = requests.get(self.server + "/api/docs/", headers=headers)
 
         body = response.text
         self.assertEqual(response.status_code, 200)

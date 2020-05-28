@@ -16,10 +16,10 @@ services:
       APP_APPEND_ID: SR # this suffix will be added to the deployer service in order to differentiate between different services mapped on VM with specific resources
       APP_IP_PORT: estuary-deployer:8080 #your app details: where it is and on which port. needed for service discovery and spread of tests from the test client
 #    entrypoint: python3 /scripts/main_flask.py
-    command: bash -c "/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 30 && python3 /scripts/main_flask.py"
+    command: bash -c "sleep 20 && /scripts/main_flask.py"
     volumes:
-      - ./inputs/templates:/data
-      - ./inputs/variables:/variables
+      - ./inputs/templates:/scripts/inputs/templates
+      - ./inputs/variables:/scripts/inputs/variables
 #      - ./:/scripts/
       - /var/run/docker.sock:/var/run/docker.sock # works on win also as long as you don't enable tcp daemon on 2375/2376
 #      - ./tmp:/tmp
@@ -30,9 +30,9 @@ services:
 
   eureka-server:
     container_name: eureka-server
-    image: dinutac/netflixoss-eureka:1.9.15
+    image: dinutac/netflixoss-eureka:1.9.21
     hostname: eureka-server
 #    ports:
-#      - "8081:8080"
+#      - "8090:8080"
     expose:
       - "8080"

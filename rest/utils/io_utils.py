@@ -16,9 +16,9 @@ class IOUtils:
         dir_list = []
         file_path = Path(path)
         if file_path.exists():
-            for directory in list(os.listdir(path)):
-                if os.path.isdir(path + "/{}".format(directory)):
-                    dir_list.append(directory)
+            dir_list = [directory for directory in list(os.listdir(path)) if
+                        os.path.isdir(path + "/{}".format(directory))]
+
         return dir_list
 
     @staticmethod

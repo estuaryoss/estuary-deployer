@@ -12,7 +12,7 @@ from tests.rest_kubectl.error_codes import ErrorCodes
 class FlaskServerTestCase(unittest.TestCase):
     home = "http://localhost:8080/kubectl"
 
-    expected_version = "4.0.2"
+    expected_version = "4.0.3"
     inputs_deployment_path = "tests/rest_kubectl/inputs"
     # inputs_deployment_path = "inputs"
     templates_deployment_path = "inputs/templates" #os.environ.get('TEMPLATES_DIR'))

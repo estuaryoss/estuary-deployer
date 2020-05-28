@@ -77,7 +77,7 @@ class KubectlUtils(EnvCreation):
                 hours_uptime = int(match.group(2))
                 if hours_uptime >= env_expire_in_hours:
                     result = KubectlUtils.down(item.get('name'), item.get('namespace'))
-                    fluentd_utils.debug(fluentd_tag,
-                                        message_dumper.dump_message(
+                    fluentd_utils.emit(tag=fluentd_tag,
+                                        msg=message_dumper.dump_message(
                                             {"action": f"{fluentd_tag}", "out": result.get('out'),
                                              "err": result.get('err')}))

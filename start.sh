@@ -1,3 +1,5 @@
-#!/bin/sh
-cd /scripts/
-python3 main_flask.py
+#!/bin/bash
+
+nohup nginx &
+/scripts/main_flask.py
+#uwsgi /scripts/flaskconfig.ini

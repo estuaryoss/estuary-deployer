@@ -12,6 +12,7 @@ Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/release
 ## Coverage & code quality
 [![Coverage Status](https://coveralls.io/repos/github/dinuta/estuary-deployer/badge.svg?branch=master)](https://coveralls.io/github/dinuta/estuary-deployer?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/fd41fd77c2594a1f8211a5c1e8926117)](https://www.codacy.com/manual/dinuta/estuary-deployer?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=dinuta/estuary-deployer&amp;utm_campaign=Badge_Grade)
+[![Maintainability](https://api.codeclimate.com/v1/badges/415605917fdf321fcd83/maintainability)](https://codeclimate.com/github/dinuta/estuary-deployer/maintainability)
 
 ## Linux status
 [![Build Status](https://travis-ci.org/dinuta/estuary-deployer.svg?branch=master)](https://travis-ci.org/dinuta/estuary-deployer)
@@ -64,7 +65,7 @@ Start Eureka server with docker:
 
     docker run -p 8080:8080 netflixoss/eureka:1.3.1  
     or
-    docker run -p 8080:8080 dinutac/netflixoss-eureka:1.9.15
+    docker run -p 8080:8080 dinutac/netflixoss-eureka:1.9.21
 
 Start your containers by specifying the full hostname or ip of the host machine on where your deployer service resides.  
     
@@ -75,11 +76,11 @@ Start your containers by specifying the full hostname or ip of the host machine 
             -e EUREKA_SERVER="http://10.13.14.28:8080/eureka/v2" -> eureka server
             -e APP_IP_PORT="10.13.14.28:8081" -> the app hostname/ip:port. Mandatory if EUREKA_SERVER is used
             -e APP_APPEND_ID="lab" -> id will be appended to the default app name on service registration. Useful for user mappings service-resources on a VM
-            -e FLUENTD_IP_PORT="10.13.14.28:24224" -> fluentd log collector agent target ip:port
+            -e FLUENTD_IP_PORT="10.13.14.28:24224" -> fluentd __enrich_message collector agent target ip:port
             -e DEPLOY_ON="docker" -> on what the env to be deployed. Options: docker, kubectl
             -e ENV_EXPIRE_IN=1440 -> how long it will take before the env will be deleted. Default is 1440 min.
     Mandatory:
-        -p 8080:8080 -> port fwd from docker 8080 to host 8080
+        -p 8081:8080 -> port fwd from docker 8080 to host 8081
         -v /var/run/docker.sock:/var/run/docker.sock -> docker sock mount
         --net=estuarydeployer_default -> bind to this net prior created
 

@@ -1,7 +1,9 @@
 FROM alpine:3.11
 
+RUN apk update
+
 RUN apk add --no-cache python3 && \
-    pip3 install --upgrade pip==20.1 setuptools==46.2.0 --no-cache
+    pip3 install --upgrade pip==20.1.1 setuptools==46.2.0 --no-cache
 
 RUN apk add --no-cache \
     bash \
@@ -20,6 +22,14 @@ RUN apk add --no-cache \
 RUN pip3 install \
   docker-compose==1.25.5
 
+## nginx
+RUN apk add nginx
+RUN adduser -D -g 'www' www
+RUN mkdir /www
+RUN mkdir -p /run/nginx
+RUN chown -R www:www /var/lib/nginx
+RUN chown -R www:www /www
+
 ## Kubectl
 ADD https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod +x /usr/local/bin/kubectl
@@ -27,11 +37,6 @@ RUN mkdir /root/.kube
 
 ## Cleanup
 RUN rm -rf /var/cache/apk/*
-
-# Create a shared data volume
-# create an empty file, otherwise the volume will
-# belong to root.
-RUN mkdir /data/
 
 ## Expose some volumes
 VOLUME ["/scripts/inputs/templates"]
@@ -56,6 +61,8 @@ COPY ./ $SCRIPTS_DIR/
 COPY ./inputs/templates/ $TEMPLATES_DIR/
 COPY ./inputs/variables/ $VARS_DIR/
 
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+
 RUN chmod +x $SCRIPTS_DIR/*.py
 RUN chmod +x $SCRIPTS_DIR/*.sh
 
@@ -63,4 +70,4 @@ WORKDIR $SCRIPTS_DIR
 
 RUN pip3 install -r $SCRIPTS_DIR/requirements.txt
 
-CMD ["python3", "/scripts/main_flask.py"]
+CMD ["/scripts/start.sh"]

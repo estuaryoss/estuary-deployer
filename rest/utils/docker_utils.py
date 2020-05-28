@@ -95,8 +95,8 @@ class DockerUtils(EnvCreation):
     @staticmethod
     def get_active_deployments():
         active_deployments = []
-        full_deployments_list = IOUtils.get_list_dir(f"{EnvConstants.DEPLOY_PATH}")
-        for item in full_deployments_list:
+        env_list = IOUtils.get_list_dir(f"{EnvConstants.DEPLOY_PATH}")
+        for item in env_list:
             container_list = DockerUtils.ps(item).get('out').split("\n")[1:-1]
             for container in container_list:
                 if item in container:
@@ -107,10 +107,8 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def folder_clean_up(path=EnvConstants.DEPLOY_PATH, delete_period=60):
-        active_deployments = []
-        active_deployments_objects = DockerUtils.get_active_deployments()
-        for item in active_deployments_objects:
-            active_deployments.append(item.get('id'))
+        active_deployments = [item.get('id') for item in DockerUtils.get_active_deployments()]
+
         full_deployments_list = map(lambda x: x.rstrip(), IOUtils.get_list_dir(f"{path}"))
         for item in full_deployments_list:
             if item not in active_deployments and (datetime.datetime.now() - datetime.datetime.fromtimestamp(
@@ -121,15 +119,13 @@ class DockerUtils(EnvCreation):
     def env_clean_up(fluentd_utils, path=EnvConstants.DEPLOY_PATH, env_expire_in=1440):  # 1 day
         fluentd_tag = 'docker_env_clean_up'
         message_dumper = MessageDumper()
-        active_deployments = []
-        active_deployments_objects = DockerUtils.get_active_deployments()
-        for item in active_deployments_objects:
-            active_deployments.append(item.get('id'))
+        active_deployments = [item.get('id') for item in DockerUtils.get_active_deployments()]
+
         for item in active_deployments:
             if (datetime.datetime.now() - datetime.datetime.fromtimestamp(
                     os.path.getmtime(f"{path}/{item}"))) > datetime.timedelta(minutes=env_expire_in):
                 result = DockerUtils.down(f"{path}/{item}/{item}")
-                fluentd_utils.debug(fluentd_tag,
-                                    message_dumper.dump_message(
-                                        {"action": f"{fluentd_tag}", "out": result.get('out'),
-                                         "err": result.get('err')}))
+                fluentd_utils.emit(tag=fluentd_tag,
+                                   msg=message_dumper.dump_message(
+                                       {"action": f"{fluentd_tag}", "out": result.get('out'),
+                                        "err": result.get('err')}))
