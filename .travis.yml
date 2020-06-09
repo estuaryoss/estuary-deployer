@@ -38,7 +38,6 @@ jobs:
         VARS_DIR: inputs/variables
         SCRIPTS_DIR: tests
         MAX_DEPLOYMENTS: 3
-        DEPLOY_ON: docker
         NGROK_TOKEN: 1RER6BUC3QNNwYWY5LcIBjrv3A8_24QccmopTEQJGMErG9uzw
       before_script:
         - docker pull alpine:3.9.4
@@ -132,7 +131,6 @@ jobs:
         TEMPLATES_DIR: inputs/templates
         VARS_DIR: inputs/variables
         SCRIPTS_DIR: tests
-        DEPLOY_ON: kubectl
       before_script:
         - docker pull alpine:3.10.2
         - pip install -r requirements.txt
@@ -280,7 +278,6 @@ jobs:
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -e DEPLOY_ON=kubectl
           -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
           -p 8080:8080
           -v $PWD/inputs/templates:/scripts/inputs/templates

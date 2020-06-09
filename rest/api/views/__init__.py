@@ -5,7 +5,6 @@ from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 
 from rest.api.views.flask_config import Config
-from rest.utils.env_startup import EnvStartup
 
 
 class FlaskApp:
@@ -26,8 +25,8 @@ class FlaskApp:
 
 app = FlaskApp.get_instance()
 app.register_blueprint(get_swaggerui_blueprint(
-    base_url='/{}/api/docs'.format(EnvStartup.get_instance().get("deploy_on")),
-    api_url='/{}/swagger/swagger.yml'.format(EnvStartup.get_instance().get("deploy_on")),
+    base_url='/api/docs',
+    api_url='/docker/swagger/swagger.yml',
     config={
         'app_name': "estuary-deployer"
-    }), url_prefix='/{}/api/docs'.format(EnvStartup.get_instance().get("deploy_on")))
+    }), url_prefix='/api/docs')

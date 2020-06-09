@@ -12,7 +12,6 @@ class EnvStartup:
 
     def __init__(self):
         EnvStartup.__instance = {
-            "deploy_on": os.environ.get('DEPLOY_ON').lower() if os.environ.get('DEPLOY_ON') else "docker",
             "app_append_id": os.environ.get('APP_APPEND_ID').lower() if os.environ.get('APP_APPEND_ID') else "",
             "env_expire_in": int(os.environ.get('ENV_EXPIRE_IN')) if os.environ.get('ENV_EXPIRE_IN') else 1440,
             "app_ip_port": os.environ.get('APP_IP_PORT').strip().lower() if os.environ.get('APP_IP_PORT') else None,

@@ -53,7 +53,6 @@ ENV DEPLOY_PATH $WORKSPACE/deployments
 ENV OUT_DIR out
 ENV TEMPLATE alpine.yml
 ENV VARIABLES variables.yml
-ENV DEPLOY_ON docker
 
 ENV TZ UTC
 

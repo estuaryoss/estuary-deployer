@@ -14,7 +14,8 @@ from tests.rest_docker.error_codes import ErrorCodes
 
 
 class FlaskServerTestCase(unittest.TestCase):
-    server = "http://localhost:8080/docker"
+    server_base = "http://localhost:8080"
+    server = "{}/docker".format(server_base)
     # server = "http://" + os.environ.get('SERVER')
 
     expected_version = "4.0.3"
@@ -109,7 +110,7 @@ class FlaskServerTestCase(unittest.TestCase):
     @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
     @unittest.skipIf(os.environ.get('TEST_ENV') == "centos", "Skip on centos bin")
     def test_swagger_endpoint(self):
-        response = requests.get(self.server + "/api/docs/")
+        response = requests.get(self.server_base + "/api/docs/")
 
         body = response.text
         self.assertEqual(response.status_code, 200)
@@ -119,7 +120,7 @@ class FlaskServerTestCase(unittest.TestCase):
     @unittest.skipIf(os.environ.get('TEST_ENV') == "centos", "Skip on centos bin")
     def test_swagger_endpoint_swagger_still_accesible(self):
         headers = {'Token': 'whateverinvalid'}
-        response = requests.get(self.server + "/api/docs/", headers=headers)
+        response = requests.get(self.server_base + "/api/docs/", headers=headers)
 
         body = response.text
         self.assertEqual(response.status_code, 200)

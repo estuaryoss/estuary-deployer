@@ -1,5 +1,3 @@
-import os
-
 import py_eureka_client.eureka_client as eureka_client
 
 from about import properties
@@ -19,7 +17,7 @@ class EurekaRegistrator:
                            app_name=f"{properties['name']}{app_append_id}",
                            instance_port=app_port,
                            instance_ip=app_ip,
-                           health_check_url=f"{os.environ.get('DEPLOY_ON')}/ping",
-                           home_page_url=f"{os.environ.get('DEPLOY_ON')}/",
-                           status_page_url=f"{os.environ.get('DEPLOY_ON')}/ping"
+                           health_check_url="api/docs",
+                           home_page_url="/",
+                           status_page_url="api/docs"
                            )
