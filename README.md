@@ -76,7 +76,7 @@ Start your containers by specifying the full hostname or ip of the host machine 
             -e EUREKA_SERVER="http://10.13.14.28:8080/eureka/v2" -> eureka server
             -e APP_IP_PORT="10.13.14.28:8081" -> the app hostname/ip:port. Mandatory if EUREKA_SERVER is used
             -e APP_APPEND_ID="lab" -> id will be appended to the default app name on service registration. Useful for user mappings service-resources on a VM
-            -e FLUENTD_IP_PORT="10.13.14.28:24224" -> fluentd __enrich_message collector agent target ip:port
+            -e FLUENTD_IP_PORT="10.13.14.28:24224" -> fluentd log collector agent target ip:port
             -e ENV_EXPIRE_IN=1440 -> how long it will take before the env will be deleted. Default is 1440 min.
     Mandatory:
         -p 8081:8080 -> port fwd from docker 8080 to host 8081
