@@ -3,7 +3,7 @@ from tests.rest_docker.constants import Constants
 
 class ErrorCodes:
     HTTP_CODE = {
-        Constants.SUCCESS: "success",
+        Constants.SUCCESS: "Success",
         Constants.JINJA2_RENDER_FAILURE: "jinja2 render failed",
         Constants.DEPLOY_START_FAILURE: "deploy start action failed",
         Constants.DEPLOY_STOP_FAILURE: "deploy stop action failed",

@@ -11,7 +11,7 @@ from tests.rest_docker_sock.error_codes import ErrorCodes
 class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
 
-    expected_version = "4.0.3"
+    expected_version = "4.0.6"
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -21,7 +21,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING))
+        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DOCKER_DAEMON_NOT_RUNNING)
         self.assertIsNotNone(body.get('time'))

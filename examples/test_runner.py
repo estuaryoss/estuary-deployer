@@ -32,7 +32,7 @@ if __name__ == '__main__':
     apps_list = EurekaClient("http://192.168.100.12:8080/eureka/v2").get_apps()
     http = HttpResponse()
     print(json.dumps(
-        http.success(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), apps_list)))
+        http.response(Constants.SUCCESS, ErrorCodes.HTTP_CODE.get(Constants.SUCCESS), apps_list)))
 
     # step 2 - start deploying your test envs on them (until no more ram available to use). Use multi thread
     # TODO

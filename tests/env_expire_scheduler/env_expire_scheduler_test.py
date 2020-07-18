@@ -23,11 +23,11 @@ class EnvExpireSchedulerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         time.sleep(5)
         response = requests.get(self.server + "/deployments")
-        self.assertEqual(len(response.json().get('message')), 1)
+        self.assertEqual(len(response.json().get('description')), 1)
         self.env_expire_scheduler.start()
         time.sleep(80)
         response = requests.get(self.server + "/deployments")
-        self.assertEqual(len(response.json().get('message')), 0)
+        self.assertEqual(len(response.json().get('description')), 0)
 
     def tearDown(self):
         self.env_expire_scheduler.stop()

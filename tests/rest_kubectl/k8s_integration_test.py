@@ -12,7 +12,7 @@ from tests.rest_kubectl.error_codes import ErrorCodes
 class FlaskServerTestCase(unittest.TestCase):
     home = "http://localhost:8080/kubectl"
 
-    expected_version = "4.0.3"
+    expected_version = "4.0.6"
     inputs_deployment_path = "tests/rest_kubectl/inputs"
     # inputs_deployment_path = "inputs"
     templates_deployment_path = "inputs/templates" #os.environ.get('TEMPLATES_DIR'))
@@ -59,7 +59,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(f"{self.home}/deployments", data=payload)
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'),
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
@@ -71,7 +71,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(f"{self.home}/deployments", data=payload)
         body = response.json()
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'),
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
@@ -81,7 +81,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(f"{self.home}/deployments/k8sdeployment_alpine_up.yml/variables.yml")
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'),
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
@@ -96,7 +96,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(f"{self.home}/deployments/{template}/{variables}")
         body = response.json()
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'),
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
@@ -106,7 +106,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(f"{self.home}/deployments/k8sdeployment_alpine_up.yml/variables.yml")
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'),
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
@@ -121,7 +121,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(f"{self.home}/deployments/{template}/{variables}")
         body = response.json()
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('description'),
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
@@ -137,8 +137,8 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(f"{self.home}/deployments/dummy", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(body.get('message')), 0)
-        self.assertEqual(body.get('description'),
+        self.assertEqual(len(body.get('description')), 0)
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
@@ -156,10 +156,10 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         # self.assertEqual(len(body.get('message')), 1)
-        self.assertIn(deployment, body.get('message')[0].get('name'))
-        self.assertEqual(body.get('message')[0].get('namespace'), "default")
-        self.assertIn(deployment, body.get('message')[0].get('pod'))
-        self.assertEqual(body.get('description'),
+        self.assertIn(deployment, body.get('description')[0].get('name'))
+        self.assertEqual(body.get('description')[0].get('namespace'), "default")
+        self.assertIn(deployment, body.get('description')[0].get('pod'))
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
@@ -175,8 +175,8 @@ class FlaskServerTestCase(unittest.TestCase):
                                 headers={"K8s-Namespace": "default"})
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertIn(deployment, body.get('message'))
-        self.assertEqual(body.get('description'),
+        self.assertIn(deployment, body.get('description'))
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
@@ -192,8 +192,8 @@ class FlaskServerTestCase(unittest.TestCase):
                                 headers={"K8s-Namespace": "production"})
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertIn(deployment, body.get('message'))
-        self.assertEqual(body.get('description'),
+        self.assertIn(deployment, body.get('description'))
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
@@ -222,15 +222,15 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         time.sleep(self.sleep_after_deploy_start)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(body.get('message')), 0)
-        self.assertEqual(body.get('description'),
+        self.assertEqual(len(body.get('description')), 0)
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
         headers = {'K8s-Namespace': 'default', "Label-Selector": "k8s-app=alpine"}
         response = requests.get(f"{self.home}/deployments", headers=headers)
-        self.assertIn("Terminating", response.json().get('message')[0].get('pod'))
+        self.assertIn("Terminating", response.json().get('description')[0].get('pod'))
 
     def test_deploy_stop_production_namespace_p(self):
         deployment = "alpine"
@@ -240,8 +240,8 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.delete(f"{self.home}/deployments/{deployment}", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(body.get('message')), 0)
-        self.assertEqual(body.get('description'),
+        self.assertEqual(len(body.get('description')), 0)
+        self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
@@ -253,7 +253,6 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.delete(f"{self.home}/deployments/{deployment}", headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 404)
-        self.assertIn(deployment, body.get('message'))
         self.assertIn(deployment, body.get('description'))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.KUBERNETES_SERVER_ERROR)
@@ -266,8 +265,8 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message').get('command').get(payload).get('details').get('code'), 0)
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('description').get('command').get(payload).get('details').get('code'), 0)
+        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertIsNotNone(body.get('time'))
 
@@ -279,7 +278,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         }
         response = requests.get(f"{FlaskServerTestCase.home}/deployments", headers=headers)
-        return response.json().get('message')
+        return response.json().get('description')
 
 
 if __name__ == '__main__':

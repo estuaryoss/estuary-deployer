@@ -15,8 +15,8 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     script_path = "tests/rest_discovery_integration/input"
     # script_path = "input"
-    discovery_expected_version = "4.0.3"
-    testrunner_expected_version = "4.0.3"
+    discovery_expected_version = "4.0.6"
+    testrunner_expected_version = "4.0.6"
     cleanup_count_safe = 5
     compose_id = ""
 
@@ -52,15 +52,15 @@ class FlaskServerTestCase(unittest.TestCase):
     def get_deployment_info():
         response = requests.get(f"{FlaskServerTestCase.server}/deployments")
         print(dump.dump_all(response))
-        return response.json().get('message')
+        return response.json().get('description')
 
     def test_about_endpoint_discovery_p(self):
         response = requests.get(self.server_discovery + f"/{self.compose_id}/about")
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message'), "estuary-discovery")
-        self.assertEqual(body.get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('description'), "estuary-discovery")
+        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.discovery_expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
@@ -71,11 +71,11 @@ class FlaskServerTestCase(unittest.TestCase):
         print(dump.dump_response(response))
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message')[0].get('message'), "estuary-testrunner")
-        self.assertEqual(body.get('message')[0].get('description'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('message')[0].get('version'), self.testrunner_expected_version)
-        self.assertEqual(body.get('message')[0].get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('message')[0].get('time'))
+        self.assertEqual(body.get('description')[0].get('description'), "estuary-testrunner")
+        self.assertEqual(body.get('description')[0].get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('description')[0].get('version'), self.testrunner_expected_version)
+        self.assertEqual(body.get('description')[0].get('code'), Constants.SUCCESS)
+        self.assertIsNotNone(body.get('description')[0].get('time'))
 
 
 if __name__ == '__main__':

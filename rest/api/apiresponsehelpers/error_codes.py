@@ -3,7 +3,7 @@ from rest.api.constants.api_constants import ApiConstants
 
 class ErrorCodes:
     HTTP_CODE = {
-        ApiConstants.SUCCESS: "success",
+        ApiConstants.SUCCESS: "Success",
         ApiConstants.JINJA2_RENDER_FAILURE: "jinja2 render failed",
         ApiConstants.DEPLOY_START_FAILURE: "deploy start action failed",
         ApiConstants.DEPLOY_STOP_FAILURE: "deploy stop action failed",
