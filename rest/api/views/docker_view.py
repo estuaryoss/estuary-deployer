@@ -62,6 +62,7 @@ class DockerView(FlaskView):
         headers['X-Request-ID'] = self.message_dumper.get_header("X-Request-ID")
         http_response.headers = headers
 
+        http_response.direct_passthrough = False
         response = self.fluentd_utils.emit(tag="api", msg=self.message_dumper.dump(http_response))
         app.logger.debug(f"{response}")
 

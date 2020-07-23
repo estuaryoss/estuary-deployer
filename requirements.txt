@@ -13,4 +13,5 @@ flask_swagger_ui
 flask-classful
 fluent-logger
 pyinstaller
+setuptools==44.0.0
 uwsgi
