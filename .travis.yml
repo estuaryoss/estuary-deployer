@@ -170,10 +170,10 @@ jobs:
         - docker run -i
           -v $TRAVIS_BUILD_DIR/inputs/templates:/scripts/inputs/templates
           -v $TRAVIS_BUILD_DIR/inputs/variables:/scripts/inputs/variables  -e TEMPLATE=standalone.yml
-          -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest --entrypoint python3 dinutac/estuary-testrunner:latest
+          -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest --entrypoint python3 dinutac/estuary-agent:latest
           $DOCKER_SCRIPTS_DIR/entities/render.py
 
-    #run testrunner integration tests
+    #run agent integration tests
     - language: python
       python: 3.6
       services:
@@ -184,7 +184,7 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker pull dinutac/estuary-testrunner:latest
+        - docker pull dinutac/estuary-agent:latest
         - docker pull dinutac/netflixoss-eureka:1.9.21
         - docker build -t dinutac/estuary-deployer:latest .
       script:
@@ -212,11 +212,11 @@ jobs:
         #- echo "Deployer net is $(docker network ls | grep deployer | awk '{print $2}' | head -1)"
         - sleep 10
         - docker ps -a
-        - python3 -m unittest discover $SCRIPTS_DIR/rest_testrunner_integration "*_test.py"
+        - python3 -m unittest discover $SCRIPTS_DIR/rest_agent_integration "*_test.py"
         - docker ps -a
         #- ./ngrok.sh 8080 $NGROK_TOKEN
         #- docker logs -f estuary-deployer
-        #- docker logs $(docker ps -a | grep testrunner | awk '{print $13}')
+        #- docker logs $(docker ps -a | grep agent | awk '{print $13}')
 
     #run discovery integration tests
     - language: python
@@ -229,7 +229,7 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker pull dinutac/estuary-testrunner:latest
+        - docker pull dinutac/estuary-agent:latest
         - docker pull dinutac/estuary-discovery:latest
         - docker pull dinutac/netflixoss-eureka:1.9.21
         - docker build -t dinutac/estuary-deployer:latest .
@@ -262,7 +262,7 @@ jobs:
         - docker ps -a
         #- ./ngrok.sh 8080 $NGROK_TOKEN
         #- docker logs -f estuary-deployer
-        #- docker logs $(docker ps -a | grep testrunner | awk '{print $13}')
+        #- docker logs $(docker ps -a | grep agent | awk '{print $13}')
 
     #run kubectl tests - in docker container
     - language: python

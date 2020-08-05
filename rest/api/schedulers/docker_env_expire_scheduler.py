@@ -16,7 +16,7 @@ class DockerEnvExpireScheduler:
     def __init__(self, fluentd_utils=FluentdUtils(sender.FluentSender('estuary', host='127.0.0.1',
                                                                       port=24224)),
                  path=EnvConstants.DEPLOY_PATH,
-                 poll_interval=120, env_expire_in=1440):
+                 poll_interval=1200, env_expire_in=1440):
         self.fluentd_utils = fluentd_utils
         self.fluentd_tag = 'DockerEnvExpireScheduler'
         self.poll_interval = poll_interval

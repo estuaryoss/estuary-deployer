@@ -7,7 +7,7 @@ Support project: <a href="https://paypal.me/catalindinuta?locale.x=en_US"><img s
 # Testing as a Service
 ## Estuary deployer
 Estuary docker deployer service which will run your containers and/or your tests.   
-Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/releases/tag/2.0.0) the estuary-deployer service can run your tests using the [estuary-testrunner](https://github.com/dinuta/estuary-testrunner) service. Check-out the wiki !  
+Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/releases/tag/2.0.0) the estuary-deployer service can run your commands/tests using the [estuary-agent](https://github.com/dinuta/estuary-agent) service. Check-out the wiki !  
 
 ## Coverage & code quality
 [![Coverage Status](https://coveralls.io/repos/github/dinuta/estuary-deployer/badge.svg?branch=master)](https://coveralls.io/github/dinuta/estuary-deployer?branch=master)
@@ -137,7 +137,7 @@ Then, access the Http Api. Call example:
     http://192.168.100.12:8083/docker/ping  
 ## Estuary stack
 [Estuary deployer](https://github.com/dinuta/estuary-deployer)  
-[Estuary testrunner](https://github.com/dinuta/estuary-testrunner)  
+[Estuary agent](https://github.com/dinuta/estuary-agent)  
 [Estuary discovery](https://github.com/dinuta/estuary-discovery)  
 [Estuary viewer](https://github.com/dinuta/estuary-viewer)  
 

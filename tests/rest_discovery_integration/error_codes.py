@@ -1,4 +1,4 @@
-from tests.rest_testrunner_integration.constants import Constants
+from tests.rest_agent_integration.constants import Constants
 
 
 class ErrorCodes:

@@ -6,8 +6,8 @@ import requests
 from flask import json
 from requests_toolbelt.utils import dump
 
-from tests.rest_testrunner_integration.constants import Constants
-from tests.rest_testrunner_integration.error_codes import ErrorCodes
+from tests.rest_agent_integration.constants import Constants
+from tests.rest_agent_integration.error_codes import ErrorCodes
 
 
 class FlaskServerTestCase(unittest.TestCase):
@@ -15,15 +15,15 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     script_path = "tests/rest_discovery_integration/input"
     # script_path = "input"
-    discovery_expected_version = "4.0.6"
-    testrunner_expected_version = "4.0.6"
+    discovery_expected_version = "4.0.7"
+    agent_expected_version = "4.0.7"
     cleanup_count_safe = 5
     compose_id = ""
 
     @classmethod
     def setUpClass(cls):
 
-        with open(f"{cls.script_path}/alpinetestrunner.yml", closefd=True) as f:
+        with open(f"{cls.script_path}/alpineagent.yml", closefd=True) as f:
             payload = f.read()
 
         headers = {'Content-type': 'text/plain'}
@@ -65,15 +65,15 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('time'))
 
-    def test_about_endpoint_discovery_broadcast_to_testrunner_p(self):
-        response = requests.get(self.server_discovery + f"/{self.compose_id}/testrunners/about")
+    def test_about_endpoint_discovery_broadcast_to_agents_p(self):
+        response = requests.get(self.server_discovery + f"/{self.compose_id}/agents/about")
 
         print(dump.dump_response(response))
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description')[0].get('description'), "estuary-testrunner")
+        self.assertEqual(body.get('description')[0].get('description'), "estuary-agent")
         self.assertEqual(body.get('description')[0].get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('description')[0].get('version'), self.testrunner_expected_version)
+        self.assertEqual(body.get('description')[0].get('version'), self.agent_expected_version)
         self.assertEqual(body.get('description')[0].get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('description')[0].get('time'))
 

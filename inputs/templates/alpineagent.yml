@@ -6,19 +6,19 @@ services:
     hostname: alpine
     entrypoint: tail -f /etc/hostname
 
-  testrunner:
-    image: dinutac/estuary-testrunner:latest
-    hostname: testrunner
+  agent:
+    image: dinutac/estuary-agent:latest
+    hostname: agent
     #    entrypoint: tail -f /etc/alpine-release
     #    entrypoint: bash -c "sleep 10 && /scripts/main_flask.py"
     environment:
       limit: 'sky' #example env var inserted. you can read it with environ('limit') in your jinja2 template
       #      EUREKA_SERVER: http://eureka-server:8080/eureka/v2 #your eureka server
-      APP_IP_PORT: estuary-testrunner:8080 #your app details: where it is and on which port. needed for service discovery and spread of tests from the test client
+      APP_IP_PORT: estuary-agent:8080 #your app details: where it is and on which port. needed for service discovery and spread of tests from the test client
     volumes:
       - type: volume
         source: sharedcontent
-        target: /testrunnersources
+        target: /agentsources
 #      - ./inputs/variables:/variables
     #      - ./:/scripts/
     #      - ./tmp:/tmp
@@ -33,7 +33,7 @@ volumes:
     driver_opts:
       o: bind
       type: none
-#      device: /host_mnt/c/Users/whateveruser/IdeaProjects/estuary-testrunner #on windows
+#      device: /host_mnt/c/Users/whateveruser/IdeaProjects/estuary-agent #on windows
       device: /tmp #on linux
 
 

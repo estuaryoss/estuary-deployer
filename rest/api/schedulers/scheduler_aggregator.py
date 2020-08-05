@@ -13,6 +13,7 @@ class SchedulerAggregator:
     def start(self):
         DockerScheduler().start()
         DockerEnvExpireScheduler(fluentd_utils=DockerView.fluentd_utils,
+                                 poll_interval=1200,
                                  env_expire_in=self.env_expire_in).start()  # minutes
         DockerCleanFolderScheduler().start()
         KubectlEnvExpireScheduler(fluentd_utils=KubectlView.fluentd_utils,

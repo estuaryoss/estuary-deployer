@@ -2,9 +2,9 @@ import json
 
 import py_eureka_client.eureka_client as eureka_client
 
-from rest.api.apiresponsehelpers.constants import Constants
 from rest.api.apiresponsehelpers.error_codes import ErrorCodes
 from rest.api.apiresponsehelpers.http_response import HttpResponse
+from tests.rest_docker.constants import Constants
 
 
 class EurekaClient:
