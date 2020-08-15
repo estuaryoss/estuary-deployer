@@ -131,6 +131,26 @@ Then, access the Http Api. Call example:
   
     curl -i -H 'Token:mysecret' http:localhost:8080/about
     
+## Output example
+curl http://172.17.0.22:8083/docker/deployments
+```json
+{
+   "code" : 1000,
+   "description" : [
+      {
+         "containers" : [
+            "346dd96ed55a        dinutac/estuary-discovery:4.0.7   \"/scripts/main_flask…\"   16 seconds ago      Up 15 seconds       8080/tcp            6961ca05296ce48d_container_1"
+         ],
+         "id" : "6961ca05296ce48d"
+      }
+   ],
+   "message" : "Success",
+   "name" : "estuary-deployer",
+   "time" : "2020-08-15 20:32:25.971933",
+   "version" : "4.0.7"
+}
+```
+
 ## Api call examples
 
     http://192.168.100.12:8083/kubectl/ping 
