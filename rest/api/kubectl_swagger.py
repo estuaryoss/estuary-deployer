@@ -3,7 +3,7 @@ kubectl_swagger_file_content = '''
 info:
   description: |
     This is estuary-deployer with Kubectl.
-  version: "4.0.2-kubectl"
+  version: "4.0.8-kubectl"
   title: estuary-deployer
   termsOfService: http://swagger.io/terms/
   contact:

@@ -185,12 +185,12 @@ jobs:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
         - docker pull dinutac/estuary-agent:latest
-        - docker pull dinutac/netflixoss-eureka:1.9.21
+        - docker pull dinutac/netflixoss-eureka:1.9.25
         - docker build -t dinutac/estuary-deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 dinutac/netflixoss-eureka:1.9.21
+          -p 8081:8080 dinutac/netflixoss-eureka:1.9.25
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
@@ -231,12 +231,12 @@ jobs:
         - docker pull mysql:5.6
         - docker pull dinutac/estuary-agent:latest
         - docker pull dinutac/estuary-discovery:latest
-        - docker pull dinutac/netflixoss-eureka:1.9.21
+        - docker pull dinutac/netflixoss-eureka:1.9.25
         - docker build -t dinutac/estuary-deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 dinutac/netflixoss-eureka:1.9.21
+          -p 8081:8080 dinutac/netflixoss-eureka:1.9.25
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2

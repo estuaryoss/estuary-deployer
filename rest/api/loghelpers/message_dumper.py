@@ -1,5 +1,6 @@
 import json
-from json import JSONDecodeError
+
+from rest.api.loghelpers.logging_message import LoggingMessage
 
 
 class MessageDumper:
@@ -29,12 +30,12 @@ class MessageDumper:
             body = {"message": str(request.get_data())}
 
         return {
-            "headers": headers,
-            "body": body
+            LoggingMessage.HEADERS: headers,
+            LoggingMessage.BODY: body
         }
 
     def dump_message(self, message):
         return {
-            "headers": {},
-            "body": {"message": json.dumps(message)}
+            LoggingMessage.HEADERS: {},
+            LoggingMessage.BODY: {"message": json.dumps(message)}
         }

@@ -6,7 +6,7 @@ from about import properties
 from rest.utils.env_startup import EnvStartup
 
 
-class FluentdUtils:
+class Fluentd:
 
     def __init__(self, logger):
         self.logger = logger

@@ -10,29 +10,31 @@ from fluent import sender
 
 from about import properties
 from entities.render import Render
-from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployment
-from rest.api.apiresponsehelpers.error_codes import ErrorCodes
-from rest.api.apiresponsehelpers.http_response import HttpResponse
 from rest.api.constants.api_constants import ApiConstants
 from rest.api.constants.env_constants import EnvConstants
+from rest.api.constants.env_init import EnvInit
+from rest.api.constants.header_constants import HeaderConstants
 from rest.api.definitions import unmodifiable_env_vars
 from rest.api.docker_swagger import docker_swagger_file_content
-from rest.api.logginghelpers.message_dumper import MessageDumper
+from rest.api.loghelpers.message_dumper import MessageDumper
+from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
+from rest.api.responsehelpers.error_codes import ErrorCodes
+from rest.api.responsehelpers.http_response import HttpResponse
 from rest.api.views import app
+from rest.service.fluentd import Fluentd
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.docker_utils import DockerUtils
 from rest.utils.env_startup import EnvStartup
-from rest.utils.fluentd_utils import FluentdUtils
 from rest.utils.io_utils import IOUtils
 
 
 class DockerView(FlaskView):
     logger = \
         sender.FluentSender(tag=properties.get('name'),
-                            host=EnvStartup.get_instance().get("fluentd_ip_port").split(":")[0],
-                            port=int(EnvStartup.get_instance().get("fluentd_ip_port").split(":")[1])) \
-            if EnvStartup.get_instance().get("fluentd_ip_port") else None
-    fluentd_utils = FluentdUtils(logger)
+                            host=EnvStartup.get_instance().get(EnvConstants.FLUENTD_IP_PORT).split(":")[0],
+                            port=int(EnvStartup.get_instance().get(EnvConstants.FLUENTD_IP_PORT).split(":")[1])) \
+            if EnvStartup.get_instance().get(EnvConstants.FLUENTD_IP_PORT) else None
+    fluentd = Fluentd(logger)
     message_dumper = MessageDumper()
 
     def before_request(self, name, *args, **kwargs):
@@ -41,16 +43,18 @@ class DockerView(FlaskView):
         http = HttpResponse()
         request_uri = request.full_path
         # add here your custom header to be logged with fluentd
-        self.message_dumper.set_header("X-Request-ID", request.headers.get('X-Request-ID') if request.headers.get(
-            'X-Request-ID') else ctx.g.xid)
-        self.message_dumper.set_header("Request-Uri", request_uri)
+        self.message_dumper.set_header(HeaderConstants.X_REQUEST_ID,
+                                       request.headers.get(HeaderConstants.X_REQUEST_ID) if request.headers.get(
+                                           HeaderConstants.X_REQUEST_ID) else ctx.g.xid)
+        self.message_dumper.set_header(HeaderConstants.REQUEST_URI, request_uri)
 
-        response = self.fluentd_utils.emit(tag="api", msg=self.message_dumper.dump(request=request))
+        response = self.fluentd.emit(tag="api", msg=self.message_dumper.dump(request=request))
         app.logger.debug(response)
-        if not str(request.headers.get("Token")) == str(EnvStartup.get_instance().get("http_auth_token")):
+        if not str(request.headers.get(HeaderConstants.TOKEN)) == str(
+                EnvStartup.get_instance().get(EnvConstants.HTTP_AUTH_TOKEN)):
             if not ("/api/docs" in request_uri or "/swagger/swagger.yml" in request_uri):  # exclude swagger
                 headers = {
-                    'X-Request-ID': self.message_dumper.get_header("X-Request-ID")
+                    HeaderConstants.X_REQUEST_ID: self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
                 }
                 return Response(json.dumps(http.response(ApiConstants.UNAUTHORIZED,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.UNAUTHORIZED),
@@ -59,11 +63,11 @@ class DockerView(FlaskView):
 
     def after_request(self, name, http_response):
         headers = dict(http_response.headers)
-        headers['X-Request-ID'] = self.message_dumper.get_header("X-Request-ID")
+        headers[HeaderConstants.X_REQUEST_ID] = self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
         http_response.headers = headers
 
         http_response.direct_passthrough = False
-        response = self.fluentd_utils.emit(tag="api", msg=self.message_dumper.dump(http_response))
+        response = self.fluentd.emit(tag="api", msg=self.message_dumper.dump(http_response))
         app.logger.debug(f"{response}")
 
         return http_response
@@ -128,11 +132,11 @@ class DockerView(FlaskView):
         except:
             pass
 
-        os.environ['TEMPLATE'] = template.strip()
-        os.environ['VARIABLES'] = variables.strip()
+        os.environ[EnvConstants.TEMPLATE] = template.strip()
+        os.environ[EnvConstants.VARIABLES] = variables.strip()
 
         try:
-            rendered_content = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES')).rend_template()
+            rendered_content = Render(os.environ.get(EnvConstants.TEMPLATE), os.environ.get(EnvConstants.VARIABLES)).rend_template()
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.JINJA2_RENDER_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.JINJA2_RENDER_FAILURE),
@@ -159,7 +163,7 @@ class DockerView(FlaskView):
         http = HttpResponse()
         docker_utils = DockerUtils()
         token = token_hex(8)
-        deploy_dir = f"{EnvConstants.DEPLOY_PATH}/{token}"
+        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
         file = f"{deploy_dir}/{token}"
         header_key = 'Eureka-Server'
         eureka_server_header = request.headers.get(f"{header_key}")
@@ -169,35 +173,35 @@ class DockerView(FlaskView):
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
                                                      status.get('err'))), 404, mimetype="application/json")
-        if os.environ.get("MAX_DEPLOYMENTS"):
+        if os.environ.get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
-            if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
+            if len(active_deployments) >= int(os.environ.get(EnvConstants.MAX_DEPLOYMENTS)):
                 return Response(json.dumps(http.response(ApiConstants.MAX_DEPLOYMENTS_REACHED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
-                                                             "MAX_DEPLOYMENTS"), active_deployments)), 404,
+                                                             EnvConstants.MAX_DEPLOYMENTS), active_deployments)), 404,
                                 mimetype="application/json")
         try:
             template_file_name = f"deployment_{token}.yml"
             input_data = request.data.decode('utf-8')
-            template_file_path = f"{EnvConstants.TEMPLATES_PATH}/{template_file_name}"
+            template_file_path = f"{EnvInit.TEMPLATES_PATH}/{template_file_name}"
             IOUtils.write_to_file(template_file_path)
             IOUtils.write_to_file(template_file_path, input_data)
 
             IOUtils.create_dir(deploy_dir)
-            os.environ['TEMPLATE'] = f"{template_file_name}"
-            r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
-            if EnvStartup.get_instance().get("eureka_server") and EnvStartup.get_instance().get("app_ip_port"):
+            os.environ[EnvConstants.TEMPLATE] = f"{template_file_name}"
+            r = Render(os.environ.get(EnvConstants.TEMPLATE), os.environ.get(EnvConstants.VARIABLES))
+            if EnvStartup.get_instance().get(EnvConstants.EUREKA_SERVER) and EnvStartup.get_instance().get(EnvConstants.APP_IP_PORT):
                 # if {{app_ip_port}} and {{eureka_server}} then register that instance too
                 if '{{app_ip_port}}' in input_data and '{{eureka_server}}' in input_data:
-                    eureka_server = EnvStartup.get_instance().get("eureka_server")
+                    eureka_server = EnvStartup.get_instance().get(EnvConstants.EUREKA_SERVER)
                     # header value overwrite the eureka server
                     if eureka_server_header:
                         eureka_server = eureka_server_header
-                    input_data = r.get_jinja2env().get_template(os.environ.get('TEMPLATE')).render(
+                    input_data = r.get_jinja2env().get_template(os.environ.get(EnvConstants.TEMPLATE)).render(
                         {"deployment_id": f"{token}",
                          "eureka_server": eureka_server,
-                         "app_ip_port": EnvStartup.get_instance().get("app_ip_port").split("/")[0]
+                         "app_ip_port": EnvStartup.get_instance().get(EnvConstants.APP_IP_PORT).split("/")[0]
                          }
                     )
             app.logger.debug({"msg": {"file_content": f"{input_data}"}})
@@ -232,12 +236,12 @@ class DockerView(FlaskView):
         except:
             pass
 
-        os.environ['TEMPLATE'] = template.strip()
-        os.environ['VARIABLES'] = variables.strip()
-        app.logger.debug({"msg": {"template_file": os.environ.get('TEMPLATE')}})
-        app.logger.debug({"msg": {"variables_file": os.environ.get('VARIABLES')}})
+        os.environ[EnvConstants.TEMPLATE] = template.strip()
+        os.environ[EnvConstants.VARIABLES] = variables.strip()
+        app.logger.debug({"msg": {"template_file": os.environ.get(EnvConstants.TEMPLATE)}})
+        app.logger.debug({"msg": {"variables_file": os.environ.get(EnvConstants.VARIABLES)}})
         token = token_hex(8)
-        deploy_dir = f"{EnvConstants.DEPLOY_PATH}/{token}"
+        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
         file = f"{deploy_dir}/{token}"
 
         status = CmdUtils.run_cmd(["docker", "ps"])
@@ -245,16 +249,16 @@ class DockerView(FlaskView):
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
                                                      status.get('err'))), 404, mimetype="application/json")
-        if os.environ.get("MAX_DEPLOYMENTS"):
+        if os.environ.get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
-            if len(active_deployments) >= int(os.environ.get("MAX_DEPLOYMENTS")):
+            if len(active_deployments) >= int(os.environ.get(EnvConstants.MAX_DEPLOYMENTS)):
                 return Response(json.dumps(http.response(ApiConstants.MAX_DEPLOYMENTS_REACHED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
-                                                             "MAX_DEPLOYMENTS"), active_deployments)), 404,
+                                                             EnvConstants.MAX_DEPLOYMENTS), active_deployments)), 404,
                                 mimetype="application/json")
         try:
-            r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
+            r = Render(os.environ.get(EnvConstants.TEMPLATE), os.environ.get(EnvConstants.VARIABLES))
             IOUtils.create_dir(deploy_dir)
             IOUtils.write_to_file(file)
             IOUtils.write_to_file(file, r.rend_template())
@@ -303,7 +307,7 @@ class DockerView(FlaskView):
         http = HttpResponse()
         env_id = env_id.strip()
         docker_utils = DockerUtils()
-        file = f"{EnvConstants.DEPLOY_PATH}/{env_id}/{env_id}"
+        file = f"{EnvInit.DEPLOY_PATH}/{env_id}/{env_id}"
         try:
             status = docker_utils.down(file)
             if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
@@ -390,7 +394,7 @@ class DockerView(FlaskView):
         http = HttpResponse()
         docker_utils = DockerUtils()
         env_id = env_id.strip()
-        env_id_dir = EnvConstants.DEPLOY_PATH + "/{}".format(env_id)
+        env_id_dir = EnvInit.DEPLOY_PATH + "/{}".format(env_id)
         file = f"{env_id_dir}/{env_id}"
 
         try:
@@ -417,7 +421,9 @@ class DockerView(FlaskView):
     def container_docker_network_connect(self, env_id):
         http = HttpResponse()
         docker_utils = DockerUtils()
+        headers = request.headers
         service_name = "container"
+
         if request.args.get('service') is not None:
             service_name = request.args.get('service')
         container_id = f"{env_id}_{service_name}_1"
@@ -432,6 +438,8 @@ class DockerView(FlaskView):
                                                              ApiConstants.GET_DEPLOYER_NETWORK_FAILED),
                                                          status.get('err'))), 404, mimetype="application/json")
             deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
+            if headers.get("Docker-Network"):
+                deployer_network = headers.get("Docker-Network")
             status = docker_utils.network_connect(deployer_network, container_id)
 
             if "already exists in network".lower() in status.get('err').lower():
@@ -498,7 +506,6 @@ class DockerView(FlaskView):
             200, mimetype="application/json")
 
     # here the requests are redirected to any container
-    # you can couple your own, just make sure the hostname is 'container'
     # url format: container/dockercomposeenvid/the_url?port=8080&service=container
     # E.g.1 /container/2a1c9aa0451add84/uploadtestconfig
     @route('/container/<env_id>/<path:text>',

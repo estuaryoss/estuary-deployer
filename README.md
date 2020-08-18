@@ -65,7 +65,7 @@ Start Eureka server with docker:
 
     docker run -p 8080:8080 netflixoss/eureka:1.3.1  
     or
-    docker run -p 8080:8080 dinutac/netflixoss-eureka:1.9.21
+    docker run -p 8080:8080 dinutac/netflixoss-eureka:1.9.25
 
 Start your containers by specifying the full hostname or ip of the host machine on where your deployer service resides.  
     
@@ -139,15 +139,16 @@ curl http://172.17.0.22:8083/docker/deployments
    "description" : [
       {
          "containers" : [
-            "346dd96ed55a        dinutac/estuary-discovery:4.0.7   \"/scripts/main_flask…\"   16 seconds ago      Up 15 seconds       8080/tcp            6961ca05296ce48d_container_1"
+            "346dd96ed55a        dinutac/estuary-discovery:4.0.8   \"/scripts/main_flask…\"   16 seconds ago      Up 15 seconds       8080/tcp            6961ca05296ce48d_container_1"
          ],
          "id" : "6961ca05296ce48d"
       }
    ],
    "message" : "Success",
    "name" : "estuary-deployer",
-   "time" : "2020-08-15 20:32:25.971933",
-   "version" : "4.0.7"
+   "timestamp" : "2020-08-15 20:32:25.971933",
+   "path" : "/deployments?",
+   "version" : "4.0.8"
 }
 ```
 

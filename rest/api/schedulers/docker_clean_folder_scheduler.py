@@ -4,13 +4,13 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from rest.api.constants.env_constants import EnvConstants
+from rest.api.constants.env_init import EnvInit
 from rest.utils.docker_utils import DockerUtils
 
 
 class DockerCleanFolderScheduler:
 
-    def __init__(self, path=EnvConstants.DEPLOY_PATH, poll_interval=120, delete_period=60):
+    def __init__(self, path=EnvInit.DEPLOY_PATH, poll_interval=120, delete_period=60):
         self.poll_interval = poll_interval
         self.delete_period = delete_period
         self.path = path

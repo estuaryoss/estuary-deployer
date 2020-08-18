@@ -12,7 +12,7 @@ from tests.rest_kubectl.error_codes import ErrorCodes
 class FlaskServerTestCase(unittest.TestCase):
     home = "http://localhost:8080/kubectl"
 
-    expected_version = "4.0.7"
+    expected_version = "4.0.8"
     inputs_deployment_path = "tests/rest_kubectl/inputs"
     # inputs_deployment_path = "inputs"
     templates_deployment_path = "inputs/templates" #os.environ.get('TEMPLATES_DIR'))
@@ -63,7 +63,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_n(self):
         payload = "whatever invalid dummy yml k8s"
@@ -75,7 +75,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_env_p(self):
         response = requests.post(f"{self.home}/deployments/k8sdeployment_alpine_up.yml/variables.yml")
@@ -85,7 +85,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("whatever.yml", "variables.yml"),
@@ -100,7 +100,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_from_server_p(self):
         response = requests.post(f"{self.home}/deployments/k8sdeployment_alpine_up.yml/variables.yml")
@@ -110,7 +110,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("whatever.yml", "variables.yml"),
@@ -125,7 +125,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_status_no_deployment_with_this_name_p(self):
         response = requests.post(f"{self.home}/deployments/k8sdeployment_alpine_up.yml/variables.yml")
@@ -142,7 +142,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_status_p(self):
         deployment = "alpine"
@@ -163,7 +163,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_logs_default_namespace_p(self):
         deployment = "alpine"
@@ -180,7 +180,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_logs_production_namespace_p(self):
         deployment = "alpine"
@@ -197,7 +197,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_logs_no_deployment_with_this_name_n(self):
         deployment = "whateverinvalid"
@@ -210,7 +210,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertGreater(body.get('description').get('code'), 0)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_LOGS_FAILED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_stop_default_namespace_p(self):
         deployment = "alpine"
@@ -227,7 +227,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
         headers = {'K8s-Namespace': 'default', "Label-Selector": "k8s-app=alpine"}
         response = requests.get(f"{self.home}/deployments", headers=headers)
         self.assertIn("Terminating", response.json().get('description')[0].get('pod'))
@@ -245,7 +245,7 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_stop_no_deployment_with_this_name_n(self):
         deployment = "whateverinvalid"
@@ -256,7 +256,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIn(deployment, body.get('description'))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.KUBERNETES_SERVER_ERROR)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_using_execute_command_p(self):
         payload = f"kubectl apply -f {self.templates_deployment_path}/k8sdeployment_alpine_prod_up.yml --insecure-skip-tls-verify"
@@ -268,7 +268,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('description').get('command').get(payload).get('details').get('code'), 0)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @staticmethod
     def get_deployment_info(label_selector, namespace):

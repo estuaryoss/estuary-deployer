@@ -1,7 +1,9 @@
 import os
 
+from rest.api.constants.env_constants import EnvConstants
+
 unmodifiable_env_vars = {
-    "TEMPLATES_DIR": os.environ.get('TEMPLATES_DIR'),
-    "VARS_DIR": os.environ.get('VARS_DIR'),
-    "PORT": os.environ.get('PORT')
+    EnvConstants.TEMPLATES_DIR: os.environ.get(EnvConstants.TEMPLATES_DIR),
+    EnvConstants.VARS_DIR: os.environ.get(EnvConstants.VARS_DIR),
+    EnvConstants.PORT: os.environ.get(EnvConstants.PORT)
 }

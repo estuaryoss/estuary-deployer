@@ -1,5 +1,7 @@
 import datetime
 
+from flask import request
+
 from about import properties
 
 
@@ -11,7 +13,8 @@ class HttpResponse:
             "code": code,
             "message": message,
             "description": description,
-            "time": str(datetime.datetime.now()),
+            "timestamp": str(datetime.datetime.now()),
+            "path": request.full_path,
             "name": properties["name"],
             "version": properties["version"]
         }

@@ -9,17 +9,19 @@ from fluent import sender
 
 from about import properties
 from entities.render import Render
-from rest.api.apiresponsehelpers.error_codes import ErrorCodes
-from rest.api.apiresponsehelpers.http_response import HttpResponse
 from rest.api.constants.api_constants import ApiConstants
 from rest.api.constants.env_constants import EnvConstants
+from rest.api.constants.env_init import EnvInit
+from rest.api.constants.header_constants import HeaderConstants
 from rest.api.definitions import unmodifiable_env_vars
 from rest.api.kubectl_swagger import kubectl_swagger_file_content
-from rest.api.logginghelpers.message_dumper import MessageDumper
+from rest.api.loghelpers.message_dumper import MessageDumper
+from rest.api.responsehelpers.error_codes import ErrorCodes
+from rest.api.responsehelpers.http_response import HttpResponse
 from rest.api.views import app
+from rest.service.fluentd import Fluentd
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.env_startup import EnvStartup
-from rest.utils.fluentd_utils import FluentdUtils
 from rest.utils.io_utils import IOUtils
 from rest.utils.kubectl_utils import KubectlUtils
 
@@ -27,10 +29,10 @@ from rest.utils.kubectl_utils import KubectlUtils
 class KubectlView(FlaskView):
     logger = \
         sender.FluentSender(tag=properties.get('name'),
-                            host=EnvStartup.get_instance().get("fluentd_ip_port").split(":")[0],
-                            port=int(EnvStartup.get_instance().get("fluentd_ip_port").split(":")[1])) \
-            if EnvStartup.get_instance().get("fluentd_ip_port") else None
-    fluentd_utils = FluentdUtils(logger)
+                            host=EnvStartup.get_instance().get(EnvConstants.FLUENTD_IP_PORT).split(":")[0],
+                            port=int(EnvStartup.get_instance().get(EnvConstants.FLUENTD_IP_PORT).split(":")[1])) \
+            if EnvStartup.get_instance().get(EnvConstants.FLUENTD_IP_PORT) else None
+    fluentd = Fluentd(logger)
     message_dumper = MessageDumper()
 
     def before_request(self, name, *args, **kwargs):
@@ -39,16 +41,18 @@ class KubectlView(FlaskView):
         http = HttpResponse()
         request_uri = request.full_path
         # add here your custom header to be logged with fluentd
-        self.message_dumper.set_header("X-Request-ID", request.headers.get('X-Request-ID') if request.headers.get(
-            'X-Request-ID') else ctx.g.xid)
-        self.message_dumper.set_header("Request-Uri", request_uri)
+        self.message_dumper.set_header(HeaderConstants.X_REQUEST_ID,
+                                       request.headers.get(HeaderConstants.X_REQUEST_ID) if request.headers.get(
+                                           HeaderConstants.X_REQUEST_ID) else ctx.g.xid)
+        self.message_dumper.set_header(HeaderConstants.REQUEST_URI, request_uri)
 
-        response = self.fluentd_utils.emit(tag="api", msg=self.message_dumper.dump(request=request))
+        response = self.fluentd.emit(tag="api", msg=self.message_dumper.dump(request=request))
         app.logger.debug(f"{response}")
-        if not str(request.headers.get("Token")) == str(EnvStartup.get_instance().get("http_auth_token")):
+        if not str(request.headers.get(HeaderConstants.TOKEN)) == str(
+                EnvStartup.get_instance().get(EnvConstants.HTTP_AUTH_TOKEN)):
             if not ("/api/docs" in request_uri or "/swagger/swagger.yml" in request_uri):  # exclude swagger
                 headers = {
-                    'X-Request-ID': self.message_dumper.get_header("X-Request-ID")
+                    HeaderConstants.X_REQUEST_ID: self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
                 }
                 return Response(json.dumps(http.response(ApiConstants.UNAUTHORIZED,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.UNAUTHORIZED),
@@ -57,11 +61,11 @@ class KubectlView(FlaskView):
 
     def after_request(self, name, http_response):
         headers = dict(http_response.headers)
-        headers['X-Request-ID'] = self.message_dumper.get_header("X-Request-ID")
+        headers[HeaderConstants.X_REQUEST_ID] = self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
         http_response.headers = headers
 
         http_response.direct_passthrough = False
-        response = self.fluentd_utils.emit(tag="api", msg=self.message_dumper.dump(http_response))
+        response = self.fluentd.emit(tag="api", msg=self.message_dumper.dump(http_response))
         app.logger.debug(f"{response}")
 
         return http_response
@@ -126,11 +130,11 @@ class KubectlView(FlaskView):
         except:
             pass
 
-        os.environ['TEMPLATE'] = template.strip()
-        os.environ['VARIABLES'] = variables.strip()
+        os.environ[EnvConstants.TEMPLATE] = template.strip()
+        os.environ[EnvConstants.VARIABLES] = variables.strip()
 
         try:
-            rendered_content = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES')).rend_template()
+            rendered_content = Render(os.environ.get(EnvConstants.TEMPLATE), os.environ.get(EnvConstants.VARIABLES)).rend_template()
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.JINJA2_RENDER_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.JINJA2_RENDER_FAILURE),
@@ -168,7 +172,7 @@ class KubectlView(FlaskView):
         kubectl_utils = KubectlUtils()
         fluentd_tag = "deploy_start"
         token = token_hex(8)
-        deploy_dir = f"{EnvConstants.DEPLOY_PATH}/{token}"
+        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
         file = f"{deploy_dir}/{token}"
 
         try:
@@ -176,7 +180,7 @@ class KubectlView(FlaskView):
             input_data = request.data.decode('utf-8')
             IOUtils.write_to_file(file, input_data)
             status = kubectl_utils.up(f"{file}")
-            self.fluentd_utils.emit(tag=fluentd_tag, msg={"msg": status})
+            self.fluentd.emit(tag=fluentd_tag, msg={"msg": status})
             if status.get('err'):
                 return Response(json.dumps(http.response(ApiConstants.DEPLOY_START_FAILURE,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE),
@@ -206,21 +210,21 @@ class KubectlView(FlaskView):
         except:
             pass
 
-        os.environ['TEMPLATE'] = template.strip()
-        os.environ['VARIABLES'] = variables.strip()
-        app.logger.debug({"msg": {"template_file": os.environ.get('TEMPLATE')}})
-        app.logger.debug({"msg": {"variables_file": os.environ.get('VARIABLES')}})
+        os.environ[EnvConstants.TEMPLATE] = template.strip()
+        os.environ[EnvConstants.VARIABLES] = variables.strip()
+        app.logger.debug({"msg": {"template_file": os.environ.get(EnvConstants.TEMPLATE)}})
+        app.logger.debug({"msg": {"variables_file": os.environ.get(EnvConstants.VARIABLES)}})
         token = token_hex(8)
-        deploy_dir = f"{EnvConstants.DEPLOY_PATH}/{token}"
+        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
         file = f"{deploy_dir}/{token}"
 
         try:
-            r = Render(os.environ.get('TEMPLATE'), os.environ.get('VARIABLES'))
+            r = Render(os.environ.get(EnvConstants.TEMPLATE), os.environ.get(EnvConstants.VARIABLES))
             IOUtils.create_dir(deploy_dir)
             IOUtils.write_to_file(file)
             IOUtils.write_to_file(file, r.rend_template())
             status = kubectl_utils.up(f"{file}")
-            self.fluentd_utils.emit(tag=fluentd_tag, msg={"msg": status})
+            self.fluentd.emit(tag=fluentd_tag, msg={"msg": status})
             if status.get('err'):
                 return Response(json.dumps(http.response(ApiConstants.DEPLOY_START_FAILURE,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE),
@@ -256,7 +260,7 @@ class KubectlView(FlaskView):
         try:
             namespace = request.headers.get(f"{header_key}")
             status = kubectl_utils.down(deployment, namespace)
-            self.fluentd_utils.emit(tag=fluentd_tag, msg={"msg": status})
+            self.fluentd.emit(tag=fluentd_tag, msg={"msg": status})
             if "Error from server".lower() in status.get('err').lower():
                 return Response(json.dumps(http.response(ApiConstants.KUBERNETES_SERVER_ERROR,
                                                          ErrorCodes.HTTP_CODE.get(

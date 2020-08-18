@@ -4,14 +4,14 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
-from rest.api.constants.env_constants import EnvConstants
-from rest.api.logginghelpers.message_dumper import MessageDumper
+from rest.api.constants.env_init import EnvInit
+from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.utils.kubectl_utils import KubectlUtils
 
 
 class KubectlEnvExpireScheduler:
 
-    def __init__(self, fluentd_utils, path=EnvConstants.DEPLOY_PATH, poll_interval=120, env_expire_in=1440):
+    def __init__(self, fluentd_utils, path=EnvInit.DEPLOY_PATH, poll_interval=120, env_expire_in=1440):
         self.fluentd_utils = fluentd_utils
         self.fluentd_tag = 'KubectlEnvExpireScheduler'
         self.poll_interval = poll_interval

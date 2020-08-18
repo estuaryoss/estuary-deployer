@@ -1,7 +1,7 @@
 import requests
 
 
-class RestUtils:
+class RestService:
     def __init__(self):
         pass
 

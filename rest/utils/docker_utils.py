@@ -4,10 +4,10 @@ import os
 import shutil
 from pathlib import Path
 
-from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployment
+from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
 from rest.api.constants.api_constants import ApiConstants
-from rest.api.constants.env_constants import EnvConstants
-from rest.api.logginghelpers.message_dumper import MessageDumper
+from rest.api.constants.env_init import EnvInit
+from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.env_creation import EnvCreation
 from rest.utils.io_utils import IOUtils
@@ -95,7 +95,7 @@ class DockerUtils(EnvCreation):
     @staticmethod
     def get_active_deployments():
         active_deployments = []
-        env_list = IOUtils.get_list_dir(f"{EnvConstants.DEPLOY_PATH}")
+        env_list = IOUtils.get_list_dir(f"{EnvInit.DEPLOY_PATH}")
         for item in env_list:
             container_list = DockerUtils.ps(item).get('out').split("\n")[1:-1]
             for container in container_list:
@@ -106,7 +106,7 @@ class DockerUtils(EnvCreation):
         return active_deployments
 
     @staticmethod
-    def folder_clean_up(path=EnvConstants.DEPLOY_PATH, delete_period=60):
+    def folder_clean_up(path=EnvInit.DEPLOY_PATH, delete_period=60):
         active_deployments = [item.get('id') for item in DockerUtils.get_active_deployments()]
 
         full_deployments_list = map(lambda x: x.rstrip(), IOUtils.get_list_dir(f"{path}"))
@@ -116,7 +116,7 @@ class DockerUtils(EnvCreation):
                 shutil.rmtree(f"{path}/{item}")
 
     @staticmethod
-    def env_clean_up(fluentd_utils, path=EnvConstants.DEPLOY_PATH, env_expire_in=1440):  # 1 day
+    def env_clean_up(fluentd_utils, path=EnvInit.DEPLOY_PATH, env_expire_in=1440):  # 1 day
         fluentd_tag = 'docker_env_clean_up'
         message_dumper = MessageDumper()
         active_deployments = [item.get('id') for item in DockerUtils.get_active_deployments()]

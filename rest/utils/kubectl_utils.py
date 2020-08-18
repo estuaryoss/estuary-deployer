@@ -3,8 +3,8 @@ import os
 import re
 from pathlib import Path
 
-from rest.api.apiresponsehelpers.active_deployments_response import ActiveDeployment
-from rest.api.logginghelpers.message_dumper import MessageDumper
+from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
+from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.env_creation import EnvCreation
 

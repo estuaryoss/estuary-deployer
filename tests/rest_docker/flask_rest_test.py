@@ -18,7 +18,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "{}/docker".format(server_base)
     # server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "4.0.7"
+    expected_version = "4.0.8"
     sleep_before_container_up = 6
 
     def setUp(self):
@@ -51,7 +51,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_ping_endpoint(self):
         response = requests.get(self.server + "/ping")
@@ -62,7 +63,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('description'), "pong")
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
 
     def test_ping_endpoint_xid_set_by_client(self):
@@ -76,7 +78,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('description'), "pong")
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(headers.get('X-Request-ID'), xid)
 
     def test_about_endpoint(self):
@@ -90,7 +93,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('name'), name)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_about_endpoint_unauthorized(self):
         headers = {'Token': "invalidtoken"}
@@ -104,7 +108,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.UNAUTHORIZED))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.UNAUTHORIZED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
 
     @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
@@ -205,7 +210,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
 
     @parameterized.expand([
@@ -224,7 +230,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("doesnotexists.yml", "variables.yml"),
@@ -241,7 +248,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -255,7 +263,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("doesnotexists.yml", "variables.yml"),
@@ -271,7 +280,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -293,7 +303,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(body.get('description').get('containers')), 1)  # 1 container should be up and running
         self.assertEqual(body.get('description').get('id'), compose_id)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("alpine2containers.yml", "variables.yml")
@@ -316,7 +327,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(body.get('description').get('containers')), 2)  # 2 containers should be up and running
         self.assertEqual(body.get('description').get('id'), compose_id)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -340,7 +352,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('description').get('id'), id)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
         requests.delete(self.server + f"/deployments/{deploystart_body.get('description')}")
 
     def test_getfile_p(self):
@@ -367,7 +380,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.GET_FILE_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_FILE_FAILURE)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_getfile_missing_param_n(self):
         header_key = 'File-Path'
@@ -380,7 +394,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploystop_n(self):
         headers = {'Content-type': 'application/json'}
@@ -392,7 +407,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_STOP_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_STOP_FAILURE)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -413,7 +429,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(len(body.get('description')), 0)  # 0 containers should be up and running
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_file_from_client_p(self):
         with open("tests/rest_docker/input/alpine.yml", closefd=True) as f:
@@ -430,7 +447,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_file_from_client_n(self):
         payload = "dummy_yml_will_not_work \n alabalaportocala"
@@ -445,7 +463,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
         active_deployments = self.get_deployment_info()
         self.assertTrue(env_id not in active_deployments)
 
@@ -469,7 +488,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertGreater(len(body.get("description")), 15)  # at least 15
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("mysql56.yml", "variables.yml")
@@ -489,7 +509,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % dummy_env_id)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_LOGS_FAILED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -531,7 +552,8 @@ class FlaskServerTestCase(unittest.TestCase):
                              'MAX_DEPLOYMENTS'))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.MAX_DEPLOYMENTS_REACHED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -554,7 +576,8 @@ class FlaskServerTestCase(unittest.TestCase):
                              'MAX_DEPLOYMENTS'))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.MAX_DEPLOYMENTS_REACHED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploystartpostfromfile_max_deployments_p(self):
         with open("tests/rest_docker/input/alpine.yml", closefd=True) as f:
@@ -578,7 +601,8 @@ class FlaskServerTestCase(unittest.TestCase):
                              'MAX_DEPLOYMENTS'))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.MAX_DEPLOYMENTS_REACHED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_getenv_endpoint_p(self):
         env_var = "VARS_DIR"
@@ -590,7 +614,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('description'))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_getenv_endpoint_n(self):
         env_var = "alabalaportocala"
@@ -602,7 +627,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_ENV_VAR_FAILURE) % env_var.upper())
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_CONTAINER_ENV_VAR_FAILURE)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         "{\"file\": \"/dummy/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"
@@ -622,7 +648,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % mandatory_header_key)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ""
@@ -644,7 +671,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.EMPTY_REQUEST_BODY_PROVIDED))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.EMPTY_REQUEST_BODY_PROVIDED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         "{\"file\": \"/tmp/config.properties\", \"content\": \"ip=10.0.0.1\\nrequest_sec=100\\nthreads=10\\ntype=dual\"}"
@@ -666,7 +694,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_executecommand_n(self):
         command = "abracadabra"  # not working on linux
@@ -687,7 +716,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertNotEqual(body.get('description').get('command').get(command).get('details').get('err'), "")
         self.assertGreater(body.get('description').get('command').get(command).get('details').get('pid'), 0)
         self.assertIsInstance(body.get('description').get('command').get(command).get('details').get('args'), str)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_executecommand_p(self):
         command = "cat /etc/hostname"
@@ -708,7 +738,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('description').get('command').get(command).get('details').get('err'), "")
         self.assertGreater(body.get('description').get('command').get(command).get('details').get('pid'), 0)
         self.assertIsInstance(body.get('description').get('command').get(command).get('details').get('args'), str)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_executecommand_rm_not_allowed_n(self):
         command = "rm -rf /tmp"
@@ -726,7 +757,8 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.EXEC_COMMAND_NOT_ALLOWED) % command)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.EXEC_COMMAND_NOT_ALLOWED)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('path'), "/docker/command?")
 
     def test_executecommand_first_valid_is_executed_n(self):
         command = "rm -rf /tmp\nls -lrt"
@@ -745,7 +777,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('description').get("command").get(commands[1]).get('details').get('code'), 0)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertIsNotNone(body.get('time'))
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('timestamp'))
 
     def test_executecommand_timeout_from_client_n(self):
         command = "sleep 20"
