@@ -265,7 +265,7 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description').get('command').get(payload).get('details').get('code'), 0)
+        self.assertEqual(body.get('description').get('commands').get(payload).get('details').get('code'), 0)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertIsNotNone(body.get('timestamp'))

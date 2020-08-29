@@ -366,7 +366,7 @@ paths:
     post:
       tags:
         - estuary-deployer
-      summary: Executes a command in blocking mode. If your command is not executing in less than few seconds, the api will timeout.
+      summary: Executes commands in blocking mode. Set the necessary client timeout.
       produces:
         - application/json
       parameters:
@@ -376,15 +376,15 @@ paths:
         required: false
       - name: command
         in: body
-        description: The command to be executed on the service
+        description: The commands to be executed on the service
         required: true
         schema:
           $ref: '#/definitions/command'
       responses:
         200:
-          description: command execution, success
+          description: success
         404:
-          description: command execution, failure
+          description: failure
 definitions:
     command:
       type: string

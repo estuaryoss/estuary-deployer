@@ -22,8 +22,8 @@ Starting with version [2.0.0](https://github.com/dinuta/estuary-deployer/release
 [centos](https://hub.docker.com/r/dinutac/estuary-deployer-centos)  ![](https://img.shields.io/docker/pulls/dinutac/estuary-deployer-centos.svg)
 
 ## Api docs 
-[4.0.1 docker](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.1)  
-[4.0.1 kubectl](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.1-kubectl)  
+[4.0.8 docker](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.8)  
+[4.0.8 kubectl](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.8-kubectl)  
 
 ## Postman collection 
 [Docker](https://documenter.getpostman.com/view/2360061/SVYjUNCG)  

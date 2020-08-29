@@ -152,9 +152,11 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(expected, body.get("description"))
 
+
     @parameterized.expand([
         ("standalone.yml", "variables.yml")
     ])
+    @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
     def test_rendwithenv_endpoint(self, template, variables):
         payload = {'DATABASE': 'mysql56', 'IMAGE': 'latest'}
         headers = {'Content-type': 'application/json'}
@@ -162,6 +164,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/render/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
 
+        print(dump.dump_all(response))
         body = yaml.safe_load(response.text)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body.get("services")), 2)
@@ -280,7 +283,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_uploadfile_p(self, payload):
         headers = {
             'Content-type': 'application/json',
-            'File-Path': '/tmp/config.properties'
+            'File-Path': 'config.properties'
         }
 
         response = requests.put(
@@ -310,11 +313,11 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertNotEqual(body.get('description').get('command').get(command).get('details').get('code'), 0)
-        self.assertEqual(body.get('description').get('command').get(command).get('details').get('out'), "")
-        self.assertNotEqual(body.get('description').get('command').get(command).get('details').get('err'), "")
-        self.assertGreater(body.get('description').get('command').get(command).get('details').get('pid'), 0)
-        self.assertIsInstance(body.get('description').get('command').get(command).get('details').get('args'), str)
+        self.assertNotEqual(body.get('description').get('commands').get(command).get('details').get('code'), 0)
+        self.assertEqual(body.get('description').get('commands').get(command).get('details').get('out'), "")
+        self.assertNotEqual(body.get('description').get('commands').get(command).get('details').get('err'), "")
+        self.assertGreater(body.get('description').get('commands').get(command).get('details').get('pid'), 0)
+        self.assertIsInstance(body.get('description').get('commands').get(command).get('details').get('args'), list)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_executecommand_p(self):
@@ -331,14 +334,14 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
-        self.assertEqual(body.get('description').get('command').get(command).get('details').get('code'), 0)
-        self.assertNotEqual(body.get('description').get('command').get(command).get('details').get('out'), "")
-        self.assertEqual(body.get('description').get('command').get(command).get('details').get('err'), "")
-        self.assertGreater(body.get('description').get('command').get(command).get('details').get('pid'), 0)
-        self.assertIsInstance(body.get('description').get('command').get(command).get('details').get('args'), str)
+        self.assertEqual(body.get('description').get('commands').get(command).get('details').get('code'), 0)
+        self.assertNotEqual(body.get('description').get('commands').get(command).get('details').get('out'), "")
+        self.assertEqual(body.get('description').get('commands').get(command).get('details').get('err'), "")
+        self.assertGreater(body.get('description').get('commands').get(command).get('details').get('pid'), 0)
+        self.assertIsInstance(body.get('description').get('commands').get(command).get('details').get('args'), list)
         self.assertIsNotNone(body.get('timestamp'))
 
-    def test_executecommand_rm_not_allowed_n(self):
+    def test_executecommand_rm_allowed_p(self):
         command = "rm -rf /tmp"
 
         response = requests.post(
@@ -347,16 +350,15 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         print(dump.dump_all(response))
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(Constants.EXEC_COMMAND_NOT_ALLOWED) % command)
-        self.assertEqual(body.get('description'),
-                         ErrorCodes.HTTP_CODE.get(Constants.EXEC_COMMAND_NOT_ALLOWED) % command)
+                         ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertIsInstance(body.get('description'), dict)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.EXEC_COMMAND_NOT_ALLOWED)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
-    def test_executecommand_first_valid_is_executed_n(self):
+    def test_both_valid_are_executed(self):
         command = "rm -rf /tmp\nls -lrt"
         commands = command.split("\n")
 
@@ -369,8 +371,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(len(body.get('description').get("command")), 1)  # only 1 cmd is executed
-        self.assertEqual(body.get('description').get("command").get(commands[1]).get('details').get('code'), 0)
+        self.assertEqual(len(body.get('description').get("commands")), 2)  # only 1 cmd is executed
+        self.assertEqual(body.get('description').get("commands").get(commands[1]).get('details').get('code'), 0)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))

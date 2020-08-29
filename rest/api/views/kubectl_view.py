@@ -1,6 +1,5 @@
 import json
 import os
-import re
 from secrets import token_hex
 
 from flask import request, Response
@@ -20,7 +19,7 @@ from rest.api.responsehelpers.error_codes import ErrorCodes
 from rest.api.responsehelpers.http_response import HttpResponse
 from rest.api.views import app
 from rest.service.fluentd import Fluentd
-from rest.utils.cmd_utils import CmdUtils
+from rest.utils.command_in_memory import CommandInMemory
 from rest.utils.env_startup import EnvStartup
 from rest.utils.io_utils import IOUtils
 from rest.utils.kubectl_utils import KubectlUtils
@@ -134,7 +133,8 @@ class KubectlView(FlaskView):
         os.environ[EnvConstants.VARIABLES] = variables.strip()
 
         try:
-            rendered_content = Render(os.environ.get(EnvConstants.TEMPLATE), os.environ.get(EnvConstants.VARIABLES)).rend_template()
+            rendered_content = Render(os.environ.get(EnvConstants.TEMPLATE),
+                                      os.environ.get(EnvConstants.VARIABLES)).rend_template()
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.JINJA2_RENDER_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.JINJA2_RENDER_FAILURE),
@@ -405,11 +405,8 @@ class KubectlView(FlaskView):
     @route('/command', methods=['POST', 'PUT'])
     def execute_command(self):
         http = HttpResponse()
-        io_utils = IOUtils()
-        cmd_utils = CmdUtils()
-        info_init = {"command": {}}
+        input_data = request.data.decode("UTF-8", "replace").strip()
 
-        input_data = request.data.decode('utf-8').strip()
         if not input_data:
             return Response(json.dumps(http.response(ApiConstants.EMPTY_REQUEST_BODY_PROVIDED,
                                                      ErrorCodes.HTTP_CODE.get(
@@ -418,26 +415,17 @@ class KubectlView(FlaskView):
                                                          ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))), 404,
                             mimetype="application/json")
         try:
-            cmd = io_utils.get_filtered_list_regex(input_data.split("\n"), re.compile(
-                r'(\s+|[^a-z]|^)rm\s+.*$'))[0:1]  # supports only one command at a time
-            if not cmd:
-                return Response(json.dumps(http.response(ApiConstants.EXEC_COMMAND_NOT_ALLOWED,
-                                                         ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.EXEC_COMMAND_NOT_ALLOWED) % input_data,
-                                                         ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.EXEC_COMMAND_NOT_ALLOWED) % input_data)), 404,
-                                mimetype="application/json")
-            command_dict = dict.fromkeys(cmd, {"details": {}})
-            info_init["command"] = command_dict
-            status = cmd_utils.run_cmd_shell_true(cmd[0].strip())
-            info_init["command"][cmd[0].strip()]["details"] = json.loads(json.dumps(status))
+            input_data_list = input_data.split("\n")
+            input_data_list = list(map(lambda x: x.strip(), input_data_list))
+            command_in_memory = CommandInMemory()
+            response = command_in_memory.run_commands(input_data_list)
         except Exception as e:
-            return Response(json.dumps(
-                http.response(ApiConstants.COMMAND_EXEC_FAILURE,
-                              ErrorCodes.HTTP_CODE.get(ApiConstants.COMMAND_EXEC_FAILURE) % cmd[0],
-                              "Exception({})".format(e.__str__()))), 404, mimetype="application/json")
+            exception = "Exception({})".format(e.__str__())
+            return Response(json.dumps(http.response(ApiConstants.COMMAND_EXEC_FAILURE,
+                                                     ErrorCodes.HTTP_CODE.get(ApiConstants.COMMAND_EXEC_FAILURE),
+                                                     exception)), 404, mimetype="application/json")
 
         return Response(
-            json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS), info_init)),
+            json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS), response)),
             200,
             mimetype="application/json")

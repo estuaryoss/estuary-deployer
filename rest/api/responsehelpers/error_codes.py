@@ -10,7 +10,7 @@ class ErrorCodes:
         ApiConstants.DEPLOY_STATUS_FAILURE: "deploy status action failed",
         ApiConstants.DEPLOY_REPLAY_FAILURE: "deploy replay action failed",
         ApiConstants.GET_FILE_FAILURE: "Getting file from the estuary deployer service failed",
-        ApiConstants.COMMAND_EXEC_FAILURE: "Starting command '%s' failed",
+        ApiConstants.COMMAND_EXEC_FAILURE: "Starting commands failed",
         ApiConstants.GET_CONTAINER_FILE_FAILURE: "Getting %s from the container %s failed",
         ApiConstants.DEPLOY_REPLAY_FAILURE_STILL_ACTIVE: "Starting environment id %s failed. Environment it is active.",
         ApiConstants.DOCKER_DAEMON_NOT_RUNNING: "Docker daemon is not running. You must start it.",
