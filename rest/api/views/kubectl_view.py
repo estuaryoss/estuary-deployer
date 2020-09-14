@@ -108,7 +108,7 @@ class KubectlView(FlaskView):
         try:
             response = Response(json.dumps(
                 http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
-                              EnvironmentSingleton.get_instance().get_env_and_virtual_env()[env_var])),
+                              EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(env_var))),
                 200,
                 mimetype="application/json")
         except Exception as e:
