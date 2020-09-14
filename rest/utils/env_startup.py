@@ -1,31 +1,44 @@
-import os
-
 from rest.api.constants.env_constants import EnvConstants
+from rest.environment.environment import EnvironmentSingleton
 
 
-class EnvStartup:
+class EnvStartupSingleton:
     __instance = None
+    __env = EnvironmentSingleton.get_instance()
 
     @staticmethod
     def get_instance():
-        if EnvStartup.__instance is None:
-            EnvStartup()
-        return EnvStartup.__instance
+        if EnvStartupSingleton.__instance is None:
+            EnvStartupSingleton()
+        return EnvStartupSingleton.__instance
 
     def __init__(self):
-        EnvStartup.__instance = {
-            EnvConstants.APP_APPEND_ID: os.environ.get(EnvConstants.APP_APPEND_ID).lower() if os.environ.get(
+        if EnvStartupSingleton.__instance is not None:
+            raise Exception("This class is a singleton!")
+        else:
+            EnvStartupSingleton.__instance = self
+
+    def get_config_env_vars(self):
+        return {
+            EnvConstants.APP_APPEND_ID: self.__env.get_env_and_virtual_env().get(
+                EnvConstants.APP_APPEND_ID).lower() if self.__env.get_env_and_virtual_env().get(
                 EnvConstants.APP_APPEND_ID) else "",
-            EnvConstants.ENV_EXPIRE_IN: int(os.environ.get(EnvConstants.ENV_EXPIRE_IN)) if os.environ.get(
+            EnvConstants.ENV_EXPIRE_IN: int(self.__env.get_env_and_virtual_env().get(
+                EnvConstants.ENV_EXPIRE_IN)) if self.__env.get_env_and_virtual_env().get(
                 EnvConstants.ENV_EXPIRE_IN) else 1440,
-            EnvConstants.APP_IP_PORT: os.environ.get(EnvConstants.APP_IP_PORT).strip().lower() if os.environ.get(
+            EnvConstants.APP_IP_PORT: self.__env.get_env_and_virtual_env().get(
+                EnvConstants.APP_IP_PORT).strip().lower() if self.__env.get_env_and_virtual_env().get(
                 EnvConstants.APP_IP_PORT) else None,
-            EnvConstants.PORT: int(os.environ.get(EnvConstants.PORT).strip()) if os.environ.get(
+            EnvConstants.PORT: int(self.__env.get_env_and_virtual_env().get(
+                EnvConstants.PORT).strip()) if self.__env.get_env_and_virtual_env().get(
                 EnvConstants.PORT) is not None else 8080,
-            EnvConstants.EUREKA_SERVER: os.environ.get(EnvConstants.EUREKA_SERVER).strip() if os.environ.get(
+            EnvConstants.EUREKA_SERVER: self.__env.get_env_and_virtual_env().get(
+                EnvConstants.EUREKA_SERVER).strip() if self.__env.get_env_and_virtual_env().get(
                 EnvConstants.EUREKA_SERVER) else None,
-            EnvConstants.FLUENTD_IP_PORT: os.environ.get(EnvConstants.FLUENTD_IP_PORT).strip() if os.environ.get(
+            EnvConstants.FLUENTD_IP_PORT: self.__env.get_env_and_virtual_env().get(
+                EnvConstants.FLUENTD_IP_PORT).strip() if self.__env.get_env_and_virtual_env().get(
                 EnvConstants.FLUENTD_IP_PORT) else None,
-            EnvConstants.HTTP_AUTH_TOKEN: os.environ.get(EnvConstants.HTTP_AUTH_TOKEN).strip() if os.environ.get(
+            EnvConstants.HTTP_AUTH_TOKEN: self.__env.get_env_and_virtual_env().get(
+                EnvConstants.HTTP_AUTH_TOKEN).strip() if self.__env.get_env_and_virtual_env().get(
                 EnvConstants.HTTP_AUTH_TOKEN) else "None"
         }

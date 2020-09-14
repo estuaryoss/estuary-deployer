@@ -18,7 +18,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "{}/docker".format(server_base)
     # server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "4.0.8"
+    expected_version = "4.0.9"
     sleep_before_container_up = 6
 
     def setUp(self):
@@ -53,6 +53,38 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
+
+    @parameterized.expand([
+        ("FOO1", "BAR10"),
+        ("FOO2", "BAR20")
+    ])
+    @unittest.skipIf(str(os.environ.get('TEST_ENV')) == "centos", "Skip on Centos docker")
+    def test_env_load_from_props(self, env_var, expected_value):
+        response = requests.get(self.server + "/env/" + env_var)
+
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get("message"), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('description'), expected_value)
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('path'))
+
+    def test_setenv_endpoint_jsonwithvalues_p(self):
+        payload = {"a": "b", "FOO1": "BAR1"}
+        headers = {'Content-type': 'application/json'}
+
+        response = requests.post(self.server + "/env", data=json.dumps(payload),
+                                 headers=headers)
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description'), payload)
+        self.assertEqual(body.get("message"), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
+        self.assertIsNotNone(body.get('timestamp'))
+        self.assertIsNotNone(body.get('path'))
 
     def test_ping_endpoint(self):
         response = requests.get(self.server + "/ping")
@@ -622,12 +654,11 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server + f"/env/{env_var}")
 
         body = response.json()
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(Constants.GET_CONTAINER_ENV_VAR_FAILURE) % env_var.upper())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('description'), None)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.GET_CONTAINER_ENV_VAR_FAILURE)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([

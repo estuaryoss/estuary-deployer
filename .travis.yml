@@ -22,9 +22,9 @@ jobs:
         - pip3 install -r requirements.txt
         - pip3 install coveralls
       before_script:
-        - py.test $SCRIPTS_DIR/render_test.py --cov=entities
+        - py.test $SCRIPTS_DIR/render_test.py --cov=rest/api/jinja2
       script:
-        - python3 -m unittest discover $SCRIPTS_DIR "render_test.py"
+        - python3 -m unittest discover . "render_test.py"
       after_script:
         - coveralls
 
@@ -51,10 +51,10 @@ jobs:
         - ls -lrt
       script:
         - ./main-linux > /dev/null 2>&1 &
-#        - ./main-linux &
-#        - chmod +x ngrok.sh
-#        - ./ngrok.sh 8080 $NGROK_TOKEN
-#        - sleep 3600
+        #        - ./main-linux &
+        #        - chmod +x ngrok.sh
+        #        - ./ngrok.sh 8080 $NGROK_TOKEN
+        #        - sleep 3600
         - PID="$!"
         - sleep 5
         #  - ./ngrok.sh
@@ -75,7 +75,7 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker build -t dinutac/estuary-deployer:latest .
+        - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
@@ -86,7 +86,7 @@ jobs:
           -v /var/run/docker.sock:/var/run/docker.sock
           --net=estuarydeployer_default
           --name estuary-deployer
-          dinutac/estuary-deployer:latest
+          estuaryoss/deployer:latest
         - sleep 10
         - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
 
@@ -108,7 +108,7 @@ jobs:
         - docker pull centos:8
         - docker pull mysql:5.6
         - docker pull alpine:3.9.4
-        - docker build -t dinutac/estuary-deployer-centos:latest -f Dockerfiles/Dockerfile_centos .
+        - docker build -t estuaryoss/deployer-centos:latest -f Dockerfiles/Dockerfile_centos .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
@@ -119,7 +119,7 @@ jobs:
           -v /var/run/docker.sock:/var/run/docker.sock
           --net=estuarydeployer_default
           --name estuary-deployer
-          dinutac/estuary-deployer-centos:latest
+          estuaryoss/deployer-centos:latest
         - sleep 10
         - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
 
@@ -145,33 +145,16 @@ jobs:
         - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
       script:
         - ./main-linux > /dev/null 2>&1 &
-#        - ./main-linux &
-#        - chmod +x ngrok.sh
-#        - ./ngrok.sh 8080 $NGROK_TOKEN
-#        - sleep 3600
+        #        - ./main-linux &
+        #        - chmod +x ngrok.sh
+        #        - ./ngrok.sh 8080 $NGROK_TOKEN
+        #        - sleep 3600
         - PID="$!"
         - sleep 5
         - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "flask_rest_test.py"
         - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "k8s_integration_test.py"
         - ls -lrt /tmp
         - ps -ef
-
-    #run templating tests
-    - language: python
-      python: 3.6
-      services: docker
-      env:
-        ISOLATED: true
-        DOCKER_SCRIPTS_DIR: /scripts
-      before_script:
-        - docker build -t dinutac/estuary-deployer:latest .
-      script:
-        #check template render
-        - docker run -i
-          -v $TRAVIS_BUILD_DIR/inputs/templates:/scripts/inputs/templates
-          -v $TRAVIS_BUILD_DIR/inputs/variables:/scripts/inputs/variables  -e TEMPLATE=standalone.yml
-          -e VARIABLES=variables.yml -e DATABASE=mysql56 -e IMAGE=latest --entrypoint python3 dinutac/estuary-agent:latest
-          $DOCKER_SCRIPTS_DIR/entities/render.py
 
     #run agent integration tests
     - language: python
@@ -184,13 +167,13 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker pull dinutac/estuary-agent:latest
-        - docker pull dinutac/netflixoss-eureka:1.9.25
-        - docker build -t dinutac/estuary-deployer:latest .
+        - docker pull estuaryoss/agent:latest
+        - docker pull estuaryoss/netflix-eureka:1.9.25
+        - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 dinutac/netflixoss-eureka:1.9.25
+          -p 8081:8080 estuaryoss/netflix-eureka:1.9.25
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
@@ -206,7 +189,7 @@ jobs:
           --net=estuarydeployer_default
           --name estuary-deployer
           --env-file .env
-          dinutac/estuary-deployer:latest
+          estuaryoss/deployer:latest
 
         #- docker network ls
         #- echo "Deployer net is $(docker network ls | grep deployer | awk '{print $2}' | head -1)"
@@ -229,14 +212,14 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker pull dinutac/estuary-agent:latest
-        - docker pull dinutac/estuary-discovery:latest
-        - docker pull dinutac/netflixoss-eureka:1.9.25
-        - docker build -t dinutac/estuary-deployer:latest .
+        - docker pull estuaryoss/agent:latest
+        - docker pull estuaryoss/discovery:latest
+        - docker pull estuaryoss/netflix-eureka:1.9.25
+        - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 dinutac/netflixoss-eureka:1.9.25
+          -p 8081:8080 estuaryoss/netflix-eureka:1.9.25
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
@@ -252,7 +235,7 @@ jobs:
           --net=estuarydeployer_default
           --name estuary-deployer
           --env-file .env
-          dinutac/estuary-deployer:latest
+          estuaryoss/deployer:latest
 
         #- docker network ls
         #- echo "Deployer net is $(docker network ls | grep deployer | awk '{print $2}' | head -1)"
@@ -274,7 +257,7 @@ jobs:
         MAX_DEPLOYMENTS: 3
         SCRIPTS_DIR: tests
       before_script:
-        - docker build -t dinutac/estuary-deployer:latest .
+        - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
@@ -285,7 +268,7 @@ jobs:
           -v /var/run/docker.sock:/var/run/docker.sock
           --net=estuarydeployer_default
           --name estuary-deployer
-          dinutac/estuary-deployer:latest
+          estuaryoss/deployer:latest
         - sleep 10
         - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "flask_rest_test.py"
 
@@ -299,7 +282,7 @@ jobs:
         DOCKER_SCRIPTS_DIR: /scripts
         ISOLATED: true
       before_script:
-        - docker build -t dinutac/estuary-deployer:latest .
+        - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
@@ -308,7 +291,7 @@ jobs:
           -v $PWD/inputs/variables:/scripts/inputs/variables
           --net=estuarydeployer_default
           --name estuary-deployer
-          dinutac/estuary-deployer:latest
+          estuaryoss/deployer:latest
         - sleep 5
         - python3 -m unittest discover $SCRIPTS_DIR/rest_docker_sock "*_test.py"
         - docker stop $(docker ps -a -q)

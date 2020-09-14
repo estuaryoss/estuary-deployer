@@ -3,8 +3,8 @@ import os
 import re
 from pathlib import Path
 
-from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
 from rest.api.loghelpers.message_dumper import MessageDumper
+from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.env_creation import EnvCreation
 
@@ -77,7 +77,10 @@ class KubectlUtils(EnvCreation):
                 hours_uptime = int(match.group(2))
                 if hours_uptime >= env_expire_in_hours:
                     result = KubectlUtils.down(item.get('name'), item.get('namespace'))
-                    fluentd_utils.emit(tag=fluentd_tag,
-                                        msg=message_dumper.dump_message(
-                                            {"action": f"{fluentd_tag}", "out": result.get('out'),
-                                             "err": result.get('err')}))
+                    fluentd_utils.emit(tag=fluentd_tag, msg=message_dumper.dump_message(
+                        {
+                            "action": f"{fluentd_tag}",
+                            "out": result.get('out'),
+                            "err": result.get('err')
+                        }
+                    ))

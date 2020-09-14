@@ -7,26 +7,37 @@ from flask_swagger_ui import get_swaggerui_blueprint
 from rest.api.views.flask_config import Config
 
 
-class FlaskApp:
+class AppCreatorSingleton:
     __instance = None
+    __app = None
 
     @staticmethod
     def get_instance():
-        if FlaskApp.__instance is None:
-            FlaskApp()
-        return FlaskApp.__instance
+        if AppCreatorSingleton.__instance is None:
+            AppCreatorSingleton()
+        return AppCreatorSingleton.__instance
 
     def __init__(self):
-        FlaskApp.__instance = Flask(__name__, instance_relative_config=False)
-        FlaskApp.__instance.config.from_object(Config)
-        CORS(FlaskApp.__instance)
-        FlaskApp.__instance.logger.setLevel(logging.DEBUG)
+        """ The constructor. This class gets a single flask app """
+        self.app = Flask(__name__, instance_relative_config=False)
+        self.app.config.from_object(Config)
+        CORS(self.app)
+        self.app.register_blueprint(get_swaggerui_blueprint(
+            base_url='/api/docs',
+            api_url='/docker/swagger/swagger.yml',
+            config={
+                'app_name': "estuary-deployer"
+            }), url_prefix='/api/docs')
+        self.app.logger.setLevel(logging.DEBUG)
+
+        if AppCreatorSingleton.__instance is not None:
+            raise Exception("This class is a singleton!")
+        else:
+            AppCreatorSingleton.__instance = self
+
+    def get_app(self):
+        with self.app.app_context():
+            return self.app
 
 
-app = FlaskApp.get_instance()
-app.register_blueprint(get_swaggerui_blueprint(
-    base_url='/api/docs',
-    api_url='/docker/swagger/swagger.yml',
-    config={
-        'app_name': "estuary-deployer"
-    }), url_prefix='/api/docs')
+app = AppCreatorSingleton.get_instance().get_app()
