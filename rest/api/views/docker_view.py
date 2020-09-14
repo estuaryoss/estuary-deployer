@@ -208,7 +208,7 @@ class DockerView(FlaskView):
         header_key = 'Eureka-Server'
         eureka_server_header = request.headers.get(f"{header_key}")
 
-        status = CmdUtils.run_cmd(["docker", "ps"])
+        status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
@@ -294,7 +294,7 @@ class DockerView(FlaskView):
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
         file = f"{deploy_dir}/{token}"
 
-        status = CmdUtils.run_cmd(["docker", "ps"])
+        status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
@@ -482,7 +482,7 @@ class DockerView(FlaskView):
         try:
             # when creating deployer net, user must include 'deployer' in its name
             # otherwise this method should have docker net param regex through http header
-            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
+            status = CmdUtils.run_cmd_shell_false(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
             app.logger.debug({"msg": status})
             if not status.get('out'):
                 return Response(json.dumps(http.response(ApiConstants.GET_DEPLOYER_NETWORK_FAILED,
@@ -525,7 +525,7 @@ class DockerView(FlaskView):
             service_name = request.args.get('service')
         container_id = f"{env_id}_{service_name}_1"
         try:
-            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
+            status = CmdUtils.run_cmd_shell_false(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
             app.logger.debug({"msg": status})
             if not status.get('out'):
                 return Response(json.dumps(http.response(ApiConstants.GET_DEPLOYER_NETWORK_FAILED,

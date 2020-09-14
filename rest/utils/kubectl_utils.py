@@ -16,22 +16,22 @@ class KubectlUtils(EnvCreation):
         file_path = Path(file)
         if not file_path.is_file():
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["kubectl", "apply", "-f", file, "--insecure-skip-tls-verify"])
+        return CmdUtils.run_cmd_shell_false(["kubectl", "apply", "-f", file, "--insecure-skip-tls-verify"])
 
     @staticmethod
     def down(deployment, namespace):
-        return CmdUtils.run_cmd(
+        return CmdUtils.run_cmd_shell_false(
             ["kubectl", "-n", namespace, "delete", "deployment", deployment, "--insecure-skip-tls-verify"])
 
     @staticmethod
     def logs(pod, namespace):
-        return CmdUtils.run_cmd(
+        return CmdUtils.run_cmd_shell_false(
             ["kubectl", "-n", namespace, "logs", pod, "--insecure-skip-tls-verify"])
 
     @staticmethod
     def get_active_pods(label_selector, namespace):
         active_pods = []
-        status = CmdUtils.run_cmd(
+        status = CmdUtils.run_cmd_shell_false(
             ["kubectl", "get", "pods", "-n", namespace, "-l", label_selector, "--insecure-skip-tls-verify"])
         active_pods_list = status.get('out').split('\n')[1:-1]
         for i in range(0, len(active_pods_list)):
@@ -44,7 +44,7 @@ class KubectlUtils(EnvCreation):
     @staticmethod
     def get_active_deployments():
         active_deployments = []
-        status = CmdUtils.run_cmd(["kubectl", "get", "deployments", "--all-namespaces", "--insecure-skip-tls-verify"])
+        status = CmdUtils.run_cmd_shell_false(["kubectl", "get", "deployments", "--all-namespaces", "--insecure-skip-tls-verify"])
         active_deployments_list = status.get('out').split('\n')[1:-1]
         for i in range(0, len(active_deployments_list)):
             active_deployments_list[i] = ' '.join(active_deployments_list[i].split())

@@ -7,7 +7,10 @@ from about import properties
 from rest.api.constants.env_constants import EnvConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.loghelpers.message_dumper import MessageDumper
-from rest.api.schedulers.scheduler_aggregator import SchedulerAggregator
+from rest.api.schedulers.docker_clean_folder_scheduler import DockerCleanFolderScheduler
+from rest.api.schedulers.docker_env_expire_scheduler import DockerEnvExpireScheduler
+from rest.api.schedulers.docker_scheduler import DockerScheduler
+from rest.api.schedulers.kubectl_env_expire_scheduler import KubectlEnvExpireScheduler
 from rest.api.views import app
 from rest.api.views.docker_view import DockerView
 from rest.api.views.kubectl_view import KubectlView
@@ -36,8 +39,14 @@ if __name__ == "__main__":
     io_utils.create_dir(Path(EnvInit.TEMPLATES_PATH))
     io_utils.create_dir(Path(EnvInit.VARIABLES_PATH))
 
-    SchedulerAggregator(
-        env_expire_in=EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.ENV_EXPIRE_IN)).start()
+    DockerScheduler().start()
+    DockerCleanFolderScheduler().start()
+    DockerEnvExpireScheduler(fluentd_utils=DockerView.fluentd, poll_interval=1200,
+                             env_expire_in=EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                                 EnvConstants.ENV_EXPIRE_IN)).start()  # minutes
+    KubectlEnvExpireScheduler(fluentd_utils=KubectlView.fluentd, poll_interval=1200,
+                              env_expire_in=EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                                  EnvConstants.ENV_EXPIRE_IN)).start()
 
     environ_dump = message_dumper.dump_message(EnvironmentSingleton.get_instance().get_env_and_virtual_env())
     ip_port_dump = message_dumper.dump_message(
