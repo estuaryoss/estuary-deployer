@@ -8,32 +8,34 @@ from flask_classful import FlaskView, route
 from fluent import sender
 
 from about import properties
-from entities.render import Render
 from rest.api.constants.api_constants import ApiConstants
 from rest.api.constants.env_constants import EnvConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.constants.header_constants import HeaderConstants
-from rest.api.definitions import unmodifiable_env_vars
 from rest.api.docker_swagger import docker_swagger_file_content
+from rest.api.jinja2.render import Render
 from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
 from rest.api.responsehelpers.error_codes import ErrorCodes
 from rest.api.responsehelpers.http_response import HttpResponse
 from rest.api.views import app
+from rest.environment.environment import EnvironmentSingleton
 from rest.service.fluentd import Fluentd
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.command_in_memory import CommandInMemory
 from rest.utils.docker_utils import DockerUtils
-from rest.utils.env_startup import EnvStartup
+from rest.utils.env_startup import EnvStartupSingleton
 from rest.utils.io_utils import IOUtils
 
 
 class DockerView(FlaskView):
     logger = \
         sender.FluentSender(tag=properties.get('name'),
-                            host=EnvStartup.get_instance().get(EnvConstants.FLUENTD_IP_PORT).split(":")[0],
-                            port=int(EnvStartup.get_instance().get(EnvConstants.FLUENTD_IP_PORT).split(":")[1])) \
-            if EnvStartup.get_instance().get(EnvConstants.FLUENTD_IP_PORT) else None
+                            host=EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                                EnvConstants.FLUENTD_IP_PORT).split(":")[0],
+                            port=int(EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                                EnvConstants.FLUENTD_IP_PORT).split(":")[1])) \
+            if EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.FLUENTD_IP_PORT) else None
     fluentd = Fluentd(logger)
     message_dumper = MessageDumper()
 
@@ -51,7 +53,7 @@ class DockerView(FlaskView):
         response = self.fluentd.emit(tag="api", msg=self.message_dumper.dump(request=request))
         app.logger.debug(response)
         if not str(request.headers.get(HeaderConstants.TOKEN)) == str(
-                EnvStartup.get_instance().get(EnvConstants.HTTP_AUTH_TOKEN)):
+                EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.HTTP_AUTH_TOKEN)):
             if not ("/api/docs" in request_uri or "/swagger/swagger.yml" in request_uri):  # exclude swagger
                 headers = {
                     HeaderConstants.X_REQUEST_ID: self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
@@ -79,14 +81,6 @@ class DockerView(FlaskView):
     def swagger(self):
         return Response(docker_swagger_file_content, 200, mimetype="text/plain;charset=UTF-8")
 
-    @route('/env')
-    def get_env_vars(self):
-        http = HttpResponse()
-        return Response(
-            json.dumps(
-                http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS), dict(os.environ))),
-            200, mimetype="application/json")
-
     @route('/ping')
     def ping(self):
         http = HttpResponse()
@@ -103,14 +97,22 @@ class DockerView(FlaskView):
                               properties["name"])),
             200, mimetype="application/json")
 
+    @route('/env')
+    def get_env_vars(self):
+        http = HttpResponse()
+        return Response(
+            json.dumps(
+                http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
+                              EnvironmentSingleton.get_instance().get_env_and_virtual_env())),
+            200, mimetype="application/json")
+
     @route('/env/<env_var>', methods=['GET'])
     def get_env_var(self, env_var):
-        env_var = env_var.upper().strip()
         http = HttpResponse()
         try:
             response = Response(json.dumps(
                 http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
-                              os.environ[env_var])),
+                              EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(env_var))),
                 200,
                 mimetype="application/json")
         except Exception as e:
@@ -121,23 +123,60 @@ class DockerView(FlaskView):
                                          result)), 404, mimetype="application/json")
         return response
 
+    @app.route('/env', methods=['POST'])
+    def set_env_docker(self):
+        http = HttpResponse()
+        input_data = request.data.decode("UTF-8", "replace").strip()
+
+        try:
+            env_vars_attempted = json.loads(input_data)
+        except Exception as e:
+            return Response(json.dumps(http.response(code=ApiConstants.INVALID_JSON_PAYLOAD,
+                                                     message=ErrorCodes.HTTP_CODE.get(
+                                                         ApiConstants.INVALID_JSON_PAYLOAD) % str(
+                                                         input_data),
+                                                     description="Exception({0})".format(e.__str__()))), 404,
+                            mimetype="application/json")
+
+        try:
+            for key, value in env_vars_attempted.items():
+                EnvironmentSingleton.get_instance().set_env_var(key, value)
+
+            env_vars_added = {key: value for key, value in env_vars_attempted.items() if
+                              key in EnvironmentSingleton.get_instance().get_virtual_env()}
+        except Exception as e:
+            return Response(json.dumps(http.response(code=ApiConstants.SET_ENV_VAR_FAILURE,
+                                                     message=ErrorCodes.HTTP_CODE.get(
+                                                         ApiConstants.SET_ENV_VAR_FAILURE) % str(
+                                                         input_data),
+                                                     description="Exception({})".format(e.__str__()))), 404,
+                            mimetype="application/json")
+        return Response(
+            json.dumps(
+                http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
+                              env_vars_added)),
+            200,
+            mimetype="application/json")
+
     @route('/render/<template>/<variables>', methods=['GET', 'POST'])
     def get_content_with_env(self, template, variables):
         http = HttpResponse()
         try:
             input_json = request.get_json(force=True)
             for key, value in input_json.items():
-                if key not in unmodifiable_env_vars:
-                    os.environ[str(key)] = str(value)
+                if key not in EnvironmentSingleton.get_instance().get_env():
+                    EnvironmentSingleton.get_instance().set_env_var(str(key), str(value))
         except:
             pass
 
-        os.environ[EnvConstants.TEMPLATE] = template.strip()
-        os.environ[EnvConstants.VARIABLES] = variables.strip()
+        EnvironmentSingleton.get_instance().set_env_var(EnvConstants.TEMPLATE, template.strip())
+        EnvironmentSingleton.get_instance().set_env_var(EnvConstants.VARIABLES, variables.strip())
 
         try:
-            rendered_content = Render(os.environ.get(EnvConstants.TEMPLATE),
-                                      os.environ.get(EnvConstants.VARIABLES)).rend_template()
+            rendered_content = Render(
+                EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.TEMPLATE),
+                EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
+                    EnvConstants.VARIABLES)).rend_template()
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.JINJA2_RENDER_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.JINJA2_RENDER_FAILURE),
@@ -174,12 +213,13 @@ class DockerView(FlaskView):
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
                                                      status.get('err'))), 404, mimetype="application/json")
-        if os.environ.get(EnvConstants.MAX_DEPLOYMENTS):
+        if EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
-            if len(active_deployments) >= int(os.environ.get(EnvConstants.MAX_DEPLOYMENTS)):
+            if len(active_deployments) >= int(
+                    EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.MAX_DEPLOYMENTS)):
                 return Response(json.dumps(http.response(ApiConstants.MAX_DEPLOYMENTS_REACHED,
                                                          ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
+                                                             ApiConstants.MAX_DEPLOYMENTS_REACHED) % EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
                                                              EnvConstants.MAX_DEPLOYMENTS), active_deployments)), 404,
                                 mimetype="application/json")
         try:
@@ -190,20 +230,26 @@ class DockerView(FlaskView):
             IOUtils.write_to_file(template_file_path, input_data)
 
             IOUtils.create_dir(deploy_dir)
-            os.environ[EnvConstants.TEMPLATE] = f"{template_file_name}"
-            r = Render(os.environ.get(EnvConstants.TEMPLATE), os.environ.get(EnvConstants.VARIABLES))
-            if EnvStartup.get_instance().get(EnvConstants.EUREKA_SERVER) and EnvStartup.get_instance().get(
-                    EnvConstants.APP_IP_PORT):
+            EnvironmentSingleton.get_instance().set_env_var(EnvConstants.TEMPLATE, template_file_name)
+            r = Render(EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.TEMPLATE),
+                       EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.VARIABLES))
+            if EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                    EnvConstants.EUREKA_SERVER) and EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                EnvConstants.APP_IP_PORT):
                 # if {{app_ip_port}} and {{eureka_server}} then register that instance too
                 if '{{app_ip_port}}' in input_data and '{{eureka_server}}' in input_data:
-                    eureka_server = EnvStartup.get_instance().get(EnvConstants.EUREKA_SERVER)
+                    eureka_server = EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                        EnvConstants.EUREKA_SERVER)
                     # header value overwrite the eureka server
                     if eureka_server_header:
                         eureka_server = eureka_server_header
-                    input_data = r.get_jinja2env().get_template(os.environ.get(EnvConstants.TEMPLATE)).render(
+                    input_data = r.get_jinja2env().get_template(
+                        EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
+                            EnvConstants.TEMPLATE)).render(
                         {"deployment_id": f"{token}",
                          "eureka_server": eureka_server,
-                         "app_ip_port": EnvStartup.get_instance().get(EnvConstants.APP_IP_PORT).split("/")[0]
+                         "app_ip_port": EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                             EnvConstants.APP_IP_PORT).split("/")[0]
                          }
                     )
             app.logger.debug({"msg": {"file_content": f"{input_data}"}})
@@ -233,15 +279,17 @@ class DockerView(FlaskView):
         try:
             input_json = request.get_json(force=True)
             for key, value in input_json.items():
-                if key not in unmodifiable_env_vars:
-                    os.environ[str(key)] = str(value)
+                if key not in EnvironmentSingleton.get_instance().get_env():
+                    EnvironmentSingleton.get_instance().set_env_var(str(key), str(value))
         except:
             pass
 
-        os.environ[EnvConstants.TEMPLATE] = template.strip()
-        os.environ[EnvConstants.VARIABLES] = variables.strip()
-        app.logger.debug({"msg": {"template_file": os.environ.get(EnvConstants.TEMPLATE)}})
-        app.logger.debug({"msg": {"variables_file": os.environ.get(EnvConstants.VARIABLES)}})
+        EnvironmentSingleton.get_instance().set_env_var(EnvConstants.TEMPLATE, template.strip())
+        EnvironmentSingleton.get_instance().set_env_var(EnvConstants.VARIABLES, variables.strip())
+        app.logger.debug({"msg": {
+            "template_file": EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.TEMPLATE)}})
+        app.logger.debug({"msg": {"variables_file": EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
+            EnvConstants.VARIABLES)}})
         token = token_hex(8)
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
         file = f"{deploy_dir}/{token}"
@@ -251,16 +299,18 @@ class DockerView(FlaskView):
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
                                                      status.get('err'))), 404, mimetype="application/json")
-        if os.environ.get(EnvConstants.MAX_DEPLOYMENTS):
+        if EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
-            if len(active_deployments) >= int(os.environ.get(EnvConstants.MAX_DEPLOYMENTS)):
+            if len(active_deployments) >= int(
+                    EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.MAX_DEPLOYMENTS)):
                 return Response(json.dumps(http.response(ApiConstants.MAX_DEPLOYMENTS_REACHED,
                                                          ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
+                                                             ApiConstants.MAX_DEPLOYMENTS_REACHED) % EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
                                                              EnvConstants.MAX_DEPLOYMENTS), active_deployments)), 404,
                                 mimetype="application/json")
         try:
-            r = Render(os.environ.get(EnvConstants.TEMPLATE), os.environ.get(EnvConstants.VARIABLES))
+            r = Render(EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.TEMPLATE),
+                       EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.VARIABLES))
             IOUtils.create_dir(deploy_dir)
             IOUtils.write_to_file(file)
             IOUtils.write_to_file(file, r.rend_template())

@@ -4,7 +4,7 @@ import unittest
 
 import yaml
 
-from entities.render import Render
+from rest.api.jinja2.render import Render
 
 
 class RenderTestCase(unittest.TestCase):

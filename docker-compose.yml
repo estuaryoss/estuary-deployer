@@ -3,7 +3,7 @@ version: "3.3"
 services:
   estuary-deployer:
     container_name: estuary-deployer
-    image: dinutac/estuary-deployer:latest
+    image: estuaryoss/deployer:latest
     hostname: estuary-deployer
 #    entrypoint: tail -f /etc/alpine-release
     environment:
@@ -29,7 +29,7 @@ services:
 
   eureka-server:
     container_name: eureka-server
-    image: dinutac/netflixoss-eureka:1.9.25
+    image: estuaryoss/netflix-eureka:1.9.25
     hostname: eureka-server
 #    ports:
 #      - "8090:8080"

@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   container:
-    image: dinutac/estuary-agent:latest
+    image: estuaryoss/agent:latest
     hostname: container
     #    entrypoint: tail -f /etc/alpine-release
     #    entrypoint: bash -c "/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 10 && python3 /scripts/main_flask.py"
