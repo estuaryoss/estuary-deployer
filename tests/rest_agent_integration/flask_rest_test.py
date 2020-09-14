@@ -102,11 +102,11 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server_agent + f"/{self.compose_id}" + f"/env/{env_var}")
 
         body = response.json()
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(Constants.GET_ENV_VAR_FAILURE) % env_var.upper())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
+        self.assertEqual(body.get('description'), None)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.GET_ENV_VAR_FAILURE)
+        self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_about_endpoint(self):

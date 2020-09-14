@@ -119,8 +119,8 @@ class KubectlView(FlaskView):
                                                          result)), 404, mimetype="application/json")
         return response
 
-    @app.route('/env', methods=['POST'])
-    def set_env_kubectl(self):
+    @route('/env', methods=['POST'])
+    def set_env(self):
         http = HttpResponse()
         input_data = request.data.decode("UTF-8", "replace").strip()
 
