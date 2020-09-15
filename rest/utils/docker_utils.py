@@ -4,10 +4,10 @@ import os
 import shutil
 from pathlib import Path
 
-from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
 from rest.api.constants.api_constants import ApiConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.loghelpers.message_dumper import MessageDumper
+from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.env_creation import EnvCreation
 from rest.utils.io_utils import IOUtils
@@ -97,7 +97,7 @@ class DockerUtils(EnvCreation):
         active_deployments = []
         env_list = IOUtils.get_list_dir(f"{EnvInit.DEPLOY_PATH}")
         for item in env_list:
-            container_list = DockerUtils.ps(item).get('out').split("\n")[1:-1]
+            container_list = DockerUtils.ps(item).get('out').split("\n")[1:]
             for container in container_list:
                 if item in container:
                     active_deployments.append(ActiveDeployment.docker_deployment(item.strip(), container_list))

@@ -226,6 +226,7 @@ class DockerView(FlaskView):
             template_file_name = f"deployment_{token}.yml"
             input_data = request.data.decode('utf-8')
             template_file_path = f"{EnvInit.TEMPLATES_PATH}/{template_file_name}"
+            app.logger.debug({"msg": {"file": template_file_path, "file_content": f"{input_data}"}})
             IOUtils.write_to_file(template_file_path, input_data)
 
             IOUtils.create_dir(deploy_dir)
@@ -251,9 +252,9 @@ class DockerView(FlaskView):
                              EnvConstants.APP_IP_PORT).split("/")[0]
                          }
                     )
-            app.logger.debug({"msg": {"file_content": f"{input_data}"}})
             if os.path.exists(template_file_path):
                 os.remove(template_file_path)
+            app.logger.debug({"msg": {"file": file, "file_content": f"{input_data}"}})
             IOUtils.write_to_file(file, input_data)
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
             response = Response(
