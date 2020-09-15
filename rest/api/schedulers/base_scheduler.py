@@ -11,7 +11,7 @@ from rest.api.loghelpers.message_dumper import MessageDumper
 class BaseScheduler(ABC):
 
     def __init__(self, fluentd_utils, method, poll_interval, args):
-        "Base scheduler"
+        """Base scheduler."""
         self.fluentd_utils = fluentd_utils
         self.message_dumper = MessageDumper()
         self.scheduler = BackgroundScheduler()

@@ -5,8 +5,8 @@ from rest.utils.docker_utils import DockerUtils
 
 class DockerEnvExpireScheduler(BaseScheduler):
 
-    def __init__(self, fluentd_utils=None, path=EnvInit.DEPLOY_PATH,
-                 poll_interval=1200, env_expire_in=1440):
+    def __init__(self, fluentd_utils=None, path=EnvInit.DEPLOY_PATH, poll_interval=1200, env_expire_in=1440):
+        """Docker env expire scheduler."""
         super().__init__(fluentd_utils=fluentd_utils, method=DockerUtils.env_clean_up, poll_interval=poll_interval,
                          args=[fluentd_utils, path, env_expire_in])
 

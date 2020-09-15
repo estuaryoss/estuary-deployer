@@ -226,7 +226,6 @@ class DockerView(FlaskView):
             template_file_name = f"deployment_{token}.yml"
             input_data = request.data.decode('utf-8')
             template_file_path = f"{EnvInit.TEMPLATES_PATH}/{template_file_name}"
-            IOUtils.write_to_file(template_file_path)
             IOUtils.write_to_file(template_file_path, input_data)
 
             IOUtils.create_dir(deploy_dir)
@@ -312,7 +311,6 @@ class DockerView(FlaskView):
             r = Render(EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.TEMPLATE),
                        EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.VARIABLES))
             IOUtils.create_dir(deploy_dir)
-            IOUtils.write_to_file(file)
             IOUtils.write_to_file(file, r.rend_template())
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
             result = str(token)
