@@ -45,7 +45,3 @@ class IOUtils:
         if not file_path.exists():
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
         shutil.make_archive(f"/tmp/{id}", 'zip', f"/tmp/{id}")
-
-    @staticmethod
-    def get_filtered_list_regex(input_list, regex):
-        return [i.strip() for i in input_list if not regex.search(i)]

@@ -16,24 +16,24 @@ class KubectlUtils(EnvCreation):
         file_path = Path(file)
         if not file_path.is_file():
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["kubectl", "apply", "-f", file, "--insecure-skip-tls-verify"])
+        return CmdUtils.run_cmd_shell_false(["kubectl", "apply", "-f", file, "--insecure-skip-tls-verify"])
 
     @staticmethod
     def down(deployment, namespace):
-        return CmdUtils.run_cmd(
+        return CmdUtils.run_cmd_shell_false(
             ["kubectl", "-n", namespace, "delete", "deployment", deployment, "--insecure-skip-tls-verify"])
 
     @staticmethod
     def logs(pod, namespace):
-        return CmdUtils.run_cmd(
+        return CmdUtils.run_cmd_shell_false(
             ["kubectl", "-n", namespace, "logs", pod, "--insecure-skip-tls-verify"])
 
     @staticmethod
     def get_active_pods(label_selector, namespace):
         active_pods = []
-        status = CmdUtils.run_cmd(
+        status = CmdUtils.run_cmd_shell_false(
             ["kubectl", "get", "pods", "-n", namespace, "-l", label_selector, "--insecure-skip-tls-verify"])
-        active_pods_list = status.get('out').split('\n')[1:-1]
+        active_pods_list = status.get('out').split('\n')[1:]
         for i in range(0, len(active_pods_list)):
             active_pods_list[i] = ' '.join(active_pods_list[i].split())
             active_pods.append(ActiveDeployment.k8s_pod(f'{namespace}',
@@ -44,8 +44,9 @@ class KubectlUtils(EnvCreation):
     @staticmethod
     def get_active_deployments():
         active_deployments = []
-        status = CmdUtils.run_cmd(["kubectl", "get", "deployments", "--all-namespaces", "--insecure-skip-tls-verify"])
-        active_deployments_list = status.get('out').split('\n')[1:-1]
+        status = CmdUtils.run_cmd_shell_false(
+            ["kubectl", "get", "deployments", "--all-namespaces", "--insecure-skip-tls-verify"])
+        active_deployments_list = status.get('out').split('\n')[1:]
         for i in range(0, len(active_deployments_list)):
             active_deployments_list[i] = ' '.join(active_deployments_list[i].split())
             active_deployments.append(ActiveDeployment.k8s_deployment(f'{active_deployments_list[i].split()[0]}',

@@ -9,12 +9,11 @@ Estuary docker deployer service which will run your containers in docker or K8s 
 Deployer service can run your commands using the [estuary-agent](https://github.com/estuaryoss/estuary-agent) service. Check-out the wiki !  
 
 ## Coverage & code quality
-[![Coverage Status](https://coveralls.io/repos/github/estuaryoss/estuary-deployer/badge.svg)](https://coveralls.io/github/estuaryoss/estuary-deployer)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/9c21d37be8d0437495b3e8f5fcaf022e)](https://www.codacy.com/gh/estuaryoss/estuary-deployer?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=estuaryoss/estuary-deployer&amp;utm_campaign=Badge_Grade)
 [![Maintainability](https://api.codeclimate.com/v1/badges/824c268532876c4984f3/maintainability)](https://codeclimate.com/github/estuaryoss/estuary-deployer/maintainability)
 
 ## Linux status
-[![Build Status](https://travis-ci.org/estuaryoss/estuary-deployer.svg?branch=master)](https://travis-ci.org/estuaryoss/estuary-deployer)
+[![Build Status](https://travis-ci.com/estuaryoss/estuary-deployer.svg?token=UC9Z5nQSPmb5vK5QLpJh&branch=master)](https://travis-ci.com/estuaryoss/estuary-deployer)
 
 ## Docker Hub
 [alpine](https://hub.docker.com/r/estuaryoss/deployer)  ![](https://img.shields.io/docker/pulls/estuaryoss/deployer.svg)  

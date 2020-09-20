@@ -1,9 +1,9 @@
-FROM alpine:3.11.5
+FROM alpine:3.11.6
 
 RUN apk update
 
 RUN apk add --no-cache python3 && \
-    pip3 install --upgrade pip==20.1.1 setuptools==49.2.0 --no-cache
+    pip3 install --upgrade pip==20.2.3 setuptools==49.2.0 --no-cache
 
 RUN apk add --no-cache \
     bash \
@@ -20,7 +20,7 @@ RUN apk add --no-cache \
     curl
 
 RUN pip3 install \
-  docker-compose==1.26.2
+  docker-compose==1.27.2
 
 ## nginx
 RUN apk add nginx

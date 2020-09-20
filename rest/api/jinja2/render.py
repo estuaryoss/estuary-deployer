@@ -11,20 +11,18 @@ import jinja2
 import yaml
 
 from rest.api.constants.env_constants import EnvConstants
+from rest.api.constants.env_init import EnvInit
 from rest.environment.environment import EnvironmentSingleton
 
 
 class Render:
 
     def __init__(self, template=None, variables=None):
-        """
-        Custom jinja2 render
-        """
+        """Custom jinja2 render."""
         self.template = template
         self.variables = variables
         self.env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(
-                EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.TEMPLATES_DIR)),
+            loader=jinja2.FileSystemLoader(EnvInit.TEMPLATES_PATH),
             extensions=['jinja2.ext.autoescape', 'jinja2.ext.do', 'jinja2.ext.loopcontrols', 'jinja2.ext.with_'],
             autoescape=True,
             trim_blocks=True)
@@ -37,8 +35,7 @@ class Render:
     def env_override(value, key):
         return os.getenv(key, value)
 
-    def rend_template(self, vars_dir=EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
-        EnvConstants.VARS_DIR)):
+    def rend_template(self, vars_dir=EnvInit.VARIABLES_PATH):
         with open(vars_dir + "/" + self.variables, closefd=True) as f:
             data = yaml.safe_load(f)
 

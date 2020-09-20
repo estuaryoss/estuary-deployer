@@ -4,10 +4,10 @@ import os
 import shutil
 from pathlib import Path
 
-from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
 from rest.api.constants.api_constants import ApiConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.loghelpers.message_dumper import MessageDumper
+from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.env_creation import EnvCreation
 from rest.utils.io_utils import IOUtils
@@ -20,72 +20,72 @@ class DockerUtils(EnvCreation):
         file_path = Path(file)
         if not file_path.is_file():
             raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["docker-compose", "pull", "&&", "docker-compose", "-f", file, "up", "-d"])
+        return CmdUtils.run_cmd_shell_false(["docker-compose", "pull", "&&", "docker-compose", "-f", file, "up", "-d"])
 
     @staticmethod
     def down(file):
         file_path = Path(file)
         if not file_path.is_file():
             raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["docker-compose", "-f", file, "down", "-v"])
+        return CmdUtils.run_cmd_shell_false(["docker-compose", "-f", file, "down", "-v"])
 
     @staticmethod
     def start(file):
         file_path = Path(file)
         if not file_path.is_file():
             raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["docker-compose", "-f", file, "start"])
+        return CmdUtils.run_cmd_shell_false(["docker-compose", "-f", file, "start"])
 
     @staticmethod
     def stop(file):
         file_path = Path(file)
         if not file_path.is_file():
             raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(["docker-compose", "-f", file, "stop"])
+        return CmdUtils.run_cmd_shell_false(["docker-compose", "-f", file, "stop"])
 
     @staticmethod
     def logs(file):
         file_path = Path(file)
         if not file_path.is_file():
             raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
-        return CmdUtils.run_cmd(
+        return CmdUtils.run_cmd_shell_false(
             ["docker-compose", "-f", file, "logs", "-t", "--tail=" + str(ApiConstants.DOCKER_LOGS_LINES)])
 
     @staticmethod
-    def ps(id):
-        return CmdUtils.run_cmd(["docker", "ps", "--filter", "name={}".format(id)])
+    def ps(env_id):
+        return CmdUtils.run_cmd_shell_false(["docker", "ps", "--filter", f"name={env_id}"])
 
     @staticmethod
     def exec(container_id, command):
         container_exec_cmd = ["docker", "exec", f"{container_id}"]
         container_exec_cmd.extend(command)
-        return CmdUtils.run_cmd(container_exec_cmd)
+        return CmdUtils.run_cmd_shell_false(container_exec_cmd)
 
     @staticmethod
     def network_prune():
         container_exec_cmd = ["docker", "network", "prune", "-f"]
-        return CmdUtils.run_cmd(container_exec_cmd)
+        return CmdUtils.run_cmd_shell_false(container_exec_cmd)
 
     @staticmethod
     def network_connect(deployer_net, container):
         container_exec_cmd = ["docker", "network", "connect", f"{deployer_net}", f"{container}"]
-        return CmdUtils.run_cmd(container_exec_cmd)
+        return CmdUtils.run_cmd_shell_false(container_exec_cmd)
 
     @staticmethod
     def network_disconnect(deployer_net, container):
         container_exec_cmd = ["docker", "network", "disconnect", f"{deployer_net}", f"{container}"]
-        return CmdUtils.run_cmd(container_exec_cmd)
+        return CmdUtils.run_cmd_shell_false(container_exec_cmd)
 
     @staticmethod
     def volume_prune():
         container_exec_cmd = ["docker", "volume", "prune", "-f"]
-        return CmdUtils.run_cmd(container_exec_cmd)
+        return CmdUtils.run_cmd_shell_false(container_exec_cmd)
 
     @staticmethod
     def exec_detached(container_id, command):
         container_exec_cmd = ["docker", "exec", "-d", f"{container_id}"]
         container_exec_cmd.extend(command)
-        return CmdUtils.run_cmd(container_exec_cmd)
+        return CmdUtils.run_cmd_shell_false(container_exec_cmd)
 
     @staticmethod
     def clean_up():
@@ -97,7 +97,7 @@ class DockerUtils(EnvCreation):
         active_deployments = []
         env_list = IOUtils.get_list_dir(f"{EnvInit.DEPLOY_PATH}")
         for item in env_list:
-            container_list = DockerUtils.ps(item).get('out').split("\n")[1:-1]
+            container_list = DockerUtils.ps(item).get('out').split("\n")[1:]
             for container in container_list:
                 if item in container:
                     active_deployments.append(ActiveDeployment.docker_deployment(item.strip(), container_list))

@@ -208,7 +208,7 @@ class DockerView(FlaskView):
         header_key = 'Eureka-Server'
         eureka_server_header = request.headers.get(f"{header_key}")
 
-        status = CmdUtils.run_cmd(["docker", "ps"])
+        status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
@@ -226,7 +226,7 @@ class DockerView(FlaskView):
             template_file_name = f"deployment_{token}.yml"
             input_data = request.data.decode('utf-8')
             template_file_path = f"{EnvInit.TEMPLATES_PATH}/{template_file_name}"
-            IOUtils.write_to_file(template_file_path)
+            app.logger.debug({"msg": {"file": template_file_path, "file_content": f"{input_data}"}})
             IOUtils.write_to_file(template_file_path, input_data)
 
             IOUtils.create_dir(deploy_dir)
@@ -252,9 +252,9 @@ class DockerView(FlaskView):
                              EnvConstants.APP_IP_PORT).split("/")[0]
                          }
                     )
-            app.logger.debug({"msg": {"file_content": f"{input_data}"}})
             if os.path.exists(template_file_path):
                 os.remove(template_file_path)
+            app.logger.debug({"msg": {"file": file, "file_content": f"{input_data}"}})
             IOUtils.write_to_file(file, input_data)
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
             response = Response(
@@ -294,7 +294,7 @@ class DockerView(FlaskView):
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
         file = f"{deploy_dir}/{token}"
 
-        status = CmdUtils.run_cmd(["docker", "ps"])
+        status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
@@ -312,7 +312,6 @@ class DockerView(FlaskView):
             r = Render(EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.TEMPLATE),
                        EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.VARIABLES))
             IOUtils.create_dir(deploy_dir)
-            IOUtils.write_to_file(file)
             IOUtils.write_to_file(file, r.rend_template())
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
             result = str(token)
@@ -340,7 +339,7 @@ class DockerView(FlaskView):
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
                                                          status.get('err'))), 404, mimetype="application/json")
-            result = status.get('out').split("\n")[1:-1]
+            result = status.get('out').split("\n")[1:]
             response = Response(
                 json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
                                          ActiveDeployment.docker_deployment(env_id, result))), 200,
@@ -369,7 +368,7 @@ class DockerView(FlaskView):
                                                          status.get('err'))), 404, mimetype="application/json")
             app.logger.debug({"msg": status})
             status = docker_utils.ps(env_id)
-            result = status.get('out').split("\n")[1:-1]
+            result = status.get('out').split("\n")[1:]
             response = Response(
                 json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS), result)),
                 200,
@@ -482,7 +481,7 @@ class DockerView(FlaskView):
         try:
             # when creating deployer net, user must include 'deployer' in its name
             # otherwise this method should have docker net param regex through http header
-            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
+            status = CmdUtils.run_cmd_shell_false(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
             app.logger.debug({"msg": status})
             if not status.get('out'):
                 return Response(json.dumps(http.response(ApiConstants.GET_DEPLOYER_NETWORK_FAILED,
@@ -525,7 +524,7 @@ class DockerView(FlaskView):
             service_name = request.args.get('service')
         container_id = f"{env_id}_{service_name}_1"
         try:
-            status = CmdUtils.run_cmd(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
+            status = CmdUtils.run_cmd_shell_false(["docker", "network", "ls", "--filter", "name={}".format("deployer")])
             app.logger.debug({"msg": status})
             if not status.get('out'):
                 return Response(json.dumps(http.response(ApiConstants.GET_DEPLOYER_NETWORK_FAILED,
