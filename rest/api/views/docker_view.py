@@ -339,7 +339,7 @@ class DockerView(FlaskView):
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
                                                          status.get('err'))), 404, mimetype="application/json")
-            result = status.get('out').split("\n")[1:-1]
+            result = status.get('out').split("\n")[1:]
             response = Response(
                 json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
                                          ActiveDeployment.docker_deployment(env_id, result))), 200,
@@ -368,7 +368,7 @@ class DockerView(FlaskView):
                                                          status.get('err'))), 404, mimetype="application/json")
             app.logger.debug({"msg": status})
             status = docker_utils.ps(env_id)
-            result = status.get('out').split("\n")[1:-1]
+            result = status.get('out').split("\n")[1:]
             response = Response(
                 json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS), result)),
                 200,

@@ -33,7 +33,7 @@ class KubectlUtils(EnvCreation):
         active_pods = []
         status = CmdUtils.run_cmd_shell_false(
             ["kubectl", "get", "pods", "-n", namespace, "-l", label_selector, "--insecure-skip-tls-verify"])
-        active_pods_list = status.get('out').split('\n')[1:-1]
+        active_pods_list = status.get('out').split('\n')[1:]
         for i in range(0, len(active_pods_list)):
             active_pods_list[i] = ' '.join(active_pods_list[i].split())
             active_pods.append(ActiveDeployment.k8s_pod(f'{namespace}',
@@ -44,8 +44,9 @@ class KubectlUtils(EnvCreation):
     @staticmethod
     def get_active_deployments():
         active_deployments = []
-        status = CmdUtils.run_cmd_shell_false(["kubectl", "get", "deployments", "--all-namespaces", "--insecure-skip-tls-verify"])
-        active_deployments_list = status.get('out').split('\n')[1:-1]
+        status = CmdUtils.run_cmd_shell_false(
+            ["kubectl", "get", "deployments", "--all-namespaces", "--insecure-skip-tls-verify"])
+        active_deployments_list = status.get('out').split('\n')[1:]
         for i in range(0, len(active_deployments_list)):
             active_deployments_list[i] = ' '.join(active_deployments_list[i].split())
             active_deployments.append(ActiveDeployment.k8s_deployment(f'{active_deployments_list[i].split()[0]}',

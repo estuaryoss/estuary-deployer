@@ -307,7 +307,7 @@ class KubectlView(FlaskView):
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.KUBERNETES_SERVER_ERROR) % status.get('err'),
                                                          status.get('err'))), 404, mimetype="application/json")
-            result = status.get('out').split("\n")[1:-1]
+            result = status.get('out').split("\n")[1:]
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.DEPLOY_STOP_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_STOP_FAILURE),

@@ -52,8 +52,8 @@ class DockerUtils(EnvCreation):
             ["docker-compose", "-f", file, "logs", "-t", "--tail=" + str(ApiConstants.DOCKER_LOGS_LINES)])
 
     @staticmethod
-    def ps(id):
-        return CmdUtils.run_cmd_shell_false(["docker", "ps", "--filter", "name={}".format(id)])
+    def ps(env_id):
+        return CmdUtils.run_cmd_shell_false(["docker", "ps", "--filter", f"name={env_id}"])
 
     @staticmethod
     def exec(container_id, command):

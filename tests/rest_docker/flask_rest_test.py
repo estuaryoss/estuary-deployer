@@ -19,8 +19,8 @@ class FlaskServerTestCase(unittest.TestCase):
     # server = "http://" + os.environ.get('SERVER')
 
     expected_version = "4.0.9"
-    sleep_after_env_up = 10
-    sleep_after_env_down = 3
+    sleep_after_env_up = 6
+    sleep_after_env_down = 6
 
     def setUp(self):
         active_deployments = self.get_deployment_info()
