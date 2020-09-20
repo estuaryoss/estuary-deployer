@@ -19,13 +19,14 @@ class FlaskServerTestCase(unittest.TestCase):
     # server = "http://" + os.environ.get('SERVER')
 
     expected_version = "4.0.9"
-    sleep_before_container_up = 6
+    sleep_after_env_up = 10
+    sleep_after_env_down = 3
 
     def setUp(self):
-        time.sleep(self.sleep_before_container_up)
         active_deployments = self.get_deployment_info()
         for item in active_deployments:
             requests.delete(self.server + f"/deployments/{item}")
+        time.sleep(self.sleep_after_env_down)
 
     def get_deployment_info(self):
         response = requests.get(self.server + "/deployments")
@@ -255,7 +256,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
-        time.sleep(self.sleep_before_container_up)
+        time.sleep(self.sleep_after_env_up)
         body = response.json()
         self.assertEqual(len(self.get_deployment_info()), 1)
         self.assertEqual(response.status_code, 200)
@@ -288,7 +289,7 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_deploystart_p(self, template, variables):
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
-        time.sleep(self.sleep_before_container_up)
+        time.sleep(self.sleep_after_env_up)
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
@@ -321,7 +322,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystatus_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
-        time.sleep(self.sleep_before_container_up)
+        time.sleep(self.sleep_after_env_up)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
         compose_id = response.json().get('description')
@@ -344,7 +345,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystatus_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
-        time.sleep(self.sleep_before_container_up)
+        time.sleep(self.sleep_after_env_up)
         self.assertEqual(response.status_code, 200)
         body = response.json()
         compose_id = body.get('description')
@@ -368,7 +369,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystatus_n(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
-        time.sleep(self.sleep_before_container_up)
+        time.sleep(self.sleep_after_env_up)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
         deploystart_body = response.json()
@@ -448,7 +449,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystop_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
-        time.sleep(self.sleep_before_container_up)
+        time.sleep(self.sleep_after_env_up)
         self.assertEqual(response.status_code, 200)
         deploystart_body = response.json()
 
@@ -471,7 +472,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.post(self.server + f"/deployments", data=payload,
                                  headers=headers)
-        time.sleep(self.sleep_before_container_up)
+        time.sleep(self.sleep_after_env_up)
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
@@ -508,7 +509,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
-        time.sleep(self.sleep_before_container_up)
+        time.sleep(self.sleep_after_env_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("description")
 
@@ -551,7 +552,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), 0)
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
-        time.sleep(self.sleep_before_container_up)
+        time.sleep(self.sleep_after_env_up)
         compose_id = response.json().get('description')
         self.assertEqual(response.status_code, 200)
 
@@ -570,7 +571,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(response.json().get('description')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
             response = requests.post(self.server + f"/deployments/{template}/{variables}")
-            time.sleep(self.sleep_before_container_up)
+            time.sleep(self.sleep_after_env_up)
             self.assertEqual(response.status_code, 200)
         time.sleep(3)
         response = requests.get(self.server + "/deployments")
@@ -596,7 +597,7 @@ class FlaskServerTestCase(unittest.TestCase):
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
             response = requests.post(self.server + f"/deployments/{template}/{variables}")
             self.assertEqual(response.status_code, 200)
-            time.sleep(self.sleep_before_container_up)
+            time.sleep(self.sleep_after_env_up)
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), int(os.environ.get('MAX_DEPLOYMENTS')))
 
@@ -620,7 +621,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(response.json().get('description')), 0)
         for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
             response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
-            time.sleep(self.sleep_before_container_up)
+            time.sleep(self.sleep_after_env_up)
             self.assertEqual(response.status_code, 200)
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), int(os.environ.get('MAX_DEPLOYMENTS')))
