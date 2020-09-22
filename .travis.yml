@@ -108,7 +108,7 @@ jobs:
         - docker pull centos:8
         - docker pull mysql:5.6
         - docker pull alpine:3.9.4
-        - docker build -t estuaryoss/deployer-centos:latest -f Dockerfiles/Dockerfile_centos .
+        - docker build -t estuaryoss/deployer-centos:latest -f Dockerfile_centos .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
@@ -283,6 +283,7 @@ jobs:
         ISOLATED: true
       before_script:
         - docker build -t estuaryoss/deployer:latest .
+        - docker tag estuaryoss/deployer:latest dinutac/estuary-deployer:latest #<-- remove this when migrated to the new org
       script:
         - docker network create estuarydeployer_default
         - docker run -d

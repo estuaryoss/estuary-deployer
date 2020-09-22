@@ -27,6 +27,7 @@ if __name__ == "__main__":
 
     fluentd_tag = "startup"
     host = '0.0.0.0'
+    port = EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.PORT)
     message_dumper = MessageDumper()
     io_utils = IOUtils()
 
@@ -66,4 +67,10 @@ if __name__ == "__main__":
     fluentd_utils = Fluentd(logger)
     fluentd_utils.emit(tag=fluentd_tag, msg=environ_dump)
 
-    app.run(host=host, port=EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.PORT))
+    is_https = EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.HTTPS_ENABLE)
+    https_cert_path = EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.HTTPS_CERT)
+    https_prv_key_path = EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.HTTPS_KEY)
+    ssl_context = None
+    if is_https:
+        ssl_context = (https_cert_path, https_prv_key_path)
+    app.run(host=host, port=port, ssl_context=ssl_context)

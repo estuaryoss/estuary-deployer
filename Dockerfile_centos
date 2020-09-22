@@ -3,6 +3,7 @@ FROM centos:8
 ENV TZ UTC
 ENV PORT 8080
 ENV SCRIPTS_DIR /root/deployer
+ENV HTTPS_DIR $SCRIPTS_DIR/https
 ENV WORKSPACE $SCRIPTS_DIR
 ENV TEMPLATES_DIR $WORKSPACE/templates
 ENV VARS_DIR $WORKSPACE/variables
@@ -30,6 +31,8 @@ COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
 COPY main-linux $SCRIPTS_DIR
 COPY start_bin.sh $SCRIPTS_DIR
+COPY https/key.pem $HTTPS_DIR/
+COPY https/cert.pem $HTTPS_DIR/
 #ADD https://github.com/dinuta/estuary-deployer/releases/download/4.0.2/main-linux $SCRIPTS_DIR
 
 RUN chmod +x $SCRIPTS_DIR/main-linux
