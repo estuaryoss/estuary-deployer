@@ -10,7 +10,7 @@ Deployer service can run your commands using the [estuary-agent](https://github.
 
 ## Coverage & code quality
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/9c21d37be8d0437495b3e8f5fcaf022e)](https://www.codacy.com/gh/estuaryoss/estuary-deployer?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=estuaryoss/estuary-deployer&amp;utm_campaign=Badge_Grade)
-[![Maintainability](https://api.codeclimate.com/v1/badges/824c268532876c4984f3/maintainability)](https://codeclimate.com/github/estuaryoss/estuary-deployer/maintainability)
+[![Maintainability](https://api.codeclimate.com/v1/badges/8cf66f0043a72175600a/maintainability)](https://codeclimate.com/repos/5f6783ec5aa629014e00463d/maintainability)
 
 ## Linux status
 [![Build Status](https://travis-ci.com/estuaryoss/estuary-deployer.svg?token=UC9Z5nQSPmb5vK5QLpJh&branch=master)](https://travis-ci.com/estuaryoss/estuary-deployer)

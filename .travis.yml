@@ -167,8 +167,10 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker pull estuaryoss/agent:latest
-        - docker pull estuaryoss/netflix-eureka:1.9.25
+        - docker pull dinutac/estuary-agent:latest
+        - docker tag dinutac/estuary-agent:latest estuaryoss/agent:latest # <-- remove this when migrating
+        - docker pull dinutac/netflixoss-eureka:1.9.25
+        - docker tag dinutac/netflixoss-eureka:1.9.25 estuaryoss/netflix-eureka:1.9.25 # <-- remove this when migrating
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
@@ -212,9 +214,12 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker pull estuaryoss/agent:latest
-        - docker pull estuaryoss/discovery:latest
-        - docker pull estuaryoss/netflix-eureka:1.9.25
+        - docker pull dinutac/estuary-agent:latest
+        - docker tag dinutac/estuary-agent:latest estuaryoss/agent:latest #<- remove this when migrating
+        - docker pull dinutac/estuary-discovery:latest
+        - docker tag dinutac/estuary-discovery:latest estuaryoss/discovery:latest #<- remove this when migrating
+        - docker pull dinutac/netflixoss-eureka:1.9.25
+        - docker tag  dinutac/netflixoss-eureka:1.9.25 estuaryoss/netflix-eureka:1.9.25 #<- remove this when migrating
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default

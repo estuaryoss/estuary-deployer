@@ -42,7 +42,7 @@ curl -X POST -i http://[[HOST_IP]]:8080/docker/deployments/network/$DEPLOYMENT_D
 ```
 
 Access the discovery through the deployer's net:  
-```
+```bash
 curl http://[[HOST_IP]]:8080/docker/container/$DEPLOYMENT_DISCOVERY/about | json_pp
 ```
 The deployer binds to a specific network containing **deployer** in its name. The services accessed through this network must be connected to this net.  
