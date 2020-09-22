@@ -7,7 +7,7 @@ services:
     entrypoint: tail -f /etc/hostname
 
   agent:
-    image: estuaryoss/agent:latest
+    image: dinutac/estuary-agent:latest
     hostname: agent
     #    entrypoint: tail -f /etc/alpine-release
     #    entrypoint: bash -c "sleep 10 && /scripts/main_flask.py"

@@ -108,7 +108,7 @@ jobs:
         - docker pull centos:8
         - docker pull mysql:5.6
         - docker pull alpine:3.9.4
-        - docker build -t estuaryoss/deployer-centos:latest -f Dockerfiles/Dockerfile_centos .
+        - docker build -t estuaryoss/deployer-centos:latest -f Dockerfile_centos .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
@@ -167,8 +167,11 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker pull estuaryoss/agent:latest
-        - docker pull estuaryoss/netflix-eureka:1.9.25
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
+        - docker pull dinutac/estuary-agent:latest
+        - docker tag dinutac/estuary-agent:latest estuaryoss/agent:latest # <-- remove this when migrating
+        - docker pull dinutac/netflixoss-eureka:1.9.25
+        - docker tag dinutac/netflixoss-eureka:1.9.25 estuaryoss/netflix-eureka:1.9.25 # <-- remove this when migrating
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
@@ -179,6 +182,8 @@ jobs:
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
         - echo "EUREKA_SERVER=$EUREKA_SERVER_LOCAL" >> .env
         - echo "APP_IP_PORT=${IP_ADDR_ARRAY[0]}:8080" >> .env
+        - echo "DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME" >> .env
+        - echo "DOCKERHUB_TOKEN=$DOCKERHUB_TOKEN" >> .env
         - cat .env
         - sleep 30
         - docker run -d
@@ -212,9 +217,13 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker pull estuaryoss/agent:latest
-        - docker pull estuaryoss/discovery:latest
-        - docker pull estuaryoss/netflix-eureka:1.9.25
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
+        - docker pull dinutac/estuary-agent:latest
+        - docker tag dinutac/estuary-agent:latest estuaryoss/agent:latest #<- remove this when migrating
+        - docker pull dinutac/estuary-discovery:latest
+        - docker tag dinutac/estuary-discovery:latest estuaryoss/discovery:latest #<- remove this when migrating
+        - docker pull dinutac/netflixoss-eureka:1.9.25
+        - docker tag  dinutac/netflixoss-eureka:1.9.25 estuaryoss/netflix-eureka:1.9.25 #<- remove this when migrating
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
@@ -225,6 +234,8 @@ jobs:
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
         - echo "EUREKA_SERVER=$EUREKA_SERVER_LOCAL" >> .env
         - echo "APP_IP_PORT=${IP_ADDR_ARRAY[0]}:8080" >> .env
+        - echo "DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME" >> .env
+        - echo "DOCKERHUB_TOKEN=$DOCKERHUB_TOKEN" >> .env
         - cat .env
         - sleep 30
         - docker run -d
@@ -283,6 +294,7 @@ jobs:
         ISOLATED: true
       before_script:
         - docker build -t estuaryoss/deployer:latest .
+        - docker tag estuaryoss/deployer:latest dinutac/estuary-deployer:latest #<-- remove this when migrated to the new org
       script:
         - docker network create estuarydeployer_default
         - docker run -d

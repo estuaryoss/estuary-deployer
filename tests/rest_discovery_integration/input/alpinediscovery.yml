@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   container:
-    image: estuaryoss/discovery:latest
+    image: dinutac/estuary-discovery:latest
     hostname: container
     environment:
       limit: 'sky' #example env var inserted. you can read it with environ('limit') in your jinja2 template

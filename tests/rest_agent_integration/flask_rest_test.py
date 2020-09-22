@@ -30,6 +30,8 @@ class FlaskServerTestCase(unittest.TestCase):
             payload = f.read()
 
         headers = {'Content-type': 'text/plain'}
+        requests.post(f"{FlaskServerTestCase.server}/command",
+                      data="docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN", headers=headers)
         requests.post(f"{FlaskServerTestCase.server}/deployments", data=payload, headers=headers)
         # print(dump.dump_all(response))
         time.sleep(60)  # wait until the env is up and running, including image download and container boot
