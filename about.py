@@ -1,6 +1,6 @@
 properties = {
     "name": "estuary-deployer",
-    "version": "4.0.9",
+    "version": "4.1.0",
     "description": "Deployer manages your docker/k8s deployments",
     "author": "Catalin Dinuta",
     "platforms": ["Linux", "Mac", "Windows"],

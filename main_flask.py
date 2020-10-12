@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import sys
 from pathlib import Path
 
 from fluent import sender
@@ -24,6 +25,8 @@ DockerView.register(app=app)
 KubectlView.register(app=app)
 
 if __name__ == "__main__":
+    cli = sys.modules['flask.cli']
+    cli.show_server_banner = lambda *x: None
 
     fluentd_tag = "startup"
     host = '0.0.0.0'

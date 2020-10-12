@@ -18,7 +18,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "{}/docker".format(server_base)
     # server = "http://" + os.environ.get('SERVER')
 
-    expected_version = "4.0.9"
+    expected_version = "4.1.0"
     sleep_after_env_up = 6
     sleep_after_env_down = 6
 

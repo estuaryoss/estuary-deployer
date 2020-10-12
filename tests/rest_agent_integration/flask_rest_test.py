@@ -20,7 +20,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     script_path = "tests/rest_agent_integration/input"
     # script_path = "input"
-    expected_version = "4.0.9"
+    expected_version = "4.1.0"
     cleanup_count_safe = 5
     compose_id = ""
 
