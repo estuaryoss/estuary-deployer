@@ -57,7 +57,7 @@ paths:
       responses:
         200:
           description: Get env var success
-        404:
+        500:
           description: Get env var failure
   /ping:
     get:
@@ -123,7 +123,7 @@ paths:
       responses:
         200:
           description: jinja2 rendered template, success
-        404:
+        500:
           description: jinja2 rendered template, failure
   /deployments:
     get:
@@ -150,7 +150,7 @@ paths:
       responses:
         200:
           description: get active deployments success.
-        404:
+        500:
           description: get active deployments failure
     post:
       tags:
@@ -174,7 +174,7 @@ paths:
       responses:
         200:
           description: deploy success
-        404:
+        500:
           description: deploy failure
   /deployments/{template}/{variables}:
     post:
@@ -210,7 +210,7 @@ paths:
       responses:
         200:
           description: deploy success
-        404:
+        500:
           description: deploy failure
   /deployments/{name}:
     get:
@@ -245,7 +245,7 @@ paths:
       responses:
         200:
           description: get deploy status success
-        404:
+        500:
           description: get deploy status failure
     delete:
       tags:
@@ -274,7 +274,7 @@ paths:
       responses:
         200:
           description: deploy stop success
-        404:
+        500:
           description: deploy stop failure
   /deployments/logs/{pod_name}:
     get:
@@ -304,7 +304,7 @@ paths:
       responses:
         200:
           description: get compose environment logs success
-        404:
+        500:
           description: get compose environment logs failure
 
   /file:
@@ -330,7 +330,7 @@ paths:
       responses:
         200:
           description: get file content success
-        404:
+        500:
           description: get file content failure
     post:
       tags:
@@ -359,7 +359,7 @@ paths:
       responses:
         200:
           description: The content of the file was uploaded successfully
-        404:
+        500:
           description: Failure, the file content could not be uploaded
 
   /command:
@@ -383,7 +383,7 @@ paths:
       responses:
         200:
           description: success
-        404:
+        500:
           description: failure
 definitions:
     command:

@@ -196,7 +196,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server + f"/render/{template}/{variables}")
 
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertIn(expected, body.get("description"))
 
     @parameterized.expand([
@@ -209,7 +209,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server + f"/render/{template}/{variables}")
 
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(expected, body.get("description"))
 
     @parameterized.expand([
@@ -239,7 +239,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = yaml.safe_load(response.text)
         headers = response.headers
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
@@ -277,7 +277,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
@@ -309,7 +309,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
 
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_START_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_START_FAILURE)
@@ -408,7 +408,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.get(self.server + f"/file", headers=headers)
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.GET_FILE_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
@@ -422,7 +422,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.get(self.server + f"/file", headers=headers)
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
         self.assertEqual(body.get('version'), self.expected_version)
@@ -436,7 +436,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.delete(self.server + f"/deployments/dummy", headers=headers)
 
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DEPLOY_STOP_FAILURE))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DEPLOY_STOP_FAILURE)
@@ -537,7 +537,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.get(self.server + f"/deployments/logs/{dummy_env_id}")
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.GET_LOGS_FAILED) % dummy_env_id)
         self.assertEqual(body.get('version'), self.expected_version)
@@ -579,7 +579,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
                              'MAX_DEPLOYMENTS'))
@@ -603,7 +603,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
                              'MAX_DEPLOYMENTS'))
@@ -628,7 +628,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
                              'MAX_DEPLOYMENTS'))
@@ -675,7 +675,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         print(dump.dump_all(response))
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % mandatory_header_key)
         self.assertEqual(body.get('version'), self.expected_version)
@@ -698,7 +698,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         print(dump.dump_all(response))
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.EMPTY_REQUEST_BODY_PROVIDED))
         self.assertEqual(body.get('version'), self.expected_version)

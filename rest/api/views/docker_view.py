@@ -120,7 +120,7 @@ class DockerView(FlaskView):
             response = Response(
                 json.dumps(http.response(ApiConstants.GET_CONTAINER_ENV_VAR_FAILURE,
                                          ErrorCodes.HTTP_CODE.get(ApiConstants.GET_CONTAINER_ENV_VAR_FAILURE) % env_var,
-                                         result)), 404, mimetype="application/json")
+                                         result)), 500, mimetype="application/json")
         return response
 
     @route('/env', methods=['POST'])
@@ -135,7 +135,7 @@ class DockerView(FlaskView):
                                                      message=ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.INVALID_JSON_PAYLOAD) % str(
                                                          input_data),
-                                                     description="Exception({0})".format(e.__str__()))), 404,
+                                                     description="Exception({0})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         try:
@@ -149,7 +149,7 @@ class DockerView(FlaskView):
                                                      message=ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.SET_ENV_VAR_FAILURE) % str(
                                                          input_data),
-                                                     description="Exception({})".format(e.__str__()))), 404,
+                                                     description="Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
         return Response(
             json.dumps(
@@ -180,7 +180,7 @@ class DockerView(FlaskView):
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.JINJA2_RENDER_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.JINJA2_RENDER_FAILURE),
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         return Response(rendered_content, 200, mimetype="text/plain")
@@ -212,7 +212,7 @@ class DockerView(FlaskView):
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
-                                                     status.get('err'))), 404, mimetype="application/json")
+                                                     status.get('err'))), 500, mimetype="application/json")
         if EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(
@@ -220,7 +220,7 @@ class DockerView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.MAX_DEPLOYMENTS_REACHED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.MAX_DEPLOYMENTS_REACHED) % EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
-                                                             EnvConstants.MAX_DEPLOYMENTS), active_deployments)), 404,
+                                                             EnvConstants.MAX_DEPLOYMENTS), active_deployments)), 500,
                                 mimetype="application/json")
         try:
             template_file_name = f"deployment_{token}.yml"
@@ -267,7 +267,7 @@ class DockerView(FlaskView):
             app.logger.debug({"msg": status})
             response = Response(json.dumps(http.response(ApiConstants.DEPLOY_START_FAILURE,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE),
-                                                         result)), 404,
+                                                         result)), 500,
                                 mimetype="application/json")
 
         return response
@@ -298,7 +298,7 @@ class DockerView(FlaskView):
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
-                                                     status.get('err'))), 404, mimetype="application/json")
+                                                     status.get('err'))), 500, mimetype="application/json")
         if EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(
@@ -306,7 +306,7 @@ class DockerView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.MAX_DEPLOYMENTS_REACHED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.MAX_DEPLOYMENTS_REACHED) % EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
-                                                             EnvConstants.MAX_DEPLOYMENTS), active_deployments)), 404,
+                                                             EnvConstants.MAX_DEPLOYMENTS), active_deployments)), 500,
                                 mimetype="application/json")
         try:
             r = Render(EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.TEMPLATE),
@@ -323,7 +323,7 @@ class DockerView(FlaskView):
             result = "Exception({})".format(e.__str__())
             response = Response(json.dumps(http.response(ApiConstants.DEPLOY_START_FAILURE,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE),
-                                                         result)), 404, mimetype="application/json")
+                                                         result)), 500, mimetype="application/json")
 
         return response
 
@@ -338,7 +338,7 @@ class DockerView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
-                                                         status.get('err'))), 404, mimetype="application/json")
+                                                         status.get('err'))), 500, mimetype="application/json")
             result = status.get('out').split("\n")[1:]
             response = Response(
                 json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
@@ -349,7 +349,7 @@ class DockerView(FlaskView):
             result = "Exception({})".format(e.__str__())
             response = Response(json.dumps(http.response(ApiConstants.DEPLOY_STATUS_FAILURE,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_STATUS_FAILURE),
-                                                         result)), 404, mimetype="application/json")
+                                                         result)), 500, mimetype="application/json")
 
         return response
 
@@ -365,7 +365,7 @@ class DockerView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.DOCKER_DAEMON_NOT_RUNNING,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.DOCKER_DAEMON_NOT_RUNNING),
-                                                         status.get('err'))), 404, mimetype="application/json")
+                                                         status.get('err'))), 500, mimetype="application/json")
             app.logger.debug({"msg": status})
             status = docker_utils.ps(env_id)
             result = status.get('out').split("\n")[1:]
@@ -377,7 +377,7 @@ class DockerView(FlaskView):
             result = "Exception({})".format(e.__str__())
             response = Response(json.dumps(http.response(ApiConstants.DEPLOY_STOP_FAILURE,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_STOP_FAILURE),
-                                                         result)), 404, mimetype="application/json")
+                                                         result)), 500, mimetype="application/json")
 
         return response
 
@@ -392,7 +392,7 @@ class DockerView(FlaskView):
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                      ErrorCodes.HTTP_CODE.get(
-                                                         ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 404,
+                                                         ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 500,
                             mimetype="application/json")
 
         try:
@@ -401,7 +401,7 @@ class DockerView(FlaskView):
             return Response(json.dumps(http.response(ApiConstants.GET_FILE_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.GET_FILE_FAILURE),
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
         return Response(file_content, 200, mimetype="text/plain")
 
@@ -418,14 +418,14 @@ class DockerView(FlaskView):
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                          ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 404,
+                                                             ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 500,
                                 mimetype="application/json")
             if not file_content:
                 return Response(json.dumps(http.response(ApiConstants.EMPTY_REQUEST_BODY_PROVIDED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.EMPTY_REQUEST_BODY_PROVIDED),
                                                          ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))), 404,
+                                                             ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))), 500,
                                 mimetype="application/json")
 
             io_utils.write_to_file_binary(file_path, file_content)
@@ -433,7 +433,7 @@ class DockerView(FlaskView):
             exception = "Exception({})".format(e.__str__())
             return Response(json.dumps(http.response(ApiConstants.UPLOAD_FILE_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.UPLOAD_FILE_FAILURE),
-                                                     exception)), 404, mimetype="application/json")
+                                                     exception)), 500, mimetype="application/json")
 
         return Response(json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
                                                  ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))),
@@ -455,12 +455,12 @@ class DockerView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.GET_LOGS_FAILED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.GET_LOGS_FAILED) % env_id,
-                                                         status.get('err'))), 404, mimetype="application/json")
+                                                         status.get('err'))), 500, mimetype="application/json")
         except Exception as e:
             exception = "Exception({})".format(e.__str__())
             return Response(json.dumps(http.response(ApiConstants.GET_LOGS_FAILED,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.GET_LOGS_FAILED) % env_id,
-                                                     exception)), 404, mimetype="application/json")
+                                                     exception)), 500, mimetype="application/json")
 
         return Response(
             json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
@@ -487,7 +487,7 @@ class DockerView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.GET_DEPLOYER_NETWORK_FAILED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.GET_DEPLOYER_NETWORK_FAILED),
-                                                         status.get('err'))), 404, mimetype="application/json")
+                                                         status.get('err'))), 500, mimetype="application/json")
             deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
             if headers.get("Docker-Network"):
                 deployer_network = headers.get("Docker-Network")
@@ -503,13 +503,13 @@ class DockerView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED),
-                                                         status.get('err'))), 404, mimetype="application/json")
+                                                         status.get('err'))), 500, mimetype="application/json")
         except Exception as e:
             exception = "Exception({})".format(e.__str__())
             return Response(json.dumps(http.response(ApiConstants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED,
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.CONTAINER_DEPLOYER_NET_CONNECT_FAILED),
-                                                     exception)), 404, mimetype="application/json")
+                                                     exception)), 500, mimetype="application/json")
         return Response(
             json.dumps(
                 http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS), status.get('out'))),
@@ -530,7 +530,7 @@ class DockerView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.GET_DEPLOYER_NETWORK_FAILED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.GET_DEPLOYER_NETWORK_FAILED),
-                                                         status.get('err'))), 404, mimetype="application/json")
+                                                         status.get('err'))), 500, mimetype="application/json")
             deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
             status = docker_utils.network_disconnect(deployer_network, container_id)
 
@@ -544,13 +544,13 @@ class DockerView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED),
-                                                         status.get('err'))), 404, mimetype="application/json")
+                                                         status.get('err'))), 500, mimetype="application/json")
         except Exception as e:
             exception = "Exception({})".format(e.__str__())
             return Response(json.dumps(http.response(ApiConstants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED,
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.CONTAINER_DEPLOYER_NET_DISCONNECT_FAILED),
-                                                     exception)), 404, mimetype="application/json")
+                                                     exception)), 500, mimetype="application/json")
         return Response(
             json.dumps(
                 http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS), status.get('out'))),
@@ -590,7 +590,7 @@ class DockerView(FlaskView):
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.CONTAINER_UNREACHABLE) % (
                                                          service_name, service_name),
-                                                     exception)), 404, mimetype="application/json")
+                                                     exception)), 500, mimetype="application/json")
         return Response(r.text, r.status_code)
 
     @route('/command', methods=['POST', 'PUT'])
@@ -603,7 +603,7 @@ class DockerView(FlaskView):
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.EMPTY_REQUEST_BODY_PROVIDED),
                                                      ErrorCodes.HTTP_CODE.get(
-                                                         ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))), 404,
+                                                         ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))), 500,
                             mimetype="application/json")
         try:
             input_data_list = input_data.split("\n")
@@ -614,7 +614,7 @@ class DockerView(FlaskView):
             exception = "Exception({})".format(e.__str__())
             return Response(json.dumps(http.response(ApiConstants.COMMAND_EXEC_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.COMMAND_EXEC_FAILURE),
-                                                     exception)), 404, mimetype="application/json")
+                                                     exception)), 500, mimetype="application/json")
 
         return Response(
             json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS), response)),
