@@ -116,7 +116,7 @@ class KubectlView(FlaskView):
             response = Response(json.dumps(http.response(ApiConstants.GET_CONTAINER_ENV_VAR_FAILURE,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.GET_CONTAINER_ENV_VAR_FAILURE) % env_var,
-                                                         result)), 404, mimetype="application/json")
+                                                         result)), 500, mimetype="application/json")
         return response
 
     @route('/env', methods=['POST'])
@@ -131,7 +131,7 @@ class KubectlView(FlaskView):
                                                      message=ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.INVALID_JSON_PAYLOAD) % str(
                                                          input_data),
-                                                     description="Exception({0})".format(e.__str__()))), 404,
+                                                     description="Exception({0})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         try:
@@ -145,7 +145,7 @@ class KubectlView(FlaskView):
                                                      message=ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.SET_ENV_VAR_FAILURE) % str(
                                                          input_data),
-                                                     description="Exception({})".format(e.__str__()))), 404,
+                                                     description="Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
         return Response(
             json.dumps(
@@ -176,7 +176,7 @@ class KubectlView(FlaskView):
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.JINJA2_RENDER_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.JINJA2_RENDER_FAILURE),
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         return Response(rendered_content, 200, mimetype="text/plain")
@@ -193,7 +193,7 @@ class KubectlView(FlaskView):
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                          ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 404,
+                                                             ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 500,
                                 mimetype="application/json")
         label_selector = request.headers.get(f"{header_keys[0]}")
         namespace = request.headers.get(f"{header_keys[1]}")
@@ -222,12 +222,12 @@ class KubectlView(FlaskView):
             if status.get('err'):
                 return Response(json.dumps(http.response(ApiConstants.DEPLOY_START_FAILURE,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE),
-                                                         status.get('err'))), 404,
+                                                         status.get('err'))), 500,
                                 mimetype="application/json")
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.DEPLOY_START_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE),
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         return Response(
@@ -269,12 +269,12 @@ class KubectlView(FlaskView):
             if status.get('err'):
                 return Response(json.dumps(http.response(ApiConstants.DEPLOY_START_FAILURE,
                                                          ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE),
-                                                         status.get('err'))), 404, mimetype="application/json")
+                                                         status.get('err'))), 500, mimetype="application/json")
             result = str(token)
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.DEPLOY_START_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE),
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         return Response(
@@ -295,7 +295,7 @@ class KubectlView(FlaskView):
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                      ErrorCodes.HTTP_CODE.get(
-                                                         ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 404,
+                                                         ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 500,
                             mimetype="application/json")
 
         try:
@@ -306,12 +306,12 @@ class KubectlView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.KUBERNETES_SERVER_ERROR,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.KUBERNETES_SERVER_ERROR) % status.get('err'),
-                                                         status.get('err'))), 404, mimetype="application/json")
+                                                         status.get('err'))), 500, mimetype="application/json")
             result = status.get('out').split("\n")[1:]
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.DEPLOY_STOP_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_STOP_FAILURE),
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         return Response(
@@ -332,7 +332,7 @@ class KubectlView(FlaskView):
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                          ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 404,
+                                                             ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 500,
                                 mimetype="application/json")
 
         try:
@@ -342,7 +342,7 @@ class KubectlView(FlaskView):
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.DEPLOY_STATUS_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_STATUS_FAILURE),
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         return Response(
@@ -363,20 +363,20 @@ class KubectlView(FlaskView):
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                          ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 404,
+                                                             ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 500,
                                 mimetype="application/json")
             if not file_content:
                 return Response(json.dumps(http.response(ApiConstants.EMPTY_REQUEST_BODY_PROVIDED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.EMPTY_REQUEST_BODY_PROVIDED),
                                                          ErrorCodes.HTTP_CODE.get(
-                                                             ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))), 404,
+                                                             ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))), 500,
                                 mimetype="application/json")
             io_utils.write_to_file_binary(file_path, file_content)
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.UPLOAD_FILE_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.UPLOAD_FILE_FAILURE),
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         return Response(json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS),
@@ -395,7 +395,7 @@ class KubectlView(FlaskView):
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                      ErrorCodes.HTTP_CODE.get(
-                                                         ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 404,
+                                                         ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 500,
                             mimetype="application/json")
         try:
             file_content = IOUtils.read_file(file_path)
@@ -403,7 +403,7 @@ class KubectlView(FlaskView):
             return Response(json.dumps(http.response(ApiConstants.GET_FILE_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.GET_FILE_FAILURE),
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
         return Response(file_content, 200, mimetype="text/plain")
 
@@ -419,7 +419,7 @@ class KubectlView(FlaskView):
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key,
                                                      ErrorCodes.HTTP_CODE.get(
-                                                         ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 404,
+                                                         ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)), 500,
                             mimetype="application/json")
 
         try:
@@ -430,12 +430,12 @@ class KubectlView(FlaskView):
                 return Response(json.dumps(http.response(ApiConstants.GET_LOGS_FAILED,
                                                          ErrorCodes.HTTP_CODE.get(
                                                              ApiConstants.GET_LOGS_FAILED) % deployment,
-                                                         status)), 404, mimetype="application/json")
+                                                         status)), 500, mimetype="application/json")
         except Exception as e:
             return Response(json.dumps(http.response(ApiConstants.GET_LOGS_FAILED,
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.GET_LOGS_FAILED) % deployment,
-                                                     "Exception({})".format(e.__str__()))), 404,
+                                                     "Exception({})".format(e.__str__()))), 500,
                             mimetype="application/json")
 
         return Response(
@@ -453,7 +453,7 @@ class KubectlView(FlaskView):
                                                      ErrorCodes.HTTP_CODE.get(
                                                          ApiConstants.EMPTY_REQUEST_BODY_PROVIDED),
                                                      ErrorCodes.HTTP_CODE.get(
-                                                         ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))), 404,
+                                                         ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))), 500,
                             mimetype="application/json")
         try:
             input_data_list = input_data.split("\n")
@@ -464,7 +464,7 @@ class KubectlView(FlaskView):
             exception = "Exception({})".format(e.__str__())
             return Response(json.dumps(http.response(ApiConstants.COMMAND_EXEC_FAILURE,
                                                      ErrorCodes.HTTP_CODE.get(ApiConstants.COMMAND_EXEC_FAILURE),
-                                                     exception)), 404, mimetype="application/json")
+                                                     exception)), 500, mimetype="application/json")
 
         return Response(
             json.dumps(http.response(ApiConstants.SUCCESS, ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS), response)),

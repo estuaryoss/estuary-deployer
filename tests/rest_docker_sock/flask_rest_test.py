@@ -20,7 +20,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
 
         body = response.json()
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.DOCKER_DAEMON_NOT_RUNNING)

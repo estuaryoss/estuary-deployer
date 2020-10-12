@@ -57,7 +57,7 @@ paths:
       responses:
         200:
           description: Get env var success
-        404:
+        500:
           description: Get env var failure
   /ping:
     get:
@@ -123,7 +123,7 @@ paths:
       responses:
         200:
           description: template rendered with success
-        404:
+        500:
           description: template rendered with failure
   /deployments:
     get:
@@ -140,7 +140,7 @@ paths:
       responses:
         200:
           description: get active deployments success.
-        404:
+        500:
           description: get active deployments failure
     post:
       tags:
@@ -164,7 +164,7 @@ paths:
       responses:
         200:
           description: deploy success
-        404:
+        500:
           description: deploy failure
   /deployments/{template}/{variables}:
     post:
@@ -200,7 +200,7 @@ paths:
       responses:
         200:
           description: deploy success
-        404:
+        500:
           description: deploy failure
   /deployments/{env_id}:
     get:
@@ -225,7 +225,7 @@ paths:
       responses:
         200:
           description: get deploy status success
-        404:
+        500:
           description: get deploy status failure
     delete:
       tags:
@@ -249,7 +249,7 @@ paths:
       responses:
         200:
           description: deploy stop success
-        404:
+        500:
           description: deploy stop failure
 
   /deployments/logs/{env_id}:
@@ -275,7 +275,7 @@ paths:
       responses:
         200:
           description: get environment logs success
-        404:
+        500:
           description: get environment logs failure
   /deployments/network/{env_id}:
     post:
@@ -297,7 +297,7 @@ paths:
       responses:
         200:
           description: container network connect success
-        404:
+        500:
           description: container network connect failure
     delete:
       tags:
@@ -318,7 +318,7 @@ paths:
       responses:
         200:
           description: container network disconnect success
-        404:
+        500:
           description: container network disconnect failure  
   /file:
     get:
@@ -343,7 +343,7 @@ paths:
       responses:
         200:
           description: get file content success
-        404:
+        500:
           description: get file content failure
     post:
       tags:
@@ -372,7 +372,7 @@ paths:
       responses:
         200:
           description: The content of the file was uploaded successfully
-        404:
+        500:
           description: Failure, the file content could not be uploaded
   /container/{env_id}/{container_route}:
     get:
@@ -399,7 +399,7 @@ paths:
       responses:
         200:
           description: http request sent to the service container with success
-        404:
+        500:
           description: |
             1. cannot find the container because the container network is not yet connected to the estuary-deployer
             2. the request was forwarded to the container but did not find the route
@@ -424,7 +424,7 @@ paths:
       responses:
         200:
           description: success
-        404:
+        500:
           description: failure
 definitions:
     command:
