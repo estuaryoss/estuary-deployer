@@ -4,8 +4,8 @@ import unittest
 import requests
 from parameterized import parameterized
 
-from tests.rest_docker_sock.constants import Constants
-from tests.rest_docker_sock.error_codes import ErrorCodes
+from rest.api.constants.api_constants import ApiConstants
+from rest.api.responsehelpers.error_codes import ErrorCodes
 
 
 class FlaskServerTestCase(unittest.TestCase):
@@ -21,9 +21,9 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.DOCKER_DAEMON_NOT_RUNNING))
+        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), Constants.DOCKER_DAEMON_NOT_RUNNING)
+        self.assertEqual(body.get('code'), ApiConstants.DOCKER_DAEMON_NOT_RUNNING)
         self.assertIsNotNone(body.get('timestamp'))
 
 
