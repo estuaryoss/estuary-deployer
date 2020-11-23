@@ -4,7 +4,6 @@ import os
 import shutil
 from pathlib import Path
 
-from rest.api.constants.api_constants import ApiConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
@@ -45,11 +44,12 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def logs(file):
+        docker_logs_lines = 500
         file_path = Path(file)
         if not file_path.is_file():
             raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
         return CmdUtils.run_cmd_shell_false(
-            ["docker-compose", "-f", file, "logs", "-t", "--tail=" + str(ApiConstants.DOCKER_LOGS_LINES)])
+            ["docker-compose", "-f", file, "logs", "-t", "--tail=" + str(docker_logs_lines)])
 
     @staticmethod
     def ps(env_id):

@@ -10,7 +10,8 @@ class ErrorCodes:
         Constants.TEST_STOP_FAILURE: "Stopping running test %s failed",
         Constants.GET_FILE_FAILURE_IS_DIR: "Getting %s from the container %s failed. It is a directory, not a file.",
         Constants.GET_ENV_VAR_FAILURE: "Getting env var %s from the container failed.",
-        Constants.MISSING_PARAMETER_POST: "Body parameter \"%s\" sent in request missing. Please include parameter. E.g. {\"parameter\": \"value\"}",
+        Constants.MISSING_PARAMETER_POST: "Body parameter \"%s\" sent in request missing. "
+                                          "Please include parameter. E.g. {\"parameter\": \"value\"}",
         Constants.GET_TEST_INFO_FAILURE: "Failed to get test info.",
         Constants.FOLDER_ZIP_FAILURE: "Failed to zip folder %s.",
         Constants.EMPTY_REQUEST_BODY_PROVIDED: "Empty request body provided.",

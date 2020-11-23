@@ -1,9 +1,12 @@
+import json
 import logging
 
-from flask import Flask
+from flask import Flask, Response
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 
+from rest.api.exception.api_exception import ApiException
+from rest.api.responsehelpers.http_response import HttpResponse
 from rest.api.views.flask_config import Config
 
 
@@ -35,8 +38,16 @@ class AppCreatorSingleton:
         else:
             AppCreatorSingleton.__instance = self
 
+    @staticmethod
+    def handle_api_error(e):
+        return Response(json.dumps(
+            HttpResponse().response(code=e.code, message=e.message,
+                                    description="Exception({})".format(e.exception.__str__()))), 500,
+            mimetype="application/json")
+
     def get_app(self):
         with self.app.app_context():
+            self.app.register_error_handler(ApiException, self.handle_api_error)
             return self.app
 
 

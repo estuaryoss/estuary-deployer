@@ -15,8 +15,6 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     script_path = "tests/rest_discovery_integration/input"
     # script_path = "input"
-    discovery_expected_version = "4.1.0"
-    agent_expected_version = "4.1.0"
     cleanup_count_safe = 5
     compose_id = ""
 
@@ -63,7 +61,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'), "estuary-discovery")
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('version'), self.discovery_expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -75,7 +72,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description')[0].get('description'), "estuary-agent")
         self.assertEqual(body.get('description')[0].get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('description')[0].get('version'), self.agent_expected_version)
         self.assertEqual(body.get('description')[0].get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('description')[0].get('timestamp'))
 
