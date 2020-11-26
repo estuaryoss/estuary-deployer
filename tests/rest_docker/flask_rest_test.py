@@ -17,7 +17,8 @@ class FlaskServerTestCase(unittest.TestCase):
     server_base = "http://localhost:8080"
     server = "{}/docker".format(server_base)
     # server = "http://" + os.environ.get('SERVER')
-
+    input_path = f"tests/rest_docker/input"
+    # input_path = "input"
     expected_version = "4.2.0"
     sleep_after_env_up = 6
     sleep_after_env_down = 6
@@ -138,9 +139,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(body.get('description'), "Invalid Token")
         self.assertEqual(body.get('name'), service_name)
-        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.UNAUTHORIZED))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.UNAUTHORIZED.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiCode.UNAUTHORIZED)
+        self.assertEqual(body.get('code'), ApiCode.UNAUTHORIZED.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
@@ -466,7 +467,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_file_from_client_p(self):
-        with open("tests/rest_docker/input/alpine.yml", closefd=True) as f:
+        with open(f"{self.input_path}/alpine.yml", closefd=True) as f:
             payload = f.read()
         headers = {'Content-type': 'text/plain'}
 
@@ -613,7 +614,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploystartpostfromfile_max_deployments_p(self):
-        with open("tests/rest_docker/input/alpine.yml", closefd=True) as f:
+        with open(f"{self.input_path}/alpine.yml", closefd=True) as f:
             payload = f.read()
         headers = {'Content-type': 'text/plain'}
 

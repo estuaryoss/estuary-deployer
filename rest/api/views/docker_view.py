@@ -60,8 +60,8 @@ class DockerView(FlaskView):
                 headers = {
                     HeaderConstants.X_REQUEST_ID: self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
                 }
-                return Response(json.dumps(http.response(ApiCode.UNAUTHORIZED,
-                                                         ErrorMessage.HTTP_CODE.get(ApiCode.UNAUTHORIZED),
+                return Response(json.dumps(http.response(ApiCode.UNAUTHORIZED.value,
+                                                         ErrorMessage.HTTP_CODE.get(ApiCode.UNAUTHORIZED.value),
                                                          "Invalid Token")), 401, mimetype="application/json",
                                 headers=headers)
 
@@ -116,8 +116,8 @@ class DockerView(FlaskView):
         try:
             env_vars_attempted = json.loads(input_data)
         except Exception as e:
-            raise ApiException(ApiCode.INVALID_JSON_PAYLOAD,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.INVALID_JSON_PAYLOAD) % str(input_data), e)
+            raise ApiException(ApiCode.INVALID_JSON_PAYLOAD.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.INVALID_JSON_PAYLOAD.value) % str(input_data), e)
 
         try:
             for key, value in env_vars_attempted.items():
