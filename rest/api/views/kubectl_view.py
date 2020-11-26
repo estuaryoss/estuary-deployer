@@ -65,10 +65,24 @@ class KubectlView(FlaskView):
         headers[HeaderConstants.X_REQUEST_ID] = self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
         http_response.headers = headers
 
-        http_response.direct_passthrough = False
         response = self.fluentd.emit(tag="api", msg=self.message_dumper.dump(http_response))
         app.logger.debug(f"{response}")
 
+        http_response.direct_passthrough = False
+        return http_response
+
+    @app.errorhandler(ApiException)
+    def handle_api_error(self):
+        http_response = Response(json.dumps(
+            HttpResponse().response(code=self.code, message=self.message,
+                                    description="Exception({})".format(self.exception.__str__()))),
+            500, mimetype="application/json")
+        http_response.headers[HeaderConstants.X_REQUEST_ID] = KubectlView.message_dumper.get_header(
+            HeaderConstants.X_REQUEST_ID)
+        response = KubectlView.fluentd.emit(tag="api", msg=KubectlView.message_dumper.dump(http_response))
+        app.logger.debug(f"{response}")
+
+        http_response.direct_passthrough = False
         return http_response
 
     def index(self):
@@ -195,8 +209,8 @@ class KubectlView(FlaskView):
             if status.get('err'):
                 raise Exception(status.get('err'))
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_START_FAILURE,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE), e)
+            raise ApiException(ApiCode.DEPLOY_START_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value), token)),
@@ -237,8 +251,8 @@ class KubectlView(FlaskView):
                 raise Exception(status.get('error'))
             result = str(token)
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_START_FAILURE,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE), e)
+            raise ApiException(ApiCode.DEPLOY_START_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value), result)),
@@ -265,8 +279,8 @@ class KubectlView(FlaskView):
                 raise Exception(status.get('err'))
             result = status.get('out').split("\n")[1:]
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_STOP_FAILURE,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE), e)
+            raise ApiException(ApiCode.DEPLOY_STOP_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value), result)),

@@ -38,16 +38,8 @@ class AppCreatorSingleton:
         else:
             AppCreatorSingleton.__instance = self
 
-    @staticmethod
-    def handle_api_error(e):
-        return Response(json.dumps(
-            HttpResponse().response(code=e.code, message=e.message,
-                                    description="Exception({})".format(e.exception.__str__()))), 500,
-            mimetype="application/json")
-
     def get_app(self):
         with self.app.app_context():
-            self.app.register_error_handler(ApiException, self.handle_api_error)
             return self.app
 
 

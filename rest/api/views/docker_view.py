@@ -66,9 +66,8 @@ class DockerView(FlaskView):
                                 headers=headers)
 
     def after_request(self, name, http_response):
-        headers = dict(http_response.headers)
-        headers[HeaderConstants.X_REQUEST_ID] = self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
-        http_response.headers = headers
+        http_response.headers[HeaderConstants.X_REQUEST_ID] = self.message_dumper.get_header(
+            HeaderConstants.X_REQUEST_ID)
 
         http_response.direct_passthrough = False
         response = self.fluentd.emit(tag="api", msg=self.message_dumper.dump(http_response))
@@ -78,6 +77,18 @@ class DockerView(FlaskView):
 
     def index(self):
         return "docker"
+
+    @app.errorhandler(ApiException)
+    def handle_api_error(self):
+        http_response = Response(json.dumps(
+            HttpResponse().response(code=self.code, message=self.message,
+                                    description="Exception({})".format(self.exception.__str__()))),
+            500, mimetype="application/json")
+        http_response.headers[HeaderConstants.X_REQUEST_ID] = DockerView.message_dumper.get_header(
+            HeaderConstants.X_REQUEST_ID)
+        response = DockerView.fluentd.emit(tag="api", msg=DockerView.message_dumper.dump(http_response))
+        app.logger.debug(f"{response}")
+        return http_response
 
     @route('/swagger/swagger.yml')
     def swagger(self):
@@ -153,8 +164,8 @@ class DockerView(FlaskView):
                 env_vars.get(
                     EnvConstants.VARIABLES)).rend_template()
         except Exception as e:
-            raise ApiException(ApiCode.JINJA2_RENDER_FAILURE,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.JINJA2_RENDER_FAILURE), e)
+            raise ApiException(ApiCode.JINJA2_RENDER_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.JINJA2_RENDER_FAILURE.value), e)
 
         return Response(rendered_content, 200, mimetype="text/plain")
 
@@ -293,7 +304,8 @@ class DockerView(FlaskView):
             if len(active_deployments) >= int(env_vars.get(EnvConstants.MAX_DEPLOYMENTS)):
                 raise ApiException(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
                                    ErrorMessage.HTTP_CODE.get(
-                                       ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(EnvConstants.MAX_DEPLOYMENTS),
+                                       ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(
+                                       EnvConstants.MAX_DEPLOYMENTS),
                                    active_deployments)
         try:
             r = Render(env_vars.get(EnvConstants.TEMPLATE),
@@ -342,7 +354,8 @@ class DockerView(FlaskView):
             status = docker_utils.ps(env_id)
             result = status.get('out').split("\n")[1:]
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_STOP_FAILURE.value, ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
+            raise ApiException(ApiCode.DEPLOY_STOP_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
 
         return Response(
             json.dumps(
@@ -362,7 +375,8 @@ class DockerView(FlaskView):
         try:
             file_content = IOUtils.read_file(file_path)
         except Exception as e:
-            raise ApiException(ApiCode.GET_FILE_FAILURE, ErrorMessage.HTTP_CODE.get(ApiCode.GET_FILE_FAILURE), e)
+            raise ApiException(ApiCode.GET_FILE_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.GET_FILE_FAILURE.value), e)
         return Response(file_content, 200, mimetype="text/plain")
 
     @route('/file', methods=['POST', 'PUT'])

@@ -245,7 +245,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.DEPLOY_START_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
-        self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
 
     @parameterized.expand([
@@ -411,9 +410,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorMessage.HTTP_CODE.get(ApiCode.GET_FILE_FAILURE))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.GET_FILE_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiCode.GET_FILE_FAILURE)
+        self.assertEqual(body.get('code'), ApiCode.GET_FILE_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -438,9 +437,9 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiCode.DEPLOY_STOP_FAILURE)
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_STOP_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -540,9 +539,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorMessage.HTTP_CODE.get(ApiCode.GET_LOGS_FAILED) % dummy_env_id)
+                         ErrorMessage.HTTP_CODE.get(ApiCode.GET_LOGS_FAILED.value) % dummy_env_id)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiCode.GET_LOGS_FAILED)
+        self.assertEqual(body.get('code'), ApiCode.GET_LOGS_FAILED.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
