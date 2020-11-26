@@ -6,8 +6,9 @@ from rest.api.views import AppCreatorSingleton
 
 
 class EnvironmentSingleton:
+    VIRTUAL_ENV_MAX_SIZE = 100
+
     __file = "environment.properties"
-    __VIRTUAL_ENV_MAX_SIZE = 50
     __instance = None
     __env = os.environ.copy()
     __virtual_env = {}
@@ -38,15 +39,21 @@ class EnvironmentSingleton:
                 configs.load(config_file)
         except Exception as e:
             self.__app.logger.debug({
-                "msg": f"Skipping env vars loading from file '{self.__file}' because it doesn't exist. " + "Exception({})".format(
-                    e.__str__())})
+                "msg": f"Skipping env vars loading from file '{self.__file}' because it doesn't exist. " +
+                       "Exception({})".format(e.__str__())})
 
         for key in configs:
             self.set_env_var(key, configs[key][0])
 
     def set_env_var(self, key, value):
-        if key not in self.__env and len(self.__virtual_env) <= self.__VIRTUAL_ENV_MAX_SIZE:
+        if key in self.get_virtual_env():
             self.__virtual_env[key] = value
+        if len(self.get_virtual_env()) > self.VIRTUAL_ENV_MAX_SIZE:
+            return
+
+    def set_env_var(self, env_vars):
+        for key, value in env_vars.items():
+            self.set_env_var(key, value)
 
     def get_env(self):
         return self.__env

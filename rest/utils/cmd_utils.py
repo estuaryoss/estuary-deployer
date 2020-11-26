@@ -26,7 +26,7 @@ class CmdUtils:
 
     @staticmethod
     def __get_subprocess_data(p):
-        lines_to_slice = 500
+        lines_to_slice = 1000
         [out, err] = p.communicate()
 
         return {
