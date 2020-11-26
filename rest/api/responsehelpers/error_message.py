@@ -33,5 +33,6 @@ class ErrorMessage:
         ApiCode.UNAUTHORIZED.value: "Unauthorized",
         ApiCode.INVALID_JSON_PAYLOAD.value: "Invalid JSON payload '%s'",
         ApiCode.SET_ENV_VAR_FAILURE.value: "Could not set env vars '%s'",
+        ApiCode.FOLDER_UNZIP_FAILURE.value: "Could not unzip file '%'",
         ApiCode.GENERAL.value: "General error occurred."
     }

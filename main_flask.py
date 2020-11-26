@@ -8,7 +8,6 @@ from about import properties
 from rest.api.constants.env_constants import EnvConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.loghelpers.message_dumper import MessageDumper
-from rest.api.schedulers.docker_clean_folder_scheduler import DockerCleanFolderScheduler
 from rest.api.schedulers.docker_env_expire_scheduler import DockerEnvExpireScheduler
 from rest.api.schedulers.docker_scheduler import DockerScheduler
 from rest.api.schedulers.kubectl_env_expire_scheduler import KubectlEnvExpireScheduler
@@ -44,7 +43,6 @@ if __name__ == "__main__":
     io_utils.create_dir(Path(EnvInit.VARIABLES_PATH))
 
     DockerScheduler().start()
-    DockerCleanFolderScheduler().start()
     DockerEnvExpireScheduler(fluentd_utils=DockerView.fluentd, poll_interval=1200,
                              env_expire_in=EnvStartupSingleton.get_instance().get_config_env_vars().get(
                                  EnvConstants.ENV_EXPIRE_IN)).start()  # minutes

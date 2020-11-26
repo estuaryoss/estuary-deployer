@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 from secrets import token_hex
 
 import requests
@@ -167,26 +168,58 @@ class DockerView(FlaskView):
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
                                                active_deployments)), 200, mimetype="application/json")
 
+    @route('/deployments/prepare', methods=['PUT'])
+    def deploy_prepare(self):
+        token = token_hex(8)
+        io_utils = IOUtils()
+        deployment_id = request.headers.get("Deployment-Id") if request.headers.get("Deployment-Id") else token
+        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
+        file_path = f"{deploy_dir}/archive.zip"
+        file_content = request.get_data()
+        # send here the complete env. The deployment template will be overridden at deploy start
+        if not file_content:
+            raise ApiException(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
+                               ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
+
+        try:
+            io_utils.create_dir(deploy_dir)
+            io_utils.write_to_file_binary(file_path, file_content)
+        except Exception as e:
+            raise ApiException(ApiCode.UPLOAD_FILE_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.UPLOAD_FILE_FAILURE.value), e)
+        try:
+            shutil.unpack_archive(file_path, deploy_dir)
+            io_utils.remove_file(file_path)
+        except Exception as e:
+            raise ApiException(ApiCode.FOLDER_UNZIP_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.FOLDER_UNZIP_FAILURE.value), e)
+
+        return Response(
+            json.dumps(
+                HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
+                                        deployment_id)), 200, mimetype="application/json")
+
     @route('/deployments', methods=['POST'])
     def deploy_start(self):
-        http = HttpResponse()
         docker_utils = DockerUtils()
         token = token_hex(8)
+        deployment_id = request.headers.get("Deployment-Id") if request.headers.get("Deployment-Id") else token
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
-        file = f"{deploy_dir}/{token}"
+        file = f"{deploy_dir}/docker-compose.yml"
         header_key = 'Eureka-Server'
         eureka_server_header = request.headers.get(f"{header_key}")
 
         status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
-            raise ApiException(ApiCode.DOCKER_DAEMON_NOT_RUNNING,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING), status.get('err'))
+            raise ApiException(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value), status.get('err'))
         env_vars = EnvironmentSingleton.get_instance().get_env_and_virtual_env()
         if env_vars.get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(env_vars.get(EnvConstants.MAX_DEPLOYMENTS)):
-                raise ApiException(ApiCode.MAX_DEPLOYMENTS_REACHED,
-                                   ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED) % env_vars.get(
+                raise ApiException(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
+                                   ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(
                                        EnvConstants.MAX_DEPLOYMENTS), active_deployments)
         try:
             template_file_name = f"deployment_{token}.yml"
@@ -220,18 +253,22 @@ class DockerView(FlaskView):
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
         except Exception as e:
             app.logger.debug({"msg": docker_utils.down(file)})
-            raise ApiException(ApiCode.DEPLOY_START_FAILURE,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE), e)
+            raise ApiException(ApiCode.DEPLOY_START_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
 
         return Response(
-            json.dumps(
-                HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
-                                        token)), 200, mimetype="application/json")
+            json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
+                                               deployment_id)), 200, mimetype="application/json")
 
     @route('/deployments/<template>/<variables>', methods=['POST'])
     def deploy_start_env(self, template, variables):
         http = HttpResponse()
         docker_utils = DockerUtils()
+        token = token_hex(8)
+        deployment_id = request.headers.get("Deployment-Id") if request.headers.get("Deployment-Id") else token
+        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
+        file = f"{deploy_dir}/docker-compose.yml"
+
         try:
             input_json = request.get_json(force=True)
             for key, value in input_json.items():
@@ -245,21 +282,18 @@ class DockerView(FlaskView):
         env_vars = EnvironmentSingleton.get_instance().get_env_and_virtual_env()
         app.logger.debug({"msg": {"template_file": env_vars.get(EnvConstants.TEMPLATE)}})
         app.logger.debug({"msg": {"variables_file": env_vars.get(EnvConstants.VARIABLES)}})
-        token = token_hex(8)
-        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
-        file = f"{deploy_dir}/{token}"
 
         status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
-            raise ApiException(ApiCode.DOCKER_DAEMON_NOT_RUNNING,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING),
+            raise ApiException(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value),
                                status.get('err'))
         if env_vars.get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(env_vars.get(EnvConstants.MAX_DEPLOYMENTS)):
-                raise ApiException(ApiCode.MAX_DEPLOYMENTS_REACHED,
+                raise ApiException(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
                                    ErrorMessage.HTTP_CODE.get(
-                                       ApiCode.MAX_DEPLOYMENTS_REACHED) % env_vars.get(EnvConstants.MAX_DEPLOYMENTS),
+                                       ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(EnvConstants.MAX_DEPLOYMENTS),
                                    active_deployments)
         try:
             r = Render(env_vars.get(EnvConstants.TEMPLATE),
@@ -267,14 +301,13 @@ class DockerView(FlaskView):
             IOUtils.create_dir(deploy_dir)
             IOUtils.write_to_file(file, r.rend_template())
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
-            result = str(token)
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_START_FAILURE,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE), e)
+            raise ApiException(ApiCode.DEPLOY_START_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
 
         return Response(
             json.dumps(
-                http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value), result)),
+                http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value), deployment_id)),
             200, mimetype="application/json")
 
     @route('/deployments/<env_id>', methods=['GET'])
@@ -288,8 +321,8 @@ class DockerView(FlaskView):
             result = status.get('out').split("\n")[1:]
             app.logger.debug({"msg": status})
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_STATUS_FAILURE,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STATUS_FAILURE), e)
+            raise ApiException(ApiCode.DEPLOY_STATUS_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STATUS_FAILURE.value), e)
 
         return Response(
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -300,7 +333,7 @@ class DockerView(FlaskView):
     def deploy_stop(self, env_id):
         env_id = env_id.strip()
         docker_utils = DockerUtils()
-        file = f"{EnvInit.DEPLOY_PATH}/{env_id}/{env_id}"
+        file = f"{EnvInit.DEPLOY_PATH}/{env_id}/docker-compose.yml"
         try:
             status = docker_utils.down(file)
             if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
@@ -309,7 +342,7 @@ class DockerView(FlaskView):
             status = docker_utils.ps(env_id)
             result = status.get('out').split("\n")[1:]
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_STOP_FAILURE, ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE), e)
+            raise ApiException(ApiCode.DEPLOY_STOP_FAILURE.value, ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
 
         return Response(
             json.dumps(
@@ -322,9 +355,9 @@ class DockerView(FlaskView):
 
         file_path = request.headers.get(f"{header_key}")
         if not file_path:
-            raise ApiException(ApiCode.HTTP_HEADER_NOT_PROVIDED,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED) % header_key,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED) % header_key)
+            raise ApiException(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
 
         try:
             file_content = IOUtils.read_file(file_path)
@@ -341,9 +374,9 @@ class DockerView(FlaskView):
         file_path = request.headers.get(f"{header_key}")
 
         if not file_path:
-            raise ApiException(ApiCode.HTTP_HEADER_NOT_PROVIDED,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED) % header_key,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED) % header_key)
+            raise ApiException(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
         if not file_content:
             raise ApiException(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
                                ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
@@ -366,7 +399,7 @@ class DockerView(FlaskView):
         docker_utils = DockerUtils()
         env_id = env_id.strip()
         env_id_dir = EnvInit.DEPLOY_PATH + "/{}".format(env_id)
-        file = f"{env_id_dir}/{env_id}"
+        file = f"{env_id_dir}/docker-compose.yml"
 
         try:
             status = docker_utils.logs(file)
@@ -463,7 +496,7 @@ class DockerView(FlaskView):
                               status.get('out'))), 200, mimetype="application/json")
 
     # here the requests are redirected to any container
-    # url format: container/dockercomposeenvid/the_url?port=8080&service=container
+    # url format: container/ENV_ID/the_url?port=8080&service=container
     # E.g.1 /container/2a1c9aa0451add84/uploadtestconfig
     @route('/container/<env_id>/<path:text>',
            methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'])

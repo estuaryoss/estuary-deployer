@@ -49,3 +49,8 @@ class IOUtils:
     @staticmethod
     def does_file_exist(file):
         return Path(file).exists()
+
+    @staticmethod
+    def remove_file(file):
+        file_path = Path(file)
+        file_path.unlink()

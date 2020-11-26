@@ -317,12 +317,6 @@ jobs:
         - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/rest_eureka "*_test.py"
         - docker-compose down -v
 
-        # run clean_folder scheduler
-        - docker-compose up -d
-        - docker ps
-        - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/clean_folder_scheduler "*_test.py"
-        - docker-compose down -v
-
         # run env_expire scheduler
         - docker-compose up -d
         - sleep 30

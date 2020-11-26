@@ -3,7 +3,7 @@ FROM alpine:3.11.6
 RUN apk update
 
 RUN apk add --no-cache python3 && \
-    pip3 install --upgrade pip==20.2.3 setuptools==49.2.0 --no-cache
+    pip3 install --upgrade pip==20.2.4 setuptools==49.2.0 --no-cache
 
 RUN apk add --no-cache \
     bash \
@@ -49,8 +49,7 @@ ENV PORT 8080
 
 ENV SCRIPTS_DIR /scripts
 ENV HTTPS_DIR $SCRIPTS_DIR/https
-ENV WORKSPACE $SCRIPTS_DIR/inputs
-ENV DEPLOY_PATH $WORKSPACE/deployments
+ENV WORKSPACE $SCRIPTS_DIR/
 ENV OUT_DIR out
 
 ENV TZ UTC

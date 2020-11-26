@@ -184,7 +184,7 @@ class KubectlView(FlaskView):
         fluentd_tag = "deploy_start"
         token = token_hex(8)
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
-        file = f"{deploy_dir}/{token}"
+        file = f"{deploy_dir}/k8s-deployment.yml"
 
         try:
             IOUtils.create_dir(deploy_dir)
@@ -223,7 +223,7 @@ class KubectlView(FlaskView):
             EnvConstants.VARIABLES)}})
         token = token_hex(8)
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
-        file = f"{deploy_dir}/{token}"
+        file = f"{deploy_dir}/k8s-deployment.yml"
 
         try:
             r = Render(EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.TEMPLATE),
