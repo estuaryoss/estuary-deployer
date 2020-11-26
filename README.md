@@ -20,7 +20,7 @@ Deployer service can run your commands using the [estuary-agent](https://github.
 [centos](https://hub.docker.com/r/estuaryoss/deployer-centos)  ![](https://img.shields.io/docker/pulls/estuaryoss/deployer-centos.svg)
 
 ## Api docs 
-[4.0.8 docker](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.8)  
+[4.2.0 docker](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.2.0)  
 [4.0.8 kubectl](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.8-kubectl)  
 
 ## Postman collection 
