@@ -22,7 +22,7 @@ jobs:
         - pip3 install -r requirements.txt
         - pip3 install coveralls
       before_script:
-        - py.test $SCRIPTS_DIR/unit/render_test.py --cov=rest/api/jinja2
+        - py.test $SCRIPTS_DIR/render_test.py --cov=rest/api/jinja2
       script:
         - python3 -m unittest discover . render_test.py"
       after_script:

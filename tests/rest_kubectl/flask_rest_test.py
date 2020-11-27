@@ -33,8 +33,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
-        ("FOO1", "BAR10"),
-        ("FOO2", "BAR20")
+        ("FOO1", "BAR10")
     ])
     def test_env_load_from_props(self, env_var, expected_value):
         response = requests.get(self.server + "/env/" + env_var)
