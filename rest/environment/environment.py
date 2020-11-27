@@ -48,16 +48,16 @@ class EnvironmentSingleton:
     def set_env_var(self, key, value):
         if key in self.get_env():
             return False
-        if key in self.get_virtual_env():
+        if key in self.get_virtual_env() and key != "":
             self.__virtual_env[key] = value
             return True
-        if len(self.get_virtual_env()) <= self.VIRTUAL_ENV_MAX_SIZE:
+        if len(self.get_virtual_env()) < self.VIRTUAL_ENV_MAX_SIZE and key != "":
             self.__virtual_env[key] = value
             return True
 
         return False
 
-    def set_env_var(self, env_vars):
+    def set_env_vars(self, env_vars):
         env_vars_set = {}
         for key, value in env_vars.items():
             if self.set_env_var(key, value):
