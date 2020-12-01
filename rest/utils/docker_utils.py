@@ -107,6 +107,7 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def folder_clean_up(path=EnvInit.DEPLOY_PATH, delete_period=60):
+        deleted_folders = []
         active_deployments = [item.get('id') for item in DockerUtils.get_active_deployments()]
 
         full_deployments_list = map(lambda x: x.rstrip(), IOUtils.get_list_dir(f"{path}"))
@@ -114,6 +115,9 @@ class DockerUtils(EnvCreation):
             if item not in active_deployments and (datetime.datetime.now() - datetime.datetime.fromtimestamp(
                     os.path.getmtime(f"{path}/{item}"))) > datetime.timedelta(minutes=delete_period):
                 shutil.rmtree(f"{path}/{item}")
+                deleted_folders.append(item)
+
+        return deleted_folders
 
     @staticmethod
     def env_clean_up(fluentd_utils, path=EnvInit.DEPLOY_PATH, env_expire_in=1440):  # 1 day

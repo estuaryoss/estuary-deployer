@@ -187,7 +187,7 @@ class DockerView(FlaskView):
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
         file_path = f"{deploy_dir}/archive.zip"
         file_content = request.get_data()
-        # send here the complete env. The deployment template will be overridden at deploy start
+        # send here the complete env. The deployment template can be overridden at deploy start
         if not file_content:
             raise ApiException(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
                                ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
@@ -207,19 +207,32 @@ class DockerView(FlaskView):
                                ErrorMessage.HTTP_CODE.get(ApiCode.FOLDER_UNZIP_FAILURE.value), e)
 
         return Response(
-            json.dumps(
-                HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
-                                        deployment_id)), 200, mimetype="application/json")
+            json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
+                                               deployment_id)), 200, mimetype="application/json")
+
+    @route('/deployments/cleanup', methods=['GET'])
+    def deploy_folder_cleanup(self):
+        try:
+            deleted_folders = DockerUtils.folder_clean_up()
+        except Exception as e:
+            raise ApiException(ApiCode.DEPLOYMENTS_FOLDER_CLEANUP_FAILURE.value,
+                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOYMENTS_FOLDER_CLEANUP_FAILURE.value), e)
+
+        return Response(
+            json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
+                                               deleted_folders)), 200, mimetype="application/json")
 
     @route('/deployments', methods=['POST'])
     def deploy_start(self):
         docker_utils = DockerUtils()
         token = token_hex(8)
         deployment_id = request.headers.get("Deployment-Id") if request.headers.get("Deployment-Id") else token
-        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
+        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
         file = f"{deploy_dir}/docker-compose.yml"
         header_key = 'Eureka-Server'
         eureka_server_header = request.headers.get(f"{header_key}")
+        config_env_vars = EnvStartupSingleton.get_instance().get_config_env_vars()
+        input_data = request.data.decode('UTF-8').strip()
 
         status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
@@ -234,15 +247,13 @@ class DockerView(FlaskView):
                                        EnvConstants.MAX_DEPLOYMENTS), active_deployments)
         try:
             template_file_name = f"deployment_{token}.yml"
-            input_data = request.data.decode('utf-8')
             template_file_path = f"{EnvInit.TEMPLATES_PATH}/{template_file_name}"
             app.logger.debug({"msg": {"file": template_file_path, "file_content": f"{input_data}"}})
             IOUtils.write_to_file(template_file_path, input_data)
 
             IOUtils.create_dir(deploy_dir)
             EnvironmentSingleton.get_instance().set_env_var(EnvConstants.TEMPLATE, template_file_name)
-            r = Render(env_vars.get(EnvConstants.TEMPLATE), env_vars.get(EnvConstants.VARIABLES))
-            config_env_vars = EnvStartupSingleton.get_instance().get_config_env_vars()
+            render = Render(env_vars.get(EnvConstants.TEMPLATE), env_vars.get(EnvConstants.VARIABLES))
             if config_env_vars.get(EnvConstants.EUREKA_SERVER) and config_env_vars.get(EnvConstants.APP_IP_PORT):
                 # if {{app_ip_port}} and {{eureka_server}} then register that instance too
                 if '{{app_ip_port}}' in input_data and '{{eureka_server}}' in input_data:
@@ -250,17 +261,14 @@ class DockerView(FlaskView):
                     # header value overwrite the eureka server
                     if eureka_server_header:
                         eureka_server = eureka_server_header
-                    input_data = r.get_jinja2env().get_template(env_vars.get(EnvConstants.TEMPLATE)).render(
-                        {"deployment_id": f"{token}",
-                         "eureka_server": eureka_server,
-                         "app_ip_port": config_env_vars.get(
-                             EnvConstants.APP_IP_PORT).split("/")[0]
-                         }
-                    )
-            if os.path.exists(template_file_path):
-                os.remove(template_file_path)
+                    input_data = render.get_jinja2env().get_template(env_vars.get(EnvConstants.TEMPLATE)).render({
+                        "deployment_id": f"{token}",
+                        "eureka_server": eureka_server,
+                        "app_ip_port": config_env_vars.get(EnvConstants.APP_IP_PORT).split("/")[0]
+                    })
+            os.remove(template_file_path) if os.path.exists(template_file_path) else None
             app.logger.debug({"msg": {"file": file, "file_content": f"{input_data}"}})
-            IOUtils.write_to_file(file, input_data)
+            IOUtils.write_to_file(file, input_data) if input_data else None
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
         except Exception as e:
             app.logger.debug({"msg": docker_utils.down(file)})
