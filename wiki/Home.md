@@ -52,6 +52,7 @@ Connect to the deployer network the targeted service name:
 ```html
 curl -X POST -i http://[[HOST_IP]]:8080/docker/deployments/network/$DEPLOYMENT_DISCOVERY?service=xvnc
 ```
+
 Access a different service name and port:  
 ```html
 curl http://[[HOST_IP]]:8080/docker/container/$DEPLOYMENT_DISCOVERY/about?service=xvnc&&port=8080 | json_pp
