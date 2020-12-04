@@ -126,7 +126,7 @@ paths:
         500:
           description: template rendered with failure
   /deployments/prepare:
-    post:
+    put:
       tags:
         - estuary-deployer
       summary: Uploads and unpacks a zip archive containing the dependencies of the environment.
@@ -154,6 +154,23 @@ paths:
           description: Archive uploaded and extracted success
         500:
           description: Archive uploaded and extracted failure
+  /deployments/cleanup:
+    delete:
+      tags:
+        - estuary-deployer
+      summary: The action deletes the folders and their contents for the deployments which expired.
+      produces:
+        - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
+      responses:
+        200:
+          description: Folder cleanup success
+        500:
+          description: Folder cleanup failure
   /deployments:
     get:
       tags:

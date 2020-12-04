@@ -371,16 +371,16 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
         deploystart_body = response.json()
-        id = "dummy"
+        deployment_id = "dummy"
 
-        response = requests.get(self.server + f"/deployments/{id}")
+        response = requests.get(self.server + f"/deployments/{deployment_id}")
         # for dummy interogation the list of containers is empty
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
                          ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(len(body.get('description').get('containers')), 0)
-        self.assertEqual(body.get('description').get('id'), id)
+        self.assertEqual(body.get('description').get('id'), deployment_id)
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
@@ -461,7 +461,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(body.get('description')), 0)  # 0 containers should be up and running
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
-        self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_file_from_client_p(self):
         with open(f"{self.input_path}/alpine.yml", closefd=True) as f:
@@ -479,6 +478,75 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
+
+    def test_delete_folders_for_inactive_deployments(self):
+        response = requests.delete(self.server + f"/deployments/cleanup")
+
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('message'),
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
+        self.assertIsInstance(body.get('description'), list)
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
+        self.assertIsNotNone(body.get('timestamp'))
+
+    def test_deploy_prepare_and_start_zip_from_client_no_override(self):
+        with open(f"{self.input_path}/prepared_deployment.zip", 'rb') as f:
+            payload = f.read()
+        headers = {
+            "Content-Type": "application/binary",
+        }
+        response = requests.put(self.server + f"/deployments/prepare", data=payload,
+                                headers=headers)
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        deployment_id = body.get('description')
+
+        headers = {'Content-type': 'text/plain',
+                   'Deployment-Id': deployment_id}
+
+        response = requests.post(self.server + f"/deployments", data="",
+                                 headers=headers)
+        time.sleep(self.sleep_before_env_up)
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertEqual(body.get('message'),
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
+        self.assertIsNotNone(body.get('timestamp'))
+
+    def test_deploy_prepare_and_start_zip_from_client_override(self):
+        deployment_id = "myCustomDeploymentId"
+        with open(f"{self.input_path}/prepared_deployment.zip", 'rb') as f:
+            payload = f.read()
+        headers = {
+            "Content-Type": "application/binary",
+            "Deployment-Id": deployment_id
+        }
+        response = requests.put(self.server + f"/deployments/prepare", data=payload, headers=headers)
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description', deployment_id))
+
+        headers = {'Content-type': 'text/plain',
+                   'Deployment-Id': deployment_id}
+        with open(f"{self.input_path}/mysql56.yml", 'r') as f:
+            payload = f.read()
+
+        response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
+        time.sleep(self.sleep_before_env_up)
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertIn(self.get_deployment_info_object(), "mysql56")
+        self.assertEqual(body.get('message'),
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_file_from_client_n(self):

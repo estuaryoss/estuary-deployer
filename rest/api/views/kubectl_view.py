@@ -217,7 +217,7 @@ class KubectlView(FlaskView):
             200, mimetype="application/json")
 
     @route('/deployments/<template>/<variables>', methods=['POST'])
-    def deploy_start_env(self, template, variables):
+    def start_deployment_with_template(self, template, variables):
         http = HttpResponse()
         kubectl_utils = KubectlUtils()
         fluentd_tag = "deploy_start"
@@ -259,7 +259,7 @@ class KubectlView(FlaskView):
             200, mimetype="application/json")
 
     @route('/deployments/<deployment>', methods=['DELETE'])
-    def deploy_stop(self, deployment):
+    def delete_deployment(self, deployment):
         http = HttpResponse()
         deployment = deployment.strip()
         kubectl_utils = KubectlUtils()
@@ -287,7 +287,7 @@ class KubectlView(FlaskView):
             200, mimetype="application/json")
 
     @route('/deployments/<pod>', methods=['GET'])
-    def deploy_status(self, pod):
+    def get_deployment_status(self, pod):
         http = HttpResponse()
         pod = pod.strip()
         kubectl_utils = KubectlUtils()

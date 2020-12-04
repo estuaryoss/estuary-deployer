@@ -180,7 +180,7 @@ class DockerView(FlaskView):
                                                active_deployments)), 200, mimetype="application/json")
 
     @route('/deployments/prepare', methods=['PUT'])
-    def deploy_prepare(self):
+    def receive_prepared_deployment_and_unpack(self):
         token = token_hex(8)
         io_utils = IOUtils()
         deployment_id = request.headers.get("Deployment-Id") if request.headers.get("Deployment-Id") else token
@@ -210,8 +210,8 @@ class DockerView(FlaskView):
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
                                                deployment_id)), 200, mimetype="application/json")
 
-    @route('/deployments/cleanup', methods=['GET'])
-    def deploy_folder_cleanup(self):
+    @route('/deployments/cleanup', methods=['DELETE'])
+    def cleanup_inactive_deployments(self):
         try:
             deleted_folders = DockerUtils.folder_clean_up()
         except Exception as e:
@@ -223,7 +223,7 @@ class DockerView(FlaskView):
                                                deleted_folders)), 200, mimetype="application/json")
 
     @route('/deployments', methods=['POST'])
-    def deploy_start(self):
+    def start_deployment(self):
         docker_utils = DockerUtils()
         token = token_hex(8)
         deployment_id = request.headers.get("Deployment-Id") if request.headers.get("Deployment-Id") else token
@@ -280,7 +280,7 @@ class DockerView(FlaskView):
                                                deployment_id)), 200, mimetype="application/json")
 
     @route('/deployments/<template>/<variables>', methods=['POST'])
-    def deploy_start_env(self, template, variables):
+    def start_deployment_with_templates(self, template, variables):
         http = HttpResponse()
         docker_utils = DockerUtils()
         token = token_hex(8)
@@ -331,7 +331,7 @@ class DockerView(FlaskView):
             200, mimetype="application/json")
 
     @route('/deployments/<env_id>', methods=['GET'])
-    def deploy_status(self, env_id):
+    def get_deployment_status(self, env_id):
         docker_utils = DockerUtils()
         env_id = env_id.strip()
         try:
@@ -350,7 +350,7 @@ class DockerView(FlaskView):
             mimetype="application/json")
 
     @route('/deployments/<env_id>', methods=['DELETE'])
-    def deploy_stop(self, env_id):
+    def delete_deployment(self, env_id):
         env_id = env_id.strip()
         docker_utils = DockerUtils()
         file = f"{EnvInit.DEPLOY_PATH}/{env_id}/docker-compose.yml"
