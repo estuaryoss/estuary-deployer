@@ -14,7 +14,7 @@ from rest.api.constants.env_constants import EnvConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.constants.header_constants import HeaderConstants
 from rest.api.docker_swagger import docker_swagger_file_content
-from rest.api.exception.api_exception import ApiException
+from rest.api.exception.api_exception_docker import ApiExceptionDocker
 from rest.api.jinja2.render import Render
 from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
@@ -78,11 +78,11 @@ class DockerView(FlaskView):
     def index(self):
         return "docker"
 
-    @app.errorhandler(ApiException)
-    def handle_api_error(self):
+    @classmethod
+    def handle_api_error(cls, e):
         http_response = Response(json.dumps(
-            HttpResponse().response(code=self.code, message=self.message,
-                                    description="Exception({})".format(self.exception.__str__()))),
+            HttpResponse().response(code=e.code, message=e.message,
+                                    description="Exception({})".format(e.exception.__str__()))),
             500, mimetype="application/json")
         http_response.headers[HeaderConstants.X_REQUEST_ID] = DockerView.message_dumper.get_header(
             HeaderConstants.X_REQUEST_ID)
@@ -106,7 +106,7 @@ class DockerView(FlaskView):
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
                                                about_system)), 200, mimetype="application/json")
 
-    @route('/env')
+    @route('/env', methods=['GET'])
     def get_env_vars(self):
         return Response(
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -127,18 +127,15 @@ class DockerView(FlaskView):
         try:
             env_vars_attempted = json.loads(input_data)
         except Exception as e:
-            raise ApiException(ApiCode.INVALID_JSON_PAYLOAD.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.INVALID_JSON_PAYLOAD.value) % str(input_data), e)
+            raise ApiExceptionDocker(ApiCode.INVALID_JSON_PAYLOAD.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.INVALID_JSON_PAYLOAD.value) % str(input_data),
+                                     e)
 
         try:
-            for key, value in env_vars_attempted.items():
-                EnvironmentSingleton.get_instance().set_env_var(key, value)
-
-            env_vars_added = {key: value for key, value in env_vars_attempted.items() if
-                              key in EnvironmentSingleton.get_instance().get_virtual_env()}
+            env_vars_added = EnvironmentSingleton.get_instance().set_env_vars(env_vars_attempted)
         except Exception as e:
-            raise ApiException(ApiCode.SET_ENV_VAR_FAILURE,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.SET_ENV_VAR_FAILURE) % str(input_data), e)
+            raise ApiExceptionDocker(ApiCode.SET_ENV_VAR_FAILURE,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.SET_ENV_VAR_FAILURE) % str(input_data), e)
         return Response(
             json.dumps(
                 HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -164,8 +161,8 @@ class DockerView(FlaskView):
                 env_vars.get(
                     EnvConstants.VARIABLES)).rend_template()
         except Exception as e:
-            raise ApiException(ApiCode.JINJA2_RENDER_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.JINJA2_RENDER_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.JINJA2_RENDER_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.JINJA2_RENDER_FAILURE.value), e)
 
         return Response(rendered_content, 200, mimetype="text/plain")
 
@@ -189,22 +186,22 @@ class DockerView(FlaskView):
         file_content = request.get_data()
         # send here the complete env. The deployment template can be overridden at deploy start
         if not file_content:
-            raise ApiException(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
-                               ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
+            raise ApiExceptionDocker(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
 
         try:
             io_utils.create_dir(deploy_dir)
             io_utils.write_to_file_binary(file_path, file_content)
         except Exception as e:
-            raise ApiException(ApiCode.UPLOAD_FILE_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.UPLOAD_FILE_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.UPLOAD_FILE_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.UPLOAD_FILE_FAILURE.value), e)
         try:
             shutil.unpack_archive(file_path, deploy_dir)
             io_utils.remove_file(file_path)
         except Exception as e:
-            raise ApiException(ApiCode.FOLDER_UNZIP_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.FOLDER_UNZIP_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.FOLDER_UNZIP_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.FOLDER_UNZIP_FAILURE.value), e)
 
         return Response(
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -215,8 +212,8 @@ class DockerView(FlaskView):
         try:
             deleted_folders = DockerUtils.folder_clean_up()
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOYMENTS_FOLDER_CLEANUP_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOYMENTS_FOLDER_CLEANUP_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.DEPLOYMENTS_FOLDER_CLEANUP_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOYMENTS_FOLDER_CLEANUP_FAILURE.value), e)
 
         return Response(
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -236,15 +233,17 @@ class DockerView(FlaskView):
 
         status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
-            raise ApiException(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value), status.get('err'))
+            raise ApiExceptionDocker(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value),
+                                     status.get('err'))
         env_vars = EnvironmentSingleton.get_instance().get_env_and_virtual_env()
         if env_vars.get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(env_vars.get(EnvConstants.MAX_DEPLOYMENTS)):
-                raise ApiException(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
-                                   ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(
-                                       EnvConstants.MAX_DEPLOYMENTS), active_deployments)
+                raise ApiExceptionDocker(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
+                                         ErrorMessage.HTTP_CODE.get(
+                                             ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(
+                                             EnvConstants.MAX_DEPLOYMENTS), active_deployments)
         try:
             template_file_name = f"deployment_{token}.yml"
             template_file_path = f"{EnvInit.TEMPLATES_PATH}/{template_file_name}"
@@ -272,8 +271,8 @@ class DockerView(FlaskView):
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
         except Exception as e:
             app.logger.debug({"msg": docker_utils.down(file)})
-            raise ApiException(ApiCode.DEPLOY_START_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.DEPLOY_START_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
 
         return Response(
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -304,17 +303,17 @@ class DockerView(FlaskView):
 
         status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
-            raise ApiException(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value),
-                               status.get('err'))
+            raise ApiExceptionDocker(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value),
+                                     status.get('err'))
         if env_vars.get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(env_vars.get(EnvConstants.MAX_DEPLOYMENTS)):
-                raise ApiException(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
-                                   ErrorMessage.HTTP_CODE.get(
-                                       ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(
-                                       EnvConstants.MAX_DEPLOYMENTS),
-                                   active_deployments)
+                raise ApiExceptionDocker(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
+                                         ErrorMessage.HTTP_CODE.get(
+                                             ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(
+                                             EnvConstants.MAX_DEPLOYMENTS),
+                                         active_deployments)
         try:
             r = Render(env_vars.get(EnvConstants.TEMPLATE),
                        env_vars.get(EnvConstants.VARIABLES))
@@ -322,8 +321,8 @@ class DockerView(FlaskView):
             IOUtils.write_to_file(file, r.rend_template())
             CmdUtils.run_cmd_detached(rf'''docker-compose -f {file} pull && docker-compose -f {file} up -d''')
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_START_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.DEPLOY_START_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
 
         return Response(
             json.dumps(
@@ -341,8 +340,8 @@ class DockerView(FlaskView):
             result = status.get('out').split("\n")[1:]
             app.logger.debug({"msg": status})
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_STATUS_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STATUS_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.DEPLOY_STATUS_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STATUS_FAILURE.value), e)
 
         return Response(
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -362,8 +361,8 @@ class DockerView(FlaskView):
             status = docker_utils.ps(env_id)
             result = status.get('out').split("\n")[1:]
         except Exception as e:
-            raise ApiException(ApiCode.DEPLOY_STOP_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.DEPLOY_STOP_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
 
         return Response(
             json.dumps(
@@ -376,15 +375,15 @@ class DockerView(FlaskView):
 
         file_path = request.headers.get(f"{header_key}")
         if not file_path:
-            raise ApiException(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
+            raise ApiExceptionDocker(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
 
         try:
             file_content = IOUtils.read_file(file_path)
         except Exception as e:
-            raise ApiException(ApiCode.GET_FILE_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.GET_FILE_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.GET_FILE_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.GET_FILE_FAILURE.value), e)
         return Response(file_content, 200, mimetype="text/plain")
 
     @route('/file', methods=['POST', 'PUT'])
@@ -396,19 +395,19 @@ class DockerView(FlaskView):
         file_path = request.headers.get(f"{header_key}")
 
         if not file_path:
-            raise ApiException(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
+            raise ApiExceptionDocker(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
         if not file_content:
-            raise ApiException(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
-                               ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
+            raise ApiExceptionDocker(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
 
         try:
             io_utils.write_to_file_binary(file_path, file_content)
         except Exception as e:
-            raise ApiException(ApiCode.UPLOAD_FILE_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.UPLOAD_FILE_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.UPLOAD_FILE_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.UPLOAD_FILE_FAILURE.value), e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -429,12 +428,12 @@ class DockerView(FlaskView):
             if status.get('err'):
                 raise Exception(status.get('err'))
         except Exception as e:
-            raise ApiException(ApiCode.GET_LOGS_FAILED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.GET_LOGS_FAILED.value) % env_id, e)
+            raise ApiExceptionDocker(ApiCode.GET_LOGS_FAILED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.GET_LOGS_FAILED.value) % env_id, e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
-                                     status.get('out').split("\n"))), 200, mimetype="application/json")
+                                     status.get('out'))), 200, mimetype="application/json")
 
     # must connect the container to the deployer network to be able to send http request
     @route('/deployments/network/<env_id>', methods=['POST', 'PUT'])
@@ -454,8 +453,8 @@ class DockerView(FlaskView):
             if not status.get('out'):
                 raise Exception(status.get('err'))
         except Exception as e:
-            raise ApiException(ApiCode.GET_DEPLOYER_NETWORK_FAILED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.GET_DEPLOYER_NETWORK_FAILED.value), e)
+            raise ApiExceptionDocker(ApiCode.GET_DEPLOYER_NETWORK_FAILED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.GET_DEPLOYER_NETWORK_FAILED.value), e)
 
         try:
             deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
@@ -472,8 +471,8 @@ class DockerView(FlaskView):
             if "Error response from daemon".lower() in status.get('err').lower():
                 raise Exception(status.get('err'))
         except Exception as e:
-            raise ApiException(ApiCode.CONTAINER_NET_CONNECT_FAILED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.CONTAINER_NET_CONNECT_FAILED.value), e)
+            raise ApiExceptionDocker(ApiCode.CONTAINER_NET_CONNECT_FAILED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.CONTAINER_NET_CONNECT_FAILED.value), e)
         return Response(
             json.dumps(
                 http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -494,8 +493,8 @@ class DockerView(FlaskView):
             if not status.get('out'):
                 raise Exception(status.get('err'))
         except Exception as e:
-            raise ApiException(ApiCode.GET_DEPLOYER_NETWORK_FAILED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.GET_DEPLOYER_NETWORK_FAILED.value), e)
+            raise ApiExceptionDocker(ApiCode.GET_DEPLOYER_NETWORK_FAILED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.GET_DEPLOYER_NETWORK_FAILED.value), e)
 
         try:
             deployer_network = status.get('out').split("\n")[1].split(" ")[0].strip()
@@ -510,8 +509,8 @@ class DockerView(FlaskView):
             if "Error response from daemon".lower() in status.get('err').lower():
                 raise Exception(status.get('err'))
         except Exception as e:
-            raise ApiException(ApiCode.CONTAINER_NET_DISCONNECT_FAILED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.CONTAINER_NET_DISCONNECT_FAILED.value), e)
+            raise ApiExceptionDocker(ApiCode.CONTAINER_NET_DISCONNECT_FAILED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.CONTAINER_NET_DISCONNECT_FAILED.value), e)
         return Response(
             json.dumps(
                 http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -545,9 +544,9 @@ class DockerView(FlaskView):
         try:
             r = requests.request(url=complete_url, method=request.method, data=input_data, headers=headers, timeout=5)
         except Exception as e:
-            raise ApiException(ApiCode.CONTAINER_UNREACHABLE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.CONTAINER_UNREACHABLE.value) % (
-                                   service_name, service_name), e)
+            raise ApiExceptionDocker(ApiCode.CONTAINER_UNREACHABLE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.CONTAINER_UNREACHABLE.value) % (
+                                         service_name, service_name), e)
         return Response(r.text, r.status_code)
 
     @route('/command', methods=['POST', 'PUT'])
@@ -555,17 +554,17 @@ class DockerView(FlaskView):
         input_data = request.data.decode("UTF-8", "replace").strip()
 
         if not input_data:
-            raise ApiException(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
-                               ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
+            raise ApiExceptionDocker(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
         try:
             input_data_list = input_data.split("\n")
             input_data_list = list(map(lambda x: x.strip(), input_data_list))
             command_in_memory = CommandInMemory()
             response = command_in_memory.run_commands(input_data_list)
         except Exception as e:
-            raise ApiException(ApiCode.COMMAND_EXEC_FAILURE.value,
-                               ErrorMessage.HTTP_CODE.get(ApiCode.COMMAND_EXEC_FAILURE.value), e)
+            raise ApiExceptionDocker(ApiCode.COMMAND_EXEC_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.COMMAND_EXEC_FAILURE.value), e)
         return Response(
             json.dumps(
                 HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),

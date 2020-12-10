@@ -7,9 +7,10 @@ from fluent import sender
 from about import properties
 from rest.api.constants.env_constants import EnvConstants
 from rest.api.constants.env_init import EnvInit
+from rest.api.exception.api_exception_docker import ApiExceptionDocker
+from rest.api.exception.api_exception_kubectl import ApiExceptionKubectl
 from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.api.schedulers.docker_env_expire_scheduler import DockerEnvExpireScheduler
-from rest.api.schedulers.docker_scheduler import DockerScheduler
 from rest.api.schedulers.kubectl_env_expire_scheduler import KubectlEnvExpireScheduler
 from rest.api.views import app
 from rest.api.views.docker_view import DockerView
@@ -22,6 +23,9 @@ from rest.utils.io_utils import IOUtils
 
 DockerView.register(app=app)
 KubectlView.register(app=app)
+
+app.register_error_handler(ApiExceptionDocker, DockerView.handle_api_error)
+app.register_error_handler(ApiExceptionKubectl, KubectlView.handle_api_error)
 
 if __name__ == "__main__":
     cli = sys.modules['flask.cli']

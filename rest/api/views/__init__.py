@@ -1,12 +1,9 @@
-import json
 import logging
 
-from flask import Flask, Response
+from flask import Flask
 from flask_cors import CORS
 from flask_swagger_ui import get_swaggerui_blueprint
 
-from rest.api.exception.api_exception import ApiException
-from rest.api.responsehelpers.http_response import HttpResponse
 from rest.api.views.flask_config import Config
 
 

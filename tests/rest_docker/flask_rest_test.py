@@ -22,6 +22,7 @@ class FlaskServerTestCase(unittest.TestCase):
     expected_version = "4.2.0"
     sleep_before_env_up = 6
     sleep_after_env_down = 6
+    max_deployments = 3
 
     def setUp(self):
         active_deployments = self.get_deployment_info()
@@ -231,7 +232,7 @@ class FlaskServerTestCase(unittest.TestCase):
         ("mysql56.yml", "variables.yml")
     ])
     def test_deploystartenv_payload_n(self, template, variables):
-        payload = {'DATABASE': 'dummy'}
+        payload = {"DATABASE": "dummy"}
         headers = {'Content-type': 'application/json'}
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
@@ -384,7 +385,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
-        self.assertIsNotNone(body.get('timestamp'))
         requests.delete(self.server + f"/deployments/{deploystart_body.get('description')}")
 
     def test_getfile_p(self):
@@ -518,6 +518,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
+        requests.delete(self.server + f"/deployments/{deployment_id}")
 
     def test_deploy_prepare_and_start_zip_from_client_override(self):
         deployment_id = "myCustomDeploymentId"
@@ -530,7 +531,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.put(self.server + f"/deployments/prepare", data=payload, headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description', deployment_id))
+        self.assertEqual(body.get('description'), deployment_id)
 
         headers = {'Content-type': 'text/plain',
                    'Deployment-Id': deployment_id}
@@ -542,12 +543,13 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
-        self.assertIn(self.get_deployment_info_object(), "mysql56")
+        self.assertIn("mysql56", self.get_deployment_info_object()[0])
         self.assertEqual(body.get('message'),
                          ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
+        requests.delete(self.server + f"/deployments/{deployment_id}")
 
     def test_deploy_start_file_from_client_n(self):
         payload = "dummy_yml_will_not_work \n alabalaportocala"
@@ -635,22 +637,21 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystart_max_deployments_p(self, template, variables):
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), 0)
-        for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
+        for i in range(0, self.max_deployments):
             response = requests.post(self.server + f"/deployments/{template}/{variables}")
             time.sleep(self.sleep_before_env_up)
             self.assertEqual(response.status_code, 200)
         time.sleep(3)
         response = requests.get(self.server + "/deployments")
-        self.assertEqual(len(response.json().get('description')), int(os.environ.get('MAX_DEPLOYMENTS')))
+        self.assertEqual(len(response.json().get('description')), self.max_deployments)
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
-                             'MAX_DEPLOYMENTS'))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(self.max_deployments))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED)
+        self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -660,22 +661,20 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystartenv_max_deployments_p(self, template, variables):
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), 0)
-        for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
+        for i in range(0, self.max_deployments):
             response = requests.post(self.server + f"/deployments/{template}/{variables}")
             self.assertEqual(response.status_code, 200)
             time.sleep(self.sleep_before_env_up)
         response = requests.get(self.server + "/deployments")
-        self.assertEqual(len(response.json().get('description')), int(os.environ.get('MAX_DEPLOYMENTS')))
+        self.assertEqual(len(response.json().get('description')), self.max_deployments)
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
-                             'MAX_DEPLOYMENTS'))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(self.max_deployments))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploystartpostfromfile_max_deployments_p(self):
@@ -685,22 +684,20 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), 0)
-        for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
+        for i in range(0, self.max_deployments):
             response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
             time.sleep(self.sleep_before_env_up)
             self.assertEqual(response.status_code, 200)
         response = requests.get(self.server + "/deployments")
-        self.assertEqual(len(response.json().get('description')), int(os.environ.get('MAX_DEPLOYMENTS')))
+        self.assertEqual(len(response.json().get('description')), self.max_deployments)
 
         response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
-                             'MAX_DEPLOYMENTS'))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(self.max_deployments))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_getenv_endpoint_p(self):

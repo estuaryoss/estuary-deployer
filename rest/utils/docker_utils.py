@@ -44,7 +44,7 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def logs(file):
-        docker_logs_lines = 1000
+        docker_logs_lines = 5000
         file_path = Path(file)
         if not file_path.is_file():
             raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
