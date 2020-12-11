@@ -180,7 +180,7 @@ class DockerView(FlaskView):
     def receive_prepared_deployment_and_unpack(self):
         token = token_hex(8)
         io_utils = IOUtils()
-        deployment_id = request.headers.get("Deployment-Id") if request.headers.get("Deployment-Id") else token
+        deployment_id = request.headers.get("Deployment-Id").lower() if request.headers.get("Deployment-Id") else token
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
         file_path = f"{deploy_dir}/archive.zip"
         file_content = request.get_data()
@@ -223,7 +223,7 @@ class DockerView(FlaskView):
     def start_deployment(self):
         docker_utils = DockerUtils()
         token = token_hex(8)
-        deployment_id = request.headers.get("Deployment-Id") if request.headers.get("Deployment-Id") else token
+        deployment_id = request.headers.get("Deployment-Id").lower() if request.headers.get("Deployment-Id") else token
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
         file = f"{deploy_dir}/docker-compose.yml"
         header_key = 'Eureka-Server'
@@ -283,7 +283,7 @@ class DockerView(FlaskView):
         http = HttpResponse()
         docker_utils = DockerUtils()
         token = token_hex(8)
-        deployment_id = request.headers.get("Deployment-Id") if request.headers.get("Deployment-Id") else token
+        deployment_id = request.headers.get("Deployment-Id").lower() if request.headers.get("Deployment-Id") else token
         deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
         file = f"{deploy_dir}/docker-compose.yml"
 

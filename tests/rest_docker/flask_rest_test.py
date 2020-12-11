@@ -30,6 +30,11 @@ class FlaskServerTestCase(unittest.TestCase):
             requests.delete(self.server + f"/deployments/{item}")
         time.sleep(self.sleep_after_env_down)
 
+    def tearDown(self):
+        active_deployments = self.get_deployment_info()
+        for item in active_deployments:
+            requests.delete(self.server + f"/deployments/{item}")
+
     def get_deployment_info(self):
         response = requests.get(self.server + "/deployments")
         body = response.json()
@@ -375,7 +380,7 @@ class FlaskServerTestCase(unittest.TestCase):
         deployment_id = "dummy"
 
         response = requests.get(self.server + f"/deployments/{deployment_id}")
-        # for dummy interogation the list of containers is empty
+        # for dummy interrogation the list of containers is empty
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
@@ -507,7 +512,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'text/plain',
                    'Deployment-Id': deployment_id}
 
-        response = requests.post(self.server + f"/deployments", data="",
+        response = requests.post(self.server + f"/deployments", data=None,
                                  headers=headers)
         time.sleep(self.sleep_before_env_up)
         body = response.json()
@@ -531,7 +536,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.put(self.server + f"/deployments/prepare", data=payload, headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'), deployment_id)
+        self.assertEqual(body.get('description'), deployment_id.lower())
 
         headers = {'Content-type': 'text/plain',
                    'Deployment-Id': deployment_id}
@@ -543,7 +548,7 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
-        self.assertIn("mysql56", self.get_deployment_info_object()[0])
+        self.assertIn("mysql", str(self.get_deployment_info_object()[0]))
         self.assertEqual(body.get('message'),
                          ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
@@ -652,7 +657,6 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(self.max_deployments))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED.value)
-        self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([

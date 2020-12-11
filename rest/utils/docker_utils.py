@@ -53,6 +53,7 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def ps(env_id):
+        env_id = env_id.lower()
         return CmdUtils.run_cmd_shell_false(["docker", "ps", "--filter", f"name={env_id}"])
 
     @staticmethod
@@ -95,7 +96,7 @@ class DockerUtils(EnvCreation):
     @staticmethod
     def get_active_deployments():
         active_deployments = []
-        env_list = IOUtils.get_list_dir(f"{EnvInit.DEPLOY_PATH}")
+        env_list = [folder.lower() for folder in IOUtils.get_list_dir(f"{EnvInit.DEPLOY_PATH}")]
         for item in env_list:
             container_list = DockerUtils.ps(item).get('out').split("\n")[1:]
             for container in container_list:
