@@ -3,7 +3,7 @@ docker_swagger_file_content = '''
 info:
   description: |
     This is estuary-deployer with Docker.
-  version: "4.0.8"
+  version: "4.2.0"
   title: estuary-deployer
   termsOfService: http://swagger.io/terms/
   contact:
@@ -125,6 +125,52 @@ paths:
           description: template rendered with success
         500:
           description: template rendered with failure
+  /deployments/prepare:
+    put:
+      tags:
+        - estuary-deployer
+      summary: Uploads and unpacks a zip archive containing the dependencies of the environment.
+      consumes:
+        - text/plain
+      produces:
+        - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
+      - in: header
+        name: Deployment-Id
+        type: string
+        required: false
+      - name: archive
+        in: body
+        description: 'The zip archive'
+        schema:
+          type: string
+          format: binary
+      responses:
+        200:
+          description: Archive uploaded and extracted success
+        500:
+          description: Archive uploaded and extracted failure
+  /deployments/cleanup:
+    delete:
+      tags:
+        - estuary-deployer
+      summary: The action deletes the folders and their contents for the deployments which expired.
+      produces:
+        - application/json
+      parameters:
+      - in: header
+        name: Token
+        type: string
+        required: false
+      responses:
+        200:
+          description: Folder cleanup success
+        500:
+          description: Folder cleanup failure
   /deployments:
     get:
       tags:

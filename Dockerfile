@@ -3,7 +3,7 @@ FROM alpine:3.11.6
 RUN apk update
 
 RUN apk add --no-cache python3 && \
-    pip3 install --upgrade pip==20.2.3 setuptools==49.2.0 --no-cache
+    pip3 install --upgrade pip==20.3 setuptools==49.2.0 --no-cache
 
 RUN apk add --no-cache \
     bash \
@@ -31,7 +31,7 @@ RUN chown -R www:www /var/lib/nginx
 RUN chown -R www:www /www
 
 ## Kubectl
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod +x /usr/local/bin/kubectl
 RUN mkdir /root/.kube
 
@@ -42,15 +42,14 @@ RUN rm -rf /var/cache/apk/*
 VOLUME ["/scripts/inputs/templates"]
 VOLUME ["/scripts/inputs/variables"]
 
-ENV TEMPLATES_DIR /scripts/inputs/templates
-ENV VARS_DIR /scripts/inputs/variables
+ENV SCRIPTS_DIR /scripts
+ENV TEMPLATES_DIR $SCRIPTS_DIR/inputs/templates
+ENV VARS_DIR $SCRIPTS_DIR/inputs/variables
 ENV HTTP_AUTH_TOKEN None
 ENV PORT 8080
 
-ENV SCRIPTS_DIR /scripts
 ENV HTTPS_DIR $SCRIPTS_DIR/https
-ENV WORKSPACE $SCRIPTS_DIR/inputs
-ENV DEPLOY_PATH $WORKSPACE/deployments
+ENV WORKSPACE $SCRIPTS_DIR/
 ENV OUT_DIR out
 
 ENV TZ UTC

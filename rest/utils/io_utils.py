@@ -45,3 +45,12 @@ class IOUtils:
         if not file_path.exists():
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
         shutil.make_archive(f"/tmp/{id}", 'zip', f"/tmp/{id}")
+
+    @staticmethod
+    def does_file_exist(file):
+        return Path(file).exists()
+
+    @staticmethod
+    def remove_file(file):
+        file_path = Path(file)
+        file_path.unlink()

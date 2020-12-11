@@ -7,7 +7,7 @@ parameterized==0.7.4
 python-coveralls
 pytest-cov
 requests_toolbelt
-py_eureka_client==0.7.4
+py_eureka_client==0.9.1
 apscheduler==3.6.3
 flask_swagger_ui
 flask-classful
@@ -15,4 +15,5 @@ fluent-logger
 pyinstaller
 setuptools==44.0.0
 jproperties==2.1.0
+psutil
 uwsgi

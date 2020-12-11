@@ -4,14 +4,14 @@ import unittest
 import requests
 from parameterized import parameterized
 
-from rest.api.constants.api_constants import ApiConstants
-from rest.api.responsehelpers.error_codes import ErrorCodes
+from rest.api.constants.api_code import ApiCode
+from rest.api.responsehelpers.error_message import ErrorMessage
 
 
 class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
 
-    expected_version = "4.1.0"
+    expected_version = "4.2.0"
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")
@@ -21,9 +21,9 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.DOCKER_DAEMON_NOT_RUNNING))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.DOCKER_DAEMON_NOT_RUNNING)
+        self.assertEqual(body.get('code'), ApiCode.DOCKER_DAEMON_NOT_RUNNING.value)
         self.assertIsNotNone(body.get('timestamp'))
 
 

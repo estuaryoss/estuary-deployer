@@ -20,7 +20,7 @@ Deployer service can run your commands using the [estuary-agent](https://github.
 [centos](https://hub.docker.com/r/estuaryoss/deployer-centos)  ![](https://img.shields.io/docker/pulls/estuaryoss/deployer-centos.svg)
 
 ## Api docs 
-[4.0.8 docker](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.8)  
+[4.2.0 docker](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.2.0)  
 [4.0.8 kubectl](https://app.swaggerhub.com/apis/dinuta/estuary-deployer/4.0.8-kubectl)  
 
 ## Postman collection 
@@ -46,6 +46,13 @@ Deployer service can run your commands using the [estuary-agent](https://github.
     docker network create estuarydeployer_default
     docker run -p 8080:8080 -v /var/run/docker.sock:/var/run/docker.sock --net=estuarydeployer_default \
     estuaryoss/deployer:<tag>
+
+### Docker run dind (docker in docker)
+    docker run -p 8080:8080 -d --privileged --name some-docker -d docker:dind
+    docker exec -i -t some-docker docker login
+    docker exec -i -t some-docker docker run -p 8080:8080 -ti --net=deployer dinutac/estuary-deployer:latest
+    docker exec -i -t some-docker docker run -p 8080:8080 -ti --net=deployer -v /var/run/docker.sock:/var/run/docker.sock \
+    dinutac/estuary-deployer:latest
 
 ### Eureka registration
 To have all your deployer instances in a central location we use netflix eureka. This means your client will discover

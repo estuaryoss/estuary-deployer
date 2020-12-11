@@ -5,17 +5,17 @@ import unittest
 import requests
 from parameterized import parameterized
 
-from rest.api.constants.api_constants import ApiConstants
-from rest.api.responsehelpers.error_codes import ErrorCodes
+from rest.api.constants.api_code import ApiCode
+from rest.api.responsehelpers.error_message import ErrorMessage
 
 
 class FlaskServerTestCase(unittest.TestCase):
     home = "http://localhost:8080/kubectl"
 
-    expected_version = "4.1.0"
+    expected_version = "4.2.0"
     inputs_deployment_path = "tests/rest_kubectl/inputs"
     # inputs_deployment_path = "inputs"
-    templates_deployment_path = "inputs/templates" #os.environ.get('TEMPLATES_DIR'))
+    templates_deployment_path = f"inputs/templates"
     sleep_after_deploy_start = 10
 
     @classmethod
@@ -60,9 +60,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_n(self):
@@ -72,9 +72,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.DEPLOY_START_FAILURE)
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_START_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_env_p(self):
@@ -82,9 +82,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
@@ -97,9 +97,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.DEPLOY_START_FAILURE)
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_START_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_from_server_p(self):
@@ -107,9 +107,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
@@ -122,9 +122,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.DEPLOY_START_FAILURE)
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_START_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_status_no_deployment_with_this_name_p(self):
@@ -139,9 +139,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body.get('description')), 0)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_status_p(self):
@@ -160,9 +160,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('description')[0].get('namespace'), "default")
         self.assertIn(deployment, body.get('description')[0].get('pod'))
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_logs_default_namespace_p(self):
@@ -177,9 +177,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(deployment, body.get('description'))
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_logs_production_namespace_p(self):
@@ -194,9 +194,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(deployment, body.get('description'))
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_logs_no_deployment_with_this_name_n(self):
@@ -206,10 +206,10 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.GET_LOGS_FAILED) % deployment)
-        self.assertGreater(body.get('description').get('code'), 0)
+                         ErrorMessage.HTTP_CODE.get(ApiCode.GET_LOGS_FAILED.value) % deployment)
+        self.assertIn("Exception", body.get('description'))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.GET_LOGS_FAILED)
+        self.assertEqual(body.get('code'), ApiCode.GET_LOGS_FAILED.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_stop_default_namespace_p(self):
@@ -224,9 +224,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body.get('description')), 0)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         headers = {'K8s-Namespace': 'default', "Label-Selector": "k8s-app=alpine"}
         response = requests.get(f"{self.home}/deployments", headers=headers)
@@ -242,9 +242,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(body.get('description')), 0)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_stop_no_deployment_with_this_name_n(self):
@@ -255,7 +255,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertIn(deployment, body.get('description'))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.KUBERNETES_SERVER_ERROR)
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_STOP_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_using_execute_command_p(self):
@@ -266,7 +266,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description').get('commands').get(payload).get('details').get('code'), 0)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertIsNotNone(body.get('timestamp'))
 

@@ -9,24 +9,31 @@ from flask import json
 from parameterized import parameterized
 from requests_toolbelt.utils import dump
 
-from rest.api.constants.api_constants import ApiConstants
-from rest.api.responsehelpers.error_codes import ErrorCodes
+from rest.api.constants.api_code import ApiCode
+from rest.api.responsehelpers.error_message import ErrorMessage
 
 
 class FlaskServerTestCase(unittest.TestCase):
     server_base = "http://localhost:8080"
     server = "{}/docker".format(server_base)
     # server = "http://" + os.environ.get('SERVER')
-
-    expected_version = "4.1.0"
-    sleep_after_env_up = 6
+    input_path = f"tests/rest_docker/input"
+    # input_path = "input"
+    expected_version = "4.2.0"
+    sleep_before_env_up = 6
     sleep_after_env_down = 6
+    max_deployments = 3
 
     def setUp(self):
         active_deployments = self.get_deployment_info()
         for item in active_deployments:
             requests.delete(self.server + f"/deployments/{item}")
         time.sleep(self.sleep_after_env_down)
+
+    def tearDown(self):
+        active_deployments = self.get_deployment_info()
+        for item in active_deployments:
+            requests.delete(self.server + f"/deployments/{item}")
 
     def get_deployment_info(self):
         response = requests.get(self.server + "/deployments")
@@ -49,15 +56,14 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertGreaterEqual(len(body.get('description')), 7)
         self.assertIn("/variables", body.get('description')["VARS_DIR"])
         # self.assertIn("/data", body.get('description')["TEMPLATES_DIR"])
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
-        ("FOO1", "BAR10"),
-        ("FOO2", "BAR20")
+        ("FOO1", "BAR10")
     ])
     @unittest.skipIf(str(os.environ.get('TEST_ENV')) == "centos", "Skip on Centos docker")
     def test_env_load_from_props(self, env_var, expected_value):
@@ -65,10 +71,10 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get("message"), ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+        self.assertEqual(body.get("message"), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('description'), expected_value)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('path'))
 
@@ -81,9 +87,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'), payload)
-        self.assertEqual(body.get("message"), ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+        self.assertEqual(body.get("message"), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('path'))
 
@@ -95,7 +101,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'), "pong")
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
@@ -110,7 +116,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'), "pong")
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(headers.get('X-Request-ID'), xid)
@@ -121,11 +127,11 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'), name)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+        self.assertIsInstance(body.get('description'), dict)
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('name'), name)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -138,9 +144,9 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(body.get('description'), "Invalid Token")
         self.assertEqual(body.get('name'), service_name)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.UNAUTHORIZED))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.UNAUTHORIZED.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.UNAUTHORIZED)
+        self.assertEqual(body.get('code'), ApiCode.UNAUTHORIZED.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
@@ -231,7 +237,7 @@ class FlaskServerTestCase(unittest.TestCase):
         ("mysql56.yml", "variables.yml")
     ])
     def test_deploystartenv_payload_n(self, template, variables):
-        payload = {'DATABASE': 'dummy'}
+        payload = {"DATABASE": "dummy"}
         headers = {'Content-type': 'application/json'}
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
@@ -240,10 +246,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = yaml.safe_load(response.text)
         headers = response.headers
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.DEPLOY_START_FAILURE)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_START_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
 
@@ -256,13 +261,13 @@ class FlaskServerTestCase(unittest.TestCase):
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
-        time.sleep(self.sleep_after_env_up)
+        time.sleep(self.sleep_before_env_up)
         body = response.json()
         self.assertEqual(len(self.get_deployment_info()), 1)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -278,9 +283,9 @@ class FlaskServerTestCase(unittest.TestCase):
                                  headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.DEPLOY_START_FAILURE)
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_START_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -289,14 +294,13 @@ class FlaskServerTestCase(unittest.TestCase):
     ])
     def test_deploystart_p(self, template, variables):
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
-        time.sleep(self.sleep_after_env_up)
+        time.sleep(self.sleep_before_env_up)
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
@@ -310,9 +314,9 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_START_FAILURE))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.DEPLOY_START_FAILURE)
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_START_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -322,7 +326,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystatus_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
-        time.sleep(self.sleep_after_env_up)
+        time.sleep(self.sleep_before_env_up)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
         compose_id = response.json().get('description')
@@ -331,11 +335,11 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(len(body.get('description').get('containers')), 1)  # 1 container should be up and running
         self.assertEqual(body.get('description').get('id'), compose_id)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -345,7 +349,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystatus_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
-        time.sleep(self.sleep_after_env_up)
+        time.sleep(self.sleep_before_env_up)
         self.assertEqual(response.status_code, 200)
         body = response.json()
         compose_id = body.get('description')
@@ -355,11 +359,11 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(len(body.get('description').get('containers')), 2)  # 2 containers should be up and running
         self.assertEqual(body.get('description').get('id'), compose_id)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -369,23 +373,22 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystatus_n(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
-        time.sleep(self.sleep_after_env_up)
+        time.sleep(self.sleep_before_env_up)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
         deploystart_body = response.json()
-        id = "dummy"
+        deployment_id = "dummy"
 
-        response = requests.get(self.server + f"/deployments/{id}")
-        # for dummy interogation the list of containers is empty
+        response = requests.get(self.server + f"/deployments/{deployment_id}")
+        # for dummy interrogation the list of containers is empty
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(len(body.get('description').get('containers')), 0)
-        self.assertEqual(body.get('description').get('id'), id)
+        self.assertEqual(body.get('description').get('id'), deployment_id)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         requests.delete(self.server + f"/deployments/{deploystart_body.get('description')}")
 
@@ -410,9 +413,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.GET_FILE_FAILURE))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.GET_FILE_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.GET_FILE_FAILURE)
+        self.assertEqual(body.get('code'), ApiCode.GET_FILE_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -424,9 +427,9 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.HTTP_HEADER_NOT_PROVIDED) % header_key)
+                         ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.HTTP_HEADER_NOT_PROVIDED)
+        self.assertEqual(body.get('code'), ApiCode.HTTP_HEADER_NOT_PROVIDED.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -437,9 +440,9 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         self.assertEqual(response.status_code, 500)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.DEPLOY_STOP_FAILURE))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.DEPLOY_STOP_FAILURE)
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_STOP_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -449,7 +452,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystop_p(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
-        time.sleep(self.sleep_after_env_up)
+        time.sleep(self.sleep_before_env_up)
         self.assertEqual(response.status_code, 200)
         deploystart_body = response.json()
 
@@ -458,30 +461,100 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(len(body.get('description')), 0)  # 0 containers should be up and running
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_file_from_client_p(self):
-        with open("tests/rest_docker/input/alpine.yml", closefd=True) as f:
+        with open(f"{self.input_path}/alpine.yml", closefd=True) as f:
             payload = f.read()
         headers = {'Content-type': 'text/plain'}
 
         response = requests.post(self.server + f"/deployments", data=payload,
                                  headers=headers)
-        time.sleep(self.sleep_after_env_up)
+        time.sleep(self.sleep_before_env_up)
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
+
+    def test_delete_folders_for_inactive_deployments(self):
+        response = requests.delete(self.server + f"/deployments/cleanup")
+
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('message'),
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
+        self.assertIsInstance(body.get('description'), list)
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
+
+    def test_deploy_prepare_and_start_zip_from_client_no_override(self):
+        with open(f"{self.input_path}/prepared_deployment.zip", 'rb') as f:
+            payload = f.read()
+        headers = {
+            "Content-Type": "application/binary",
+        }
+        response = requests.put(self.server + f"/deployments/prepare", data=payload,
+                                headers=headers)
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        deployment_id = body.get('description')
+
+        headers = {'Content-type': 'text/plain',
+                   'Deployment-Id': deployment_id}
+
+        response = requests.post(self.server + f"/deployments", data=None,
+                                 headers=headers)
+        time.sleep(self.sleep_before_env_up)
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertEqual(body.get('message'),
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
+        self.assertIsNotNone(body.get('timestamp'))
+        requests.delete(self.server + f"/deployments/{deployment_id}")
+
+    def test_deploy_prepare_and_start_zip_from_client_override(self):
+        deployment_id = "myCustomDeploymentId"
+        with open(f"{self.input_path}/prepared_deployment.zip", 'rb') as f:
+            payload = f.read()
+        headers = {
+            "Content-Type": "application/binary",
+            "Deployment-Id": deployment_id
+        }
+        response = requests.put(self.server + f"/deployments/prepare", data=payload, headers=headers)
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body.get('description'), deployment_id.lower())
+
+        headers = {'Content-type': 'text/plain',
+                   'Deployment-Id': deployment_id}
+        with open(f"{self.input_path}/mysql56.yml", 'r') as f:
+            payload = f.read()
+
+        response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
+        time.sleep(self.sleep_before_env_up)
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertIn("mysql", str(self.get_deployment_info_object()[0]))
+        self.assertEqual(body.get('message'),
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
+        self.assertIsNotNone(body.get('timestamp'))
+        requests.delete(self.server + f"/deployments/{deployment_id}")
 
     def test_deploy_start_file_from_client_n(self):
         payload = "dummy_yml_will_not_work \n alabalaportocala"
@@ -493,9 +566,9 @@ class FlaskServerTestCase(unittest.TestCase):
         env_id = body.get('description')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
         active_deployments = self.get_deployment_info()
@@ -509,7 +582,7 @@ class FlaskServerTestCase(unittest.TestCase):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
-        time.sleep(self.sleep_after_env_up)
+        time.sleep(self.sleep_before_env_up)
         self.assertEqual(response.status_code, 200)
         env_id = response.json().get("description")
 
@@ -517,11 +590,10 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertGreater(len(body.get("description")), 15)  # at least 15
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
@@ -533,15 +605,15 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
         self.assertEqual(response.status_code, 200)
-        dummy_env_id = response.json().get("message") + "dummy"
+        dummy_env_id = response.json().get("description") + "dummy"
 
         response = requests.get(self.server + f"/deployments/logs/{dummy_env_id}")
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.GET_LOGS_FAILED) % dummy_env_id)
+                         ErrorMessage.HTTP_CODE.get(ApiCode.GET_LOGS_FAILED.value) % dummy_env_id)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.GET_LOGS_FAILED)
+        self.assertEqual(body.get('code'), ApiCode.GET_LOGS_FAILED.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -552,7 +624,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), 0)
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
-        time.sleep(self.sleep_after_env_up)
+        time.sleep(self.sleep_before_env_up)
         compose_id = response.json().get('description')
         self.assertEqual(response.status_code, 200)
 
@@ -569,23 +641,21 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystart_max_deployments_p(self, template, variables):
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), 0)
-        for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
+        for i in range(0, self.max_deployments):
             response = requests.post(self.server + f"/deployments/{template}/{variables}")
-            time.sleep(self.sleep_after_env_up)
+            time.sleep(self.sleep_before_env_up)
             self.assertEqual(response.status_code, 200)
         time.sleep(3)
         response = requests.get(self.server + "/deployments")
-        self.assertEqual(len(response.json().get('description')), int(os.environ.get('MAX_DEPLOYMENTS')))
+        self.assertEqual(len(response.json().get('description')), self.max_deployments)
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
-                             'MAX_DEPLOYMENTS'))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(self.max_deployments))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.MAX_DEPLOYMENTS_REACHED)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
@@ -594,47 +664,43 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_deploystartenv_max_deployments_p(self, template, variables):
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), 0)
-        for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
+        for i in range(0, self.max_deployments):
             response = requests.post(self.server + f"/deployments/{template}/{variables}")
             self.assertEqual(response.status_code, 200)
-            time.sleep(self.sleep_after_env_up)
+            time.sleep(self.sleep_before_env_up)
         response = requests.get(self.server + "/deployments")
-        self.assertEqual(len(response.json().get('description')), int(os.environ.get('MAX_DEPLOYMENTS')))
+        self.assertEqual(len(response.json().get('description')), self.max_deployments)
 
         response = requests.post(self.server + f"/deployments/{template}/{variables}")
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
-                             'MAX_DEPLOYMENTS'))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(self.max_deployments))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.MAX_DEPLOYMENTS_REACHED)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploystartpostfromfile_max_deployments_p(self):
-        with open("tests/rest_docker/input/alpine.yml", closefd=True) as f:
+        with open(f"{self.input_path}/alpine.yml", closefd=True) as f:
             payload = f.read()
         headers = {'Content-type': 'text/plain'}
 
         response = requests.get(self.server + "/deployments")
         self.assertEqual(len(response.json().get('description')), 0)
-        for i in range(0, int(os.environ.get('MAX_DEPLOYMENTS'))):
+        for i in range(0, self.max_deployments):
             response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
-            time.sleep(self.sleep_after_env_up)
+            time.sleep(self.sleep_before_env_up)
             self.assertEqual(response.status_code, 200)
         response = requests.get(self.server + "/deployments")
-        self.assertEqual(len(response.json().get('description')), int(os.environ.get('MAX_DEPLOYMENTS')))
+        self.assertEqual(len(response.json().get('description')), self.max_deployments)
 
         response = requests.post(self.server + f"/deployments", data=payload, headers=headers)
         body = response.json()
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.MAX_DEPLOYMENTS_REACHED) % os.environ.get(
-                             'MAX_DEPLOYMENTS'))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(self.max_deployments))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.MAX_DEPLOYMENTS_REACHED)
-        self.assertIsNotNone(body.get('timestamp'))
+        self.assertEqual(body.get('code'), ApiCode.MAX_DEPLOYMENTS_REACHED.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_getenv_endpoint_p(self):
@@ -643,10 +709,10 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertIsNotNone(body.get('description'))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -656,10 +722,10 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('description'), None)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
@@ -677,9 +743,9 @@ class FlaskServerTestCase(unittest.TestCase):
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.HTTP_HEADER_NOT_PROVIDED) % mandatory_header_key)
+                         ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % mandatory_header_key)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.HTTP_HEADER_NOT_PROVIDED)
+        self.assertEqual(body.get('code'), ApiCode.HTTP_HEADER_NOT_PROVIDED.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -700,9 +766,9 @@ class FlaskServerTestCase(unittest.TestCase):
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.EMPTY_REQUEST_BODY_PROVIDED))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.EMPTY_REQUEST_BODY_PROVIDED)
+        self.assertEqual(body.get('code'), ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -723,9 +789,9 @@ class FlaskServerTestCase(unittest.TestCase):
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -740,9 +806,9 @@ class FlaskServerTestCase(unittest.TestCase):
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertNotEqual(body.get('description').get('commands').get(command).get('details').get('code'), 0)
         self.assertEqual(body.get('description').get('commands').get(command).get('details').get('out'), "")
         self.assertNotEqual(body.get('description').get('commands').get(command).get('details').get('err'), "")
@@ -761,9 +827,9 @@ class FlaskServerTestCase(unittest.TestCase):
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertEqual(body.get('description').get('commands').get(command).get('details').get('code'), 0)
         self.assertNotEqual(body.get('description').get('commands').get(command).get('details').get('out'), "")
         self.assertEqual(body.get('description').get('commands').get(command).get('details').get('err'), "")
@@ -783,7 +849,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(body.get('description'), dict)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(body.get('path'), "/docker/command?")
 
@@ -799,11 +865,11 @@ class FlaskServerTestCase(unittest.TestCase):
         print(dump.dump_all(response))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
-                         ErrorCodes.HTTP_CODE.get(ApiConstants.SUCCESS))
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(len(body.get('description').get("commands")), 2)
         self.assertEqual(body.get('description').get("commands").get(commands[1]).get('details').get('code'), 0)
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiConstants.SUCCESS)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_executecommand_timeout_from_client_n(self):

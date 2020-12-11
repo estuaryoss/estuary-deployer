@@ -20,7 +20,6 @@ class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
     script_path = "tests/rest_agent_integration/input"
     # script_path = "input"
-    expected_version = "4.1.0"
     cleanup_count_safe = 5
     compose_id = ""
 
@@ -73,7 +72,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('description')["VARS_DIR"])
         self.assertIsNotNone(body.get('description')["TEMPLATES_DIR"])
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -83,7 +81,6 @@ class FlaskServerTestCase(unittest.TestCase):
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('description'), "pong")
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -95,7 +92,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertIsNotNone(body.get('description'))
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -107,7 +103,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('description'), None)
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -116,9 +111,8 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'), "estuary-agent")
+        self.assertIsInstance(body.get('description'), dict)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -130,9 +124,8 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         headers = response.headers
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'), "estuary-agent")
+        self.assertIsInstance(body.get('description'), dict)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
         self.assertIsNotNone(headers.get('X-Request-ID'), xid)
@@ -231,7 +224,6 @@ class FlaskServerTestCase(unittest.TestCase):
         # self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.GET_FILE_FAILURE))
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.GET_FILE_FAILURE)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -246,7 +238,6 @@ class FlaskServerTestCase(unittest.TestCase):
         # self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -284,7 +275,6 @@ class FlaskServerTestCase(unittest.TestCase):
         # self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.FOLDER_ZIP_FAILURE) % container_folder)
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.FOLDER_ZIP_FAILURE)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -302,7 +292,6 @@ class FlaskServerTestCase(unittest.TestCase):
         # self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.FOLDER_ZIP_FAILURE) % container_folder)
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.FOLDER_ZIP_FAILURE)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -318,7 +307,6 @@ class FlaskServerTestCase(unittest.TestCase):
         # self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % header_key)
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -337,7 +325,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('description'), test_id)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
@@ -359,7 +346,6 @@ class FlaskServerTestCase(unittest.TestCase):
                          ErrorCodes.HTTP_CODE.get(Constants.EMPTY_REQUEST_BODY_PROVIDED))
         self.assertEqual(body.get('description'),
                          ErrorCodes.HTTP_CODE.get(Constants.EMPTY_REQUEST_BODY_PROVIDED))
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.EMPTY_REQUEST_BODY_PROVIDED)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -424,7 +410,6 @@ class FlaskServerTestCase(unittest.TestCase):
         # self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.HTTP_HEADER_NOT_PROVIDED) % mandatory_header_key)
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.HTTP_HEADER_NOT_PROVIDED)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -446,7 +431,6 @@ class FlaskServerTestCase(unittest.TestCase):
         # self.assertEqual(response.status_code, 404)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.EMPTY_REQUEST_BODY_PROVIDED))
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.EMPTY_REQUEST_BODY_PROVIDED)
         self.assertIsNotNone(body.get('timestamp'))
 
@@ -468,13 +452,8 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body.get('message'),
                          ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
-        self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
-
-    # def test_container_netdisconnect_p(self):
-    #     response = requests.get(f"{self.server}/containernetdisconnect/{self.compose_id}")
-    #     self.assertEqual(response.status_code, 200)
 
 
 if __name__ == '__main__':

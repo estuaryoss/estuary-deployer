@@ -24,7 +24,7 @@ jobs:
       before_script:
         - py.test $SCRIPTS_DIR/render_test.py --cov=rest/api/jinja2
       script:
-        - python3 -m unittest discover . "render_test.py"
+        - python3 -m unittest discover . render_test.py"
       after_script:
         - coveralls
 
@@ -42,7 +42,7 @@ jobs:
       before_script:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - pip install -r requirements.txt
+        - pip3 install -r requirements.txt
         - pyinstaller --onefile main_flask.py
         - ls -lrt dist
         - cp dist/main_flask main-linux
@@ -60,6 +60,7 @@ jobs:
         #  - ./ngrok.sh
         #  - sleep 3600
         - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
+        - python3 -m unittest discover tests/unit "*_test.py"
         - ls -lrt /tmp
         - ps -ef
 
@@ -133,14 +134,14 @@ jobs:
         SCRIPTS_DIR: tests
       before_script:
         - docker pull alpine:3.10.2
-        - pip install -r requirements.txt
+        - pip3 install -r requirements.txt
         - pyinstaller --onefile main_flask.py
         - ls -lrt dist
         - cp dist/main_flask main-linux
         - chmod +x main-linux
         - sudo chown -R travis:travis inputs
         - ls -lrt
-        - curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.8.1/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
+        - curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.9.0/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
         - kind create cluster
         - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
       script:
@@ -151,8 +152,8 @@ jobs:
         #        - sleep 3600
         - PID="$!"
         - sleep 5
-        - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "flask_rest_test.py"
-        - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "k8s_integration_test.py"
+        - python3 -m unittest discover tests/rest_kubectl "flask_rest_test.py"
+        - python3 -m unittest discover tests/rest_kubectl "k8s_integration_test.py"
         - ls -lrt /tmp
         - ps -ef
 
@@ -315,12 +316,6 @@ jobs:
         - sleep 30
         - docker ps
         - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/rest_eureka "*_test.py"
-        - docker-compose down -v
-
-        # run clean_folder scheduler
-        - docker-compose up -d
-        - docker ps
-        - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/clean_folder_scheduler "*_test.py"
         - docker-compose down -v
 
         # run env_expire scheduler

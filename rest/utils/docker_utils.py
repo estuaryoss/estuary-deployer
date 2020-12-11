@@ -4,7 +4,6 @@ import os
 import shutil
 from pathlib import Path
 
-from rest.api.constants.api_constants import ApiConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
@@ -45,14 +44,16 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def logs(file):
+        docker_logs_lines = 5000
         file_path = Path(file)
         if not file_path.is_file():
             raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), file_path)
         return CmdUtils.run_cmd_shell_false(
-            ["docker-compose", "-f", file, "logs", "-t", "--tail=" + str(ApiConstants.DOCKER_LOGS_LINES)])
+            ["docker-compose", "-f", file, "logs", "-t", "--tail=" + str(docker_logs_lines)])
 
     @staticmethod
     def ps(env_id):
+        env_id = env_id.lower()
         return CmdUtils.run_cmd_shell_false(["docker", "ps", "--filter", f"name={env_id}"])
 
     @staticmethod
@@ -95,7 +96,7 @@ class DockerUtils(EnvCreation):
     @staticmethod
     def get_active_deployments():
         active_deployments = []
-        env_list = IOUtils.get_list_dir(f"{EnvInit.DEPLOY_PATH}")
+        env_list = [folder.lower() for folder in IOUtils.get_list_dir(f"{EnvInit.DEPLOY_PATH}")]
         for item in env_list:
             container_list = DockerUtils.ps(item).get('out').split("\n")[1:]
             for container in container_list:
@@ -107,6 +108,7 @@ class DockerUtils(EnvCreation):
 
     @staticmethod
     def folder_clean_up(path=EnvInit.DEPLOY_PATH, delete_period=60):
+        deleted_folders = []
         active_deployments = [item.get('id') for item in DockerUtils.get_active_deployments()]
 
         full_deployments_list = map(lambda x: x.rstrip(), IOUtils.get_list_dir(f"{path}"))
@@ -114,6 +116,9 @@ class DockerUtils(EnvCreation):
             if item not in active_deployments and (datetime.datetime.now() - datetime.datetime.fromtimestamp(
                     os.path.getmtime(f"{path}/{item}"))) > datetime.timedelta(minutes=delete_period):
                 shutil.rmtree(f"{path}/{item}")
+                deleted_folders.append(item)
+
+        return deleted_folders
 
     @staticmethod
     def env_clean_up(fluentd_utils, path=EnvInit.DEPLOY_PATH, env_expire_in=1440):  # 1 day
