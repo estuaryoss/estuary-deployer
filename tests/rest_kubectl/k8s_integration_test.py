@@ -15,7 +15,7 @@ class FlaskServerTestCase(unittest.TestCase):
     expected_version = "4.2.0"
     inputs_deployment_path = "tests/rest_kubectl/inputs"
     # inputs_deployment_path = "inputs"
-    templates_deployment_path = "inputs/templates" #os.environ.get('TEMPLATES_DIR'))
+    templates_deployment_path = f"inputs/templates"
     sleep_after_deploy_start = 10
 
     @classmethod
@@ -207,7 +207,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertEqual(body.get('message'),
                          ErrorMessage.HTTP_CODE.get(ApiCode.GET_LOGS_FAILED.value) % deployment)
-        self.assertGreater(body.get('description').get('code'), 0)
+        self.assertIn("Exception", body.get('description'))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.GET_LOGS_FAILED.value)
         self.assertIsNotNone(body.get('timestamp'))
@@ -255,7 +255,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertIn(deployment, body.get('description'))
         self.assertEqual(body.get('version'), self.expected_version)
-        self.assertEqual(body.get('code'), ApiCode.KUBERNETES_SERVER_ERROR.value)
+        self.assertEqual(body.get('code'), ApiCode.DEPLOY_STOP_FAILURE.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_deploy_start_using_execute_command_p(self):

@@ -141,7 +141,7 @@ jobs:
         - chmod +x main-linux
         - sudo chown -R travis:travis inputs
         - ls -lrt
-        - curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.8.1/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
+        - curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.9.0/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
         - kind create cluster
         - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
       script:
@@ -152,8 +152,8 @@ jobs:
         #        - sleep 3600
         - PID="$!"
         - sleep 5
-        - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "flask_rest_test.py"
-        - python3 -m unittest discover $SCRIPTS_DIR/rest_kubectl "k8s_integration_test.py"
+        - python3 -m unittest discover tests/rest_kubectl "flask_rest_test.py"
+        - python3 -m unittest discover tests/rest_kubectl "k8s_integration_test.py"
         - ls -lrt /tmp
         - ps -ef
 
