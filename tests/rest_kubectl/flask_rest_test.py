@@ -16,7 +16,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server_base = "http://localhost:8080"
     server = "{}/kubectl".format(server_base)
 
-    expected_version = "4.1.0"
+    expected_version = "4.2.0"
     sleep_before_container_up = 5
 
     def test_env_endpoint(self):
@@ -48,7 +48,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('path'))
 
     def test_setenv_endpoint_jsonwithvalues_p(self):
-        payload = {"a": "b", "FOO1": "BAR1"}
+        payload = {"a": "b", "FOO2": "BAR1"}
         headers = {'Content-type': 'application/json'}
 
         response = requests.post(self.server + "/env", data=json.dumps(payload),
@@ -95,7 +95,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'), name)
+        self.assertIsInstance(body.get('description'), dict)
         self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('name'), name)

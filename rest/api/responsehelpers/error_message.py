@@ -17,7 +17,7 @@ class ErrorMessage:
         ApiCode.DOCKER_DAEMON_NOT_RUNNING.value: "Docker daemon is not running. You must start it.",
         ApiCode.MISSING_PARAMETER_POST.value: "Body parameter '%s' sent in the request missing. "
                                               "Please include the parameter. E.g. {\"parameter\".value: \"value\"}",
-        ApiCode.GET_LOGS_FAILED.value: "Getting logs for %s failed.",
+        ApiCode.GET_LOGS_FAILED.value: "Getting logs for environment id %s failed.",
         ApiCode.MAX_DEPLOYMENTS_REACHED.value: "Maximum deployments %s reached. "
                                                "Please stop some deployments, before starting new ones.",
         ApiCode.CONTAINER_UNREACHABLE.value: "Could not reach %s container. "

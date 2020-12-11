@@ -595,7 +595,6 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
-        self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
         ("mysql56.yml", "variables.yml")
@@ -606,7 +605,7 @@ class FlaskServerTestCase(unittest.TestCase):
         response = requests.post(self.server + f"/deployments/{template}/{variables}", data=json.dumps(payload),
                                  headers=headers)
         self.assertEqual(response.status_code, 200)
-        dummy_env_id = response.json().get("message") + "dummy"
+        dummy_env_id = response.json().get("description") + "dummy"
 
         response = requests.get(self.server + f"/deployments/logs/{dummy_env_id}")
         body = response.json()

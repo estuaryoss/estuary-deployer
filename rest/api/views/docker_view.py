@@ -230,13 +230,13 @@ class DockerView(FlaskView):
         eureka_server_header = request.headers.get(f"{header_key}")
         config_env_vars = EnvStartupSingleton.get_instance().get_config_env_vars()
         input_data = request.data.decode('UTF-8').strip()
+        env_vars = EnvironmentSingleton.get_instance().get_env_and_virtual_env()
 
         status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             raise ApiExceptionDocker(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value,
                                      ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value),
                                      status.get('err'))
-        env_vars = EnvironmentSingleton.get_instance().get_env_and_virtual_env()
         if env_vars.get(EnvConstants.MAX_DEPLOYMENTS):
             active_deployments = docker_utils.get_active_deployments()
             if len(active_deployments) >= int(env_vars.get(EnvConstants.MAX_DEPLOYMENTS)):
@@ -245,13 +245,14 @@ class DockerView(FlaskView):
                                              ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(
                                              EnvConstants.MAX_DEPLOYMENTS), active_deployments)
         try:
-            template_file_name = f"deployment_{token}.yml"
+            template_file_name = f"deployment_{deployment_id}.yml"
             template_file_path = f"{EnvInit.TEMPLATES_PATH}/{template_file_name}"
             app.logger.debug({"msg": {"file": template_file_path, "file_content": f"{input_data}"}})
             IOUtils.write_to_file(template_file_path, input_data)
 
             IOUtils.create_dir(deploy_dir)
             EnvironmentSingleton.get_instance().set_env_var(EnvConstants.TEMPLATE, template_file_name)
+            env_vars = EnvironmentSingleton.get_instance().get_env_and_virtual_env()
             render = Render(env_vars.get(EnvConstants.TEMPLATE), env_vars.get(EnvConstants.VARIABLES))
             if config_env_vars.get(EnvConstants.EUREKA_SERVER) and config_env_vars.get(EnvConstants.APP_IP_PORT):
                 # if {{app_ip_port}} and {{eureka_server}} then register that instance too
@@ -261,7 +262,7 @@ class DockerView(FlaskView):
                     if eureka_server_header:
                         eureka_server = eureka_server_header
                     input_data = render.get_jinja2env().get_template(env_vars.get(EnvConstants.TEMPLATE)).render({
-                        "deployment_id": f"{token}",
+                        "deployment_id": f"{deployment_id}",
                         "eureka_server": eureka_server,
                         "app_ip_port": config_env_vars.get(EnvConstants.APP_IP_PORT).split("/")[0]
                     })
@@ -331,6 +332,7 @@ class DockerView(FlaskView):
 
     @route('/deployments/<env_id>', methods=['GET'])
     def get_deployment_status(self, env_id):
+        env_id = env_id.lower()
         docker_utils = DockerUtils()
         env_id = env_id.strip()
         try:
@@ -416,6 +418,7 @@ class DockerView(FlaskView):
 
     @route('/deployments/logs/<env_id>', methods=['GET'])
     def deploy_logs(self, env_id):
+        env_id = env_id.lower()
         http = HttpResponse()
         docker_utils = DockerUtils()
         env_id = env_id.strip()
@@ -438,6 +441,7 @@ class DockerView(FlaskView):
     # must connect the container to the deployer network to be able to send http request
     @route('/deployments/network/<env_id>', methods=['POST', 'PUT'])
     def container_docker_network_connect(self, env_id):
+        env_id = env_id.lower()
         http = HttpResponse()
         docker_utils = DockerUtils()
         headers = request.headers
@@ -480,6 +484,7 @@ class DockerView(FlaskView):
 
     @route('/deployments/network/<env_id>', methods=['DELETE'])
     def container_docker_network_disconnect(self, env_id):
+        env_id = env_id.lower()
         http = HttpResponse()
         docker_utils = DockerUtils()
         service_name = "container"
@@ -522,6 +527,7 @@ class DockerView(FlaskView):
     @route('/container/<env_id>/<path:text>',
            methods=['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', 'PATCH'])
     def container_request(self, env_id, text):
+        env_id = env_id.lower()
         container_url = text.strip()
         headers = request.headers
 
