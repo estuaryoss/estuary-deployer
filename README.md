@@ -50,9 +50,9 @@ Deployer service can run your commands using the [estuary-agent](https://github.
 ### Docker run dind (docker in docker)
     docker run -p 8080:8080 -d --privileged --name some-docker -d docker:dind
     docker exec -i -t some-docker docker login
-    docker exec -i -t some-docker docker run -p 8080:8080 -ti --net=deployer dinutac/estuary-deployer:latest
+    docker exec -i -t some-docker docker run -p 8080:8080 -ti --net=deployer estuaryoss/deployer:latest
     docker exec -i -t some-docker docker run -p 8080:8080 -ti --net=deployer -v /var/run/docker.sock:/var/run/docker.sock \
-    dinutac/estuary-deployer:latest
+    estuaryoss/deployer:latest
 
 ### Eureka registration
 To have all your deployer instances in a central location we use netflix eureka. This means your client will discover
