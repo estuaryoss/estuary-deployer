@@ -5,7 +5,7 @@ Example of deployment in the same eureka domain with the details found in the de
 version: '3.7'
 services:
   container:
-    image: dinutac/estuary-agent:4.0.8
+    image: estuaryoss/agent:4.0.8
     environment:
       EUREKA_SERVER: "{{eureka_server}}"
       APP_IP_PORT: "{{app_ip_port}}/docker/container/{{deployment_id}}"
@@ -17,7 +17,7 @@ services:
 version: '3.7'
 services:
   container:
-    image: dinutac/estuary-discovery:4.0.8
+    image: estuaryoss/discovery:4.0.8
     environment:
       EUREKA_SERVER: "{{eureka_server}}"
       APP_IP_PORT: "{{app_ip_port}}/docker/container/{{deployment_id}}"
