@@ -20,7 +20,7 @@ RUN apk add --no-cache \
     curl
 
 RUN pip3 install \
-  docker-compose==1.27.2
+  docker-compose==1.28.6
 
 ## nginx
 RUN apk add nginx
@@ -31,7 +31,7 @@ RUN chown -R www:www /var/lib/nginx
 RUN chown -R www:www /www
 
 ## Kubectl
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.19.9/bin/linux/amd64/kubectl /usr/local/bin/kubectl
 RUN chmod +x /usr/local/bin/kubectl
 RUN mkdir /root/.kube
 
