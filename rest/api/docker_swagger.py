@@ -3,7 +3,7 @@ docker_swagger_file_content = '''
 info:
   description: |
     This is estuary-deployer with Docker.
-  version: "4.2.0"
+  version: "4.2.1"
   title: estuary-deployer
   termsOfService: http://swagger.io/terms/
   contact:

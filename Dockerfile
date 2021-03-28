@@ -1,72 +1,41 @@
-FROM alpine:3.11.6
-
-RUN apk update
-
-RUN apk add --no-cache python3 && \
-    pip3 install --upgrade pip==20.3 setuptools==49.2.0 --no-cache
-
-RUN apk add --no-cache \
-    bash \
-    docker \
-    py-pip
-
-RUN apk add --no-cache \
-    python3-dev \
-    libffi-dev \
-    openssl-dev \
-    gcc \
-    libc-dev \
-    make \
-    curl
-
-RUN pip3 install \
-  docker-compose==1.27.2
-
-## nginx
-RUN apk add nginx
-RUN adduser -D -g 'www' www
-RUN mkdir /www
-RUN mkdir -p /run/nginx
-RUN chown -R www:www /var/lib/nginx
-RUN chown -R www:www /www
-
-## Kubectl
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl /usr/local/bin/kubectl
-RUN chmod +x /usr/local/bin/kubectl
-RUN mkdir /root/.kube
-
-## Cleanup
-RUN rm -rf /var/cache/apk/*
-
-## Expose some volumes
-VOLUME ["/scripts/inputs/templates"]
-VOLUME ["/scripts/inputs/variables"]
-
-ENV SCRIPTS_DIR /scripts
-ENV TEMPLATES_DIR $SCRIPTS_DIR/inputs/templates
-ENV VARS_DIR $SCRIPTS_DIR/inputs/variables
-ENV HTTP_AUTH_TOKEN None
-ENV PORT 8080
-
-ENV HTTPS_DIR $SCRIPTS_DIR/https
-ENV WORKSPACE $SCRIPTS_DIR/
-ENV OUT_DIR out
+FROM centos:8
 
 ENV TZ UTC
+ENV PORT 8080
+ENV SCRIPTS_DIR /root/deployer
+ENV HTTPS_DIR $SCRIPTS_DIR/https
+ENV WORKSPACE $SCRIPTS_DIR
+ENV TEMPLATES_DIR $WORKSPACE/templates
+ENV VARS_DIR $WORKSPACE/variables
 
-COPY ./ $SCRIPTS_DIR/
-COPY https/key.pem $HTTPS_DIR/
-COPY https/cert.pem $HTTPS_DIR/
-COPY ./inputs/templates/ $TEMPLATES_DIR/
-COPY ./inputs/variables/ $VARS_DIR/
+RUN yum install -y yum-utils && \
+    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
+    yum install -y https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm && \
+    yum install -y docker-ce docker-ce-cli && \
+    systemctl enable docker
 
-COPY nginx/nginx.conf /etc/nginx/nginx.conf
+RUN yum install -y epel-release && \
+    yum install -y nginx
 
-RUN chmod +x $SCRIPTS_DIR/*.py
-RUN chmod +x $SCRIPTS_DIR/*.sh
+RUN yum clean all
+RUN curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 
 WORKDIR $SCRIPTS_DIR
 
-RUN pip3 install -r $SCRIPTS_DIR/requirements.txt
+COPY inputs/templates/ $TEMPLATES_DIR/
+COPY inputs/variables/ $VARS_DIR/
 
-CMD ["/scripts/start.sh"]
+COPY nginx/nginx.conf /etc/nginx/nginx.conf
+#COPY nginx/certs/www.example.com.cert /etc/ssl/www.example.com.cert
+#COPY nginx/certs/www.example.com.key /etc/ssl/private/www.example.com.key
+
+COPY dist/main_flask $SCRIPTS_DIR/main-linux
+COPY start_bin.sh $SCRIPTS_DIR
+ADD https $HTTPS_DIR
+#ADD https://github.com/dinuta/estuary-deployer/releases/download/4.0.2/main-linux $SCRIPTS_DIR
+
+RUN chmod +x $SCRIPTS_DIR/main-linux
+RUN chmod +x $SCRIPTS_DIR/start_bin.sh
+RUN chmod +x /usr/local/bin/docker-compose
+
+CMD ["/root/deployer/start_bin.sh"]

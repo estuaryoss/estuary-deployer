@@ -59,7 +59,7 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'), "estuary-discovery")
+        self.assertIsInstance(body.get('description'), dict)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
@@ -70,7 +70,7 @@ class FlaskServerTestCase(unittest.TestCase):
         print(dump.dump_response(response))
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description')[0].get('description'), "estuary-agent")
+        self.assertIsInstance(body.get('description')[0].get('description'), dict)
         self.assertEqual(body.get('description')[0].get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('description')[0].get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('description')[0].get('timestamp'))

@@ -6,7 +6,7 @@ from rest.utils.io_utils import IOUtils
 
 properties = {
     "name": "estuary-deployer",
-    "version": "4.2.0",
+    "version": "4.2.1",
     "description": "Deployer manages your docker/k8s deployments",
     "author": "Catalin Dinuta",
     "platforms": ["Linux", "Mac", "Windows"],

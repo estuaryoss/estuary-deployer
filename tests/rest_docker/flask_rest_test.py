@@ -19,7 +19,7 @@ class FlaskServerTestCase(unittest.TestCase):
     # server = "http://" + os.environ.get('SERVER')
     input_path = f"tests/rest_docker/input"
     # input_path = "input"
-    expected_version = "4.2.0"
+    expected_version = "4.2.1"
     sleep_before_env_up = 6
     sleep_after_env_down = 6
     max_deployments = 3
