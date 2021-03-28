@@ -12,10 +12,10 @@ services:
       MAX_DEPLOYMENTS: 3 # how many deployments to be done. Useful for VMs where user knows how much resources a docker-compose env use.
       #for eureka registering
       EUREKA_SERVER: http://eureka-server:8080/eureka/v2 #your eureka server
-      APP_APPEND_ID: SR # this suffix will be added to the deployer service in order to differentiate between different services mapped on VM with specific resources
+      APP_APPEND_ID: LAB_2GB_RAM # this suffix will be added to the deployer service in order to differentiate between different services mapped on VM with specific resources
       APP_IP_PORT: estuary-deployer:8080 #your app details: where it is and on which port. needed for service discovery and spread of tests from the test client
 #    entrypoint: python3 /scripts/main_flask.py
-    command: bash -c "sleep 20 && /scripts/main_flask.py"
+    command: bash -c "sleep 20 && /root/deployer/main-linux"
     volumes:
       - ./inputs/templates:/scripts/inputs/templates
       - ./inputs/variables:/scripts/inputs/variables
