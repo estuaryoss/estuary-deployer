@@ -171,7 +171,7 @@ jobs:
         - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull estuaryoss/agent-go:latest
         - docker pull estuaryoss/netflix-eureka:1.10.5
-        - pyinstaller -onefile --clean main_flask.py
+        - pyinstaller --onefile --clean main_flask.py
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
