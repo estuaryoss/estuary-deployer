@@ -20,6 +20,11 @@ RUN yum install -y epel-release && \
 RUN yum clean all
 RUN curl -L "https://github.com/docker/compose/releases/download/1.28.6/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 
+#install kubectl
+RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.19.0/bin/linux/amd64/kubectl
+RUN chmod +x ./kubectl
+RUN mv ./kubectl /usr/local/bin/kubectl
+
 WORKDIR $SCRIPTS_DIR
 
 COPY inputs/templates/ $TEMPLATES_DIR/

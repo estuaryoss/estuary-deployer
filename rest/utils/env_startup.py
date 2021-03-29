@@ -26,6 +26,9 @@ class EnvStartupSingleton:
             EnvConstants.ENV_EXPIRE_IN: int(self.__env.get_env().get(
                 EnvConstants.ENV_EXPIRE_IN)) if self.__env.get_env().get(
                 EnvConstants.ENV_EXPIRE_IN) else 1440,
+            EnvConstants.SCHEDULER_POLL_INTERVAL: int(self.__env.get_env().get(
+                EnvConstants.SCHEDULER_POLL_INTERVAL)) if self.__env.get_env().get(
+                EnvConstants.SCHEDULER_POLL_INTERVAL) else 1200,
             EnvConstants.APP_IP_PORT: self.__env.get_env().get(
                 EnvConstants.APP_IP_PORT).strip().lower() if self.__env.get_env().get(
                 EnvConstants.APP_IP_PORT) else None,

@@ -46,10 +46,14 @@ if __name__ == "__main__":
     io_utils.create_dir(Path(EnvInit.TEMPLATES_PATH))
     io_utils.create_dir(Path(EnvInit.VARIABLES_PATH))
 
-    DockerEnvExpireScheduler(fluentd_utils=DockerView.fluentd, poll_interval=1200,
+    DockerEnvExpireScheduler(fluentd_utils=DockerView.fluentd,
+                             poll_interval=EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                                 EnvConstants.SCHEDULER_POLL_INTERVAL),  # seconds
                              env_expire_in=EnvStartupSingleton.get_instance().get_config_env_vars().get(
                                  EnvConstants.ENV_EXPIRE_IN)).start()  # minutes
-    KubectlEnvExpireScheduler(fluentd_utils=KubectlView.fluentd, poll_interval=1200,
+    KubectlEnvExpireScheduler(fluentd_utils=KubectlView.fluentd,
+                              poll_interval=EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                                  EnvConstants.SCHEDULER_POLL_INTERVAL),
                               env_expire_in=EnvStartupSingleton.get_instance().get_config_env_vars().get(
                                   EnvConstants.ENV_EXPIRE_IN)).start()
 
