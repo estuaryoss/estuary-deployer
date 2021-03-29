@@ -59,7 +59,10 @@ class FlaskServerTestCase(unittest.TestCase):
         return active_deployments
 
     def test_about_endpoint(self):
-        response = requests.get(self.server_agent + f"/{self.compose_id}" + "/about")
+        headers = {
+            'Token': 'None'
+        }
+        response = requests.get(self.server_agent + f"/{self.compose_id}" + "/about", headers=headers)
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)

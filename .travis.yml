@@ -40,6 +40,7 @@ jobs:
         MAX_DEPLOYMENTS: 3
         NGROK_TOKEN: 1RER6BUC3QNNwYWY5LcIBjrv3A8_24QccmopTEQJGMErG9uzw
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
         - pip3 install -r requirements.txt
@@ -102,6 +103,7 @@ jobs:
         SCRIPTS_DIR: tests
         ISOLATED: true
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - pip3 install -r requirements.txt
         - pyinstaller --onefile main_flask.py
         - ls -lrt dist
@@ -133,6 +135,7 @@ jobs:
         VARS_DIR: inputs/variables
         SCRIPTS_DIR: tests
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.10.2
         - pip3 install -r requirements.txt
         - pyinstaller --onefile main_flask.py
@@ -292,10 +295,10 @@ jobs:
         SCRIPTS_DIR: tests
         DOCKER_SCRIPTS_DIR: /scripts
         ISOLATED: true
+        APP_APPEND_LABEL: LAB_2GB_RAM
       before_script:
         - pyinstaller --onefile --clean main_flask.py
         - docker build -t estuaryoss/deployer:latest .
-        - docker tag estuaryoss/deployer:latest estuaryoss/deployer:latest #<-- remove this when migrated to the new org
       script:
         - docker network create estuarydeployer_default
         - docker run -d
@@ -315,14 +318,14 @@ jobs:
         - docker-compose up -d
         - sleep 30
         - docker ps
-        - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/rest_eureka "*_test.py"
+        - python3 -m unittest discover $SCRIPTS_DIR/rest_eureka "*_test.py"
         - docker-compose down -v
 
         # run env_expire scheduler
         - docker-compose up -d
         - sleep 30
         - docker ps
-        - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/env_expire_scheduler "*_test.py"
+        - python3 -m unittest discover $SCRIPTS_DIR/env_expire_scheduler "*_test.py"
 
     - stage: deploy
       services: docker

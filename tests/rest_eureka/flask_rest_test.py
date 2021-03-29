@@ -23,7 +23,7 @@ class FlaskServerEurekaTestCase(unittest.TestCase):
 
     def test_eureka_registration(self):
         app_append_label = f"{os.environ.get('APP_APPEND_LABEL')}"
-        up_services = EurekaClient(f"{os.environ.get('EUREKA_SERVER')}").get_apps()
+        up_services = EurekaClient("http://localhost:8080/eureka/v2").get_apps()
         self.assertEqual(len(up_services), 1)  # 1 instance registered
         # print(up_services[0].app)
         self.assertEqual(up_services[0].app, f"estuary-deployer{app_append_label}".upper())  # 1 instance registered
