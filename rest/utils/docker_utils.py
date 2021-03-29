@@ -129,7 +129,7 @@ class DockerUtils(EnvCreation):
         for item in active_deployments:
             if (datetime.datetime.now() - datetime.datetime.fromtimestamp(
                     os.path.getmtime(f"{path}/{item}"))) > datetime.timedelta(minutes=env_expire_in):
-                result = DockerUtils.down(f"{path}/{item}/{item}")
+                result = DockerUtils.down(f"{path}/{item}/docker-compose.yml")
                 fluentd_utils.emit(tag=fluentd_tag,
                                    msg=message_dumper.dump_message(
                                        {"action": f"{fluentd_tag}", "out": result.get('out'),

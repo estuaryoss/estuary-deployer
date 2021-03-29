@@ -19,7 +19,7 @@ class FlaskServerTestCase(unittest.TestCase):
     # server = "http://" + os.environ.get('SERVER')
     input_path = f"tests/rest_docker/input"
     # input_path = "input"
-    expected_version = "4.2.0"
+    expected_version = "4.2.1"
     sleep_before_env_up = 6
     sleep_after_env_down = 6
     max_deployments = 3
@@ -63,7 +63,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
-        ("FOO1", "BAR10")
+        ("ENV_TYPE", "DOCKER")
     ])
     @unittest.skipIf(str(os.environ.get('TEST_ENV')) == "centos", "Skip on Centos docker")
     def test_env_load_from_props(self, env_var, expected_value):

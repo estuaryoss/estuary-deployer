@@ -16,7 +16,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server_base = "http://localhost:8080"
     server = "{}/kubectl".format(server_base)
 
-    expected_version = "4.2.0"
+    expected_version = "4.2.1"
     sleep_before_container_up = 5
 
     def test_env_endpoint(self):
@@ -33,7 +33,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
-        ("FOO1", "BAR10")
+        ("ENV_TYPE", "DOCKER")
     ])
     def test_env_load_from_props(self, env_var, expected_value):
         response = requests.get(self.server + "/env/" + env_var)
@@ -117,22 +117,22 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
 
-    @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
-    def test_swagger_endpoint(self):
-        response = requests.get(self.server_base + "/api/docs/")
-
-        body = response.text
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(body.find("html") >= 0)
-
-    @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
-    def test_swagger_endpoint_swagger_still_accesible(self):
-        headers = {'Token': 'whateverinvalid'}
-        response = requests.get(self.server_base + "/api/docs/", headers=headers)
-
-        body = response.text
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(body.find("html") >= 0)
+    # @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
+    # def test_swagger_endpoint(self):
+    #     response = requests.get(self.server_base + "/api/docs/")
+    #
+    #     body = response.text
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertTrue(body.find("html") >= 0)
+    #
+    # @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
+    # def test_swagger_endpoint_swagger_still_accesible(self):
+    #     headers = {'Token': 'whateverinvalid'}
+    #     response = requests.get(self.server_base + "/api/docs/", headers=headers)
+    #
+    #     body = response.text
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertTrue(body.find("html") >= 0)
 
     def test_swagger_yml_endpoint(self):
         response = requests.get(self.server + "/swagger/swagger.yml")
@@ -182,22 +182,22 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertEqual(expected, body.get("description"))
 
-    @parameterized.expand([
-        ("standalone.yml", "variables.yml")
-    ])
-    @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
-    def test_rendwithenv_endpoint(self, template, variables):
-        payload = {'DATABASE': 'mysql56', 'IMAGE': 'latest'}
-        headers = {'Content-type': 'application/json'}
-
-        response = requests.post(self.server + f"/render/{template}/{variables}", data=json.dumps(payload),
-                                 headers=headers)
-
-        print(dump.dump_all(response))
-        body = yaml.safe_load(response.text)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(body.get("services")), 2)
-        self.assertEqual(int(body.get("version")), 3)
+    # @parameterized.expand([
+    #     ("standalone.yml", "variables.yml")
+    # ])
+    # @unittest.skipIf(os.environ.get('TEMPLATES_DIR') == "inputs/templates", "Skip on VM")
+    # def test_rendwithenv_endpoint(self, template, variables):
+    #     payload = {'DATABASE': 'mysql56', 'IMAGE': 'latest'}
+    #     headers = {'Content-type': 'application/json'}
+    #
+    #     response = requests.post(self.server + f"/render/{template}/{variables}", data=json.dumps(payload),
+    #                              headers=headers)
+    #
+    #     print(dump.dump_all(response))
+    #     body = yaml.safe_load(response.text)
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertEqual(len(body.get("services")), 2)
+    #     self.assertEqual(int(body.get("version")), 3)
 
     def test_getdeployerfile_p(self):
         headers = {

@@ -21,14 +21,14 @@ class FlaskServerTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        with open(f"{cls.script_path}/alpineagent.yml", closefd=True) as f:
+        with open(f"{cls.script_path}/agent.yml", closefd=True) as f:
             payload = f.read()
 
         headers = {'Content-type': 'text/plain'}
         requests.post(f"{FlaskServerTestCase.server}/command",
                       data="docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN", headers=headers)
         requests.post(f"{FlaskServerTestCase.server}/deployments", data=payload, headers=headers)
-        with open(f"{cls.script_path}/alpinediscovery.yml", closefd=True) as f:
+        with open(f"{cls.script_path}/discovery.yml", closefd=True) as f:
             payload = f.read()
         headers = {'Content-type': 'text/plain'}
         requests.post(f"{FlaskServerTestCase.server}/deployments", data=payload, headers=headers)
@@ -59,18 +59,21 @@ class FlaskServerTestCase(unittest.TestCase):
 
         body = json.loads(response.text)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description'), "estuary-discovery")
+        self.assertIsInstance(body.get('description'), dict)
         self.assertEqual(body.get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_about_endpoint_discovery_broadcast_to_agents_p(self):
-        response = requests.get(self.server_discovery + f"/{self.compose_id}/agents/about")
+        headers = {
+            'Token': 'None'
+        }
+        response = requests.get(self.server_discovery + f"/{self.compose_id}/agents/about", headers=headers)
 
         print(dump.dump_response(response))
         body = response.json()
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(body.get('description')[0].get('description'), "estuary-agent")
+        self.assertIsInstance(body.get('description')[0].get('description'), dict)
         self.assertEqual(body.get('description')[0].get('message'), ErrorCodes.HTTP_CODE.get(Constants.SUCCESS))
         self.assertEqual(body.get('description')[0].get('code'), Constants.SUCCESS)
         self.assertIsNotNone(body.get('description')[0].get('timestamp'))

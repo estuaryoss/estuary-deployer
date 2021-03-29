@@ -40,16 +40,20 @@ if __name__ == "__main__":
     if EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.EUREKA_SERVER):
         Eureka(EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.EUREKA_SERVER)).register_app(
             EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.APP_IP_PORT),
-            EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.APP_APPEND_ID))
+            EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.APP_APPEND_LABEL))
 
     io_utils.create_dir(Path(EnvInit.DEPLOY_PATH))
     io_utils.create_dir(Path(EnvInit.TEMPLATES_PATH))
     io_utils.create_dir(Path(EnvInit.VARIABLES_PATH))
 
-    DockerEnvExpireScheduler(fluentd_utils=DockerView.fluentd, poll_interval=1200,
+    DockerEnvExpireScheduler(fluentd_utils=DockerView.fluentd,
+                             poll_interval=EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                                 EnvConstants.SCHEDULER_POLL_INTERVAL),  # seconds
                              env_expire_in=EnvStartupSingleton.get_instance().get_config_env_vars().get(
                                  EnvConstants.ENV_EXPIRE_IN)).start()  # minutes
-    KubectlEnvExpireScheduler(fluentd_utils=KubectlView.fluentd, poll_interval=1200,
+    KubectlEnvExpireScheduler(fluentd_utils=KubectlView.fluentd,
+                              poll_interval=EnvStartupSingleton.get_instance().get_config_env_vars().get(
+                                  EnvConstants.SCHEDULER_POLL_INTERVAL),
                               env_expire_in=EnvStartupSingleton.get_instance().get_config_env_vars().get(
                                   EnvConstants.ENV_EXPIRE_IN)).start()
 

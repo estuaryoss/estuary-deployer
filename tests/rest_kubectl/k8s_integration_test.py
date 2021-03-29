@@ -12,7 +12,7 @@ from rest.api.responsehelpers.error_message import ErrorMessage
 class FlaskServerTestCase(unittest.TestCase):
     home = "http://localhost:8080/kubectl"
 
-    expected_version = "4.2.0"
+    expected_version = "4.2.1"
     inputs_deployment_path = "tests/rest_kubectl/inputs"
     # inputs_deployment_path = "inputs"
     templates_deployment_path = f"inputs/templates"

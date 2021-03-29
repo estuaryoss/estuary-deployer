@@ -22,13 +22,13 @@ jobs:
         - pip3 install -r requirements.txt
         - pip3 install coveralls
       before_script:
-        - py.test $SCRIPTS_DIR/render_test.py --cov=rest/api/jinja2
+        - py.test tests/render_test.py --cov=rest/api/jinja2
       script:
-        - python3 -m unittest discover . render_test.py"
+        - python3 -m unittest discover tests "render_test.py"
       after_script:
         - coveralls
 
-    #run executable tests - docker
+    #run executable tests - VM
     - language: python
       python: 3.6
       services: docker
@@ -40,6 +40,7 @@ jobs:
         MAX_DEPLOYMENTS: 3
         NGROK_TOKEN: 1RER6BUC3QNNwYWY5LcIBjrv3A8_24QccmopTEQJGMErG9uzw
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
         - pip3 install -r requirements.txt
@@ -64,19 +65,53 @@ jobs:
         - ls -lrt /tmp
         - ps -ef
 
-    #run docker tests - docker sock mount
+#    #run docker tests - docker sock mount
+#    - language: python
+#      python: 3.6
+#      services:
+#        - docker
+#      env:
+#        MAX_DEPLOYMENTS: 3
+#        SCRIPTS_DIR: tests
+#        ISOLATED: true
+#      before_script:
+#        - docker pull alpine:3.9.4
+#        - docker pull mysql:5.6
+#        - docker build -t estuaryoss/deployer:latest .
+#      script:
+#        - docker network create estuarydeployer_default
+#        - docker run -d
+#          -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
+#          -p 8080:8080
+#          -v $PWD/inputs/templates:/scripts/inputs/templates
+#          -v $PWD/inputs/variables:/scripts/inputs/variables
+#          -v /var/run/docker.sock:/var/run/docker.sock
+#          --net=estuarydeployer_default
+#          --name estuary-deployer
+#          estuaryoss/deployer:latest
+#        - sleep 10
+#        - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
+
+    #run docker tests - docker sock mount CENTOS
     - language: python
       python: 3.6
       services:
         - docker
       env:
+        TEST_ENV: centos
         MAX_DEPLOYMENTS: 3
         SCRIPTS_DIR: tests
         ISOLATED: true
       before_script:
-        - docker pull alpine:3.9.4
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
+        - pip3 install -r requirements.txt
+        - pyinstaller --onefile main_flask.py
+        - ls -lrt dist
+        - cp dist/main_flask main-linux
+        - docker pull centos:8
         - docker pull mysql:5.6
-        - docker build -t estuaryoss/deployer:latest .
+        - docker pull alpine:3.9.4
+        - docker build -t estuaryoss/deployer:latest -f Dockerfile .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
@@ -91,39 +126,6 @@ jobs:
         - sleep 10
         - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
 
-    #run docker tests - docker sock mount CENTOS
-    - language: python
-      python: 3.6
-      services:
-        - docker
-      env:
-        TEST_ENV: centos
-        MAX_DEPLOYMENTS: 3
-        SCRIPTS_DIR: tests
-        ISOLATED: true
-      before_script:
-        - pip3 install -r requirements.txt
-        - pyinstaller --onefile main_flask.py
-        - ls -lrt dist
-        - cp dist/main_flask main-linux
-        - docker pull centos:8
-        - docker pull mysql:5.6
-        - docker pull alpine:3.9.4
-        - docker build -t estuaryoss/deployer-centos:latest -f Dockerfile_centos .
-      script:
-        - docker network create estuarydeployer_default
-        - docker run -d
-          -e MAX_DEPLOYMENTS=$MAX_DEPLOYMENTS
-          -p 8080:8080
-          -v $PWD/inputs/templates:/scripts/inputs/templates
-          -v $PWD/inputs/variables:/scripts/inputs/variables
-          -v /var/run/docker.sock:/var/run/docker.sock
-          --net=estuarydeployer_default
-          --name estuary-deployer
-          estuaryoss/deployer-centos:latest
-        - sleep 10
-        - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
-
     #run executable tests - kubectl
     - language: python
       python: 3.6
@@ -133,6 +135,7 @@ jobs:
         VARS_DIR: inputs/variables
         SCRIPTS_DIR: tests
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.10.2
         - pip3 install -r requirements.txt
         - pyinstaller --onefile main_flask.py
@@ -141,7 +144,7 @@ jobs:
         - chmod +x main-linux
         - sudo chown -R travis:travis inputs
         - ls -lrt
-        - curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.9.0/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
+        - curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.10.0/kind-linux-amd64 && chmod +x kind && sudo mv kind /usr/local/bin/
         - kind create cluster
         - curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
       script:
@@ -166,18 +169,17 @@ jobs:
         SCRIPTS_DIR: tests
         ISOLATED: true
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
-        - docker pull estuaryoss/agent:latest
-        - docker tag estuaryoss/agent:latest estuaryoss/agent:latest # <-- remove this when migrating
+        - docker pull estuaryoss/agent-go:latest
         - docker pull estuaryoss/netflix-eureka:1.10.5
-        - docker tag estuaryoss/netflix-eureka:1.10.5 estuaryoss/netflix-eureka:1.10.5
+        - pyinstaller --onefile --clean main_flask.py
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 estuaryoss/netflix-eureka:1.9.25
+          -p 8081:8080 estuaryoss/netflix-eureka:1.10.5
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
@@ -216,20 +218,18 @@ jobs:
         SCRIPTS_DIR: tests
         ISOLATED: true
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull estuaryoss/agent:latest
-        - docker tag estuaryoss/agent:latest estuaryoss/agent:latest #<- remove this when migrating
         - docker pull estuaryoss/discovery:latest
-        - docker tag estuaryoss/discovery:latest estuaryoss/discovery:latest #<- remove this when migrating
         - docker pull estuaryoss/netflix-eureka:1.10.5
-        - docker tag  estuaryoss/netflix-eureka:1.10.5 estuaryoss/netflix-eureka:1.9.25 #<- remove this when migrating
+        - pyinstaller --onefile --clean main_flask.py
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 estuaryoss/netflix-eureka:1.9.25
+          -p 8081:8080 estuaryoss/netflix-eureka:1.10.5
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
@@ -269,6 +269,8 @@ jobs:
         MAX_DEPLOYMENTS: 3
         SCRIPTS_DIR: tests
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
+        - pyinstaller --onefile --clean main_flask.py
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
@@ -293,9 +295,12 @@ jobs:
         SCRIPTS_DIR: tests
         DOCKER_SCRIPTS_DIR: /scripts
         ISOLATED: true
+        APP_APPEND_LABEL: LAB_2GB_RAM
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
+        - docker pull alpine:3.9.4
+        - pyinstaller --onefile --clean main_flask.py
         - docker build -t estuaryoss/deployer:latest .
-        - docker tag estuaryoss/deployer:latest estuaryoss/deployer:latest #<-- remove this when migrated to the new org
       script:
         - docker network create estuarydeployer_default
         - docker run -d
@@ -315,14 +320,14 @@ jobs:
         - docker-compose up -d
         - sleep 30
         - docker ps
-        - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/rest_eureka "*_test.py"
+        - python3 -m unittest discover $SCRIPTS_DIR/rest_eureka "*_test.py"
         - docker-compose down -v
 
         # run env_expire scheduler
         - docker-compose up -d
         - sleep 30
         - docker ps
-        - docker exec estuary-deployer python3 -m unittest discover $DOCKER_SCRIPTS_DIR/tests/env_expire_scheduler "*_test.py"
+        - python3 -m unittest discover $SCRIPTS_DIR/env_expire_scheduler "*_test.py"
 
     - stage: deploy
       services: docker
