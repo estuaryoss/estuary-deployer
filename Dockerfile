@@ -10,7 +10,7 @@ ENV VARS_DIR $WORKSPACE/variables
 
 RUN yum install -y yum-utils && \
     yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
-    yum install -y https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.2.6-3.3.el7.x86_64.rpm && \
+    yum install -y https://download.docker.com/linux/centos/7/x86_64/stable/Packages/containerd.io-1.4.4-3.1.el7.x86_64.rpm && \
     yum install -y docker-ce docker-ce-cli && \
     systemctl enable docker
 
@@ -18,7 +18,7 @@ RUN yum install -y epel-release && \
     yum install -y nginx
 
 RUN yum clean all
-RUN curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+RUN curl -L "https://github.com/docker/compose/releases/download/1.28.6/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 
 WORKDIR $SCRIPTS_DIR
 
@@ -32,6 +32,8 @@ COPY nginx/nginx.conf /etc/nginx/nginx.conf
 COPY dist/main_flask $SCRIPTS_DIR/main-linux
 COPY start_bin.sh $SCRIPTS_DIR
 ADD https $HTTPS_DIR
+ADD environment.properties $SCRIPTS_DIR
+
 #ADD https://github.com/dinuta/estuary-deployer/releases/download/4.0.2/main-linux $SCRIPTS_DIR
 
 RUN chmod +x $SCRIPTS_DIR/main-linux

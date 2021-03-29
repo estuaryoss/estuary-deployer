@@ -28,7 +28,7 @@ class FlaskServerTestCase(unittest.TestCase):
         requests.post(f"{FlaskServerTestCase.server}/command",
                       data="docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_TOKEN", headers=headers)
         requests.post(f"{FlaskServerTestCase.server}/deployments", data=payload, headers=headers)
-        with open(f"{cls.script_path}/alpinediscovery.yml", closefd=True) as f:
+        with open(f"{cls.script_path}/discovery.yml", closefd=True) as f:
             payload = f.read()
         headers = {'Content-type': 'text/plain'}
         requests.post(f"{FlaskServerTestCase.server}/deployments", data=payload, headers=headers)

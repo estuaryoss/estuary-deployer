@@ -176,7 +176,7 @@ jobs:
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 estuaryoss/netflix-eureka:1.9.25
+          -p 8081:8080 estuaryoss/netflix-eureka:1.10.5
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
@@ -226,7 +226,7 @@ jobs:
       script:
         - docker network create estuarydeployer_default
         - docker run -d
-          -p 8081:8080 estuaryoss/netflix-eureka:1.9.25
+          -p 8081:8080 estuaryoss/netflix-eureka:1.10.5
         - IP_ADDR_STRING=$(hostname -I)
         - IP_ADDR_ARRAY=($IP_ADDR_STRING)
         - EUREKA_SERVER_LOCAL=http://${IP_ADDR_ARRAY[0]}:8081/eureka/v2
@@ -292,7 +292,7 @@ jobs:
         DOCKER_SCRIPTS_DIR: /scripts
         ISOLATED: true
       before_script:
-        - pyinstaller --onefile --build main_flask.py
+        - pyinstaller --onefile --clean main_flask.py
         - docker build -t estuaryoss/deployer:latest .
         - docker tag estuaryoss/deployer:latest estuaryoss/deployer:latest #<-- remove this when migrated to the new org
       script:
