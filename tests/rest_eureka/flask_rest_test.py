@@ -22,11 +22,11 @@ class EurekaClient:
 class FlaskServerEurekaTestCase(unittest.TestCase):
 
     def test_eureka_registration(self):
-        app_append_id = f"{os.environ.get('APP_APPEND_ID')}"
+        app_append_label = f"{os.environ.get('APP_APPEND_LABEL')}"
         up_services = EurekaClient(f"{os.environ.get('EUREKA_SERVER')}").get_apps()
         self.assertEqual(len(up_services), 1)  # 1 instance registered
         # print(up_services[0].app)
-        self.assertEqual(up_services[0].app, f"estuary-deployer{app_append_id}".upper())  # 1 instance registered
+        self.assertEqual(up_services[0].app, f"estuary-deployer{app_append_label}".upper())  # 1 instance registered
         self.assertEqual(up_services[0].ipAddr, f"estuary-deployer")  # 1 instance registered
 
 

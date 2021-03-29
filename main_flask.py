@@ -40,7 +40,7 @@ if __name__ == "__main__":
     if EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.EUREKA_SERVER):
         Eureka(EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.EUREKA_SERVER)).register_app(
             EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.APP_IP_PORT),
-            EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.APP_APPEND_ID))
+            EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.APP_APPEND_LABEL))
 
     io_utils.create_dir(Path(EnvInit.DEPLOY_PATH))
     io_utils.create_dir(Path(EnvInit.TEMPLATES_PATH))

@@ -20,9 +20,9 @@ class EnvStartupSingleton:
 
     def get_config_env_vars(self):
         return {
-            EnvConstants.APP_APPEND_ID: self.__env.get_env().get(
-                EnvConstants.APP_APPEND_ID).lower() if self.__env.get_env().get(
-                EnvConstants.APP_APPEND_ID) else "",
+            EnvConstants.APP_APPEND_LABEL: self.__env.get_env().get(
+                EnvConstants.APP_APPEND_LABEL).lower() if self.__env.get_env().get(
+                EnvConstants.APP_APPEND_LABEL) else "",
             EnvConstants.ENV_EXPIRE_IN: int(self.__env.get_env().get(
                 EnvConstants.ENV_EXPIRE_IN)) if self.__env.get_env().get(
                 EnvConstants.ENV_EXPIRE_IN) else 1440,

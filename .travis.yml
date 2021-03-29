@@ -166,9 +166,9 @@ jobs:
         SCRIPTS_DIR: tests
         ISOLATED: true
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull estuaryoss/agent-go:latest
         - docker pull estuaryoss/netflix-eureka:1.10.5
         - pyinstaller --onefile --clean main_flask.py
@@ -215,9 +215,9 @@ jobs:
         SCRIPTS_DIR: tests
         ISOLATED: true
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
-        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull estuaryoss/agent:latest
         - docker pull estuaryoss/discovery:latest
         - docker pull estuaryoss/netflix-eureka:1.10.5
@@ -266,6 +266,7 @@ jobs:
         MAX_DEPLOYMENTS: 3
         SCRIPTS_DIR: tests
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - pyinstaller --onefile --clean main_flask.py
         - docker build -t estuaryoss/deployer:latest .
       script:
