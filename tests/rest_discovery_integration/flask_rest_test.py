@@ -21,7 +21,7 @@ class FlaskServerTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
 
-        with open(f"{cls.script_path}/alpineagent.yml", closefd=True) as f:
+        with open(f"{cls.script_path}/agent.yml", closefd=True) as f:
             payload = f.read()
 
         headers = {'Content-type': 'text/plain'}

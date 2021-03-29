@@ -1,7 +1,7 @@
 version: '3.7'
 services:
   container:
-    image: estuaryoss/agent:latest
+    image: estuaryoss/agent-go:latest
     hostname: container
     #    entrypoint: tail -f /etc/alpine-release
     #    entrypoint: bash -c "/scripts/wait-for-it.sh -t 20 eureka-server:8080 -- echo \"eureka running\" && sleep 10 && python3 /scripts/main_flask.py"
@@ -9,6 +9,7 @@ services:
       limit: 'sky' #example env var inserted. you can read it with environ('limit') in your jinja2 template
       EUREKA_SERVER: "{{eureka_server}}"
       APP_IP_PORT: "{{app_ip_port}}/docker/container/{{deployment_id}}"
+      HTTP_AUTH_TOKEN: "None"
     #    volumes:
     #      - type: volume
     #        source: sharedcontent
