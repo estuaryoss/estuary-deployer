@@ -14,7 +14,7 @@ services:
       EUREKA_SERVER: http://eureka-server:8080/eureka/v2 #your eureka server
       APP_APPEND_LABEL: LAB_2GB_RAM # this suffix will be added to the deployer service in order to differentiate between different services mapped on VM with specific resources
       APP_IP_PORT: estuary-deployer:8080 #your app details: where it is and on which port. needed for service discovery and spread of tests from the test client
-      ENV_EXPIRE_IN=1
+      ENV_EXPIRE_IN: 1
 #    entrypoint: python3 /scripts/main_flask.py
     command: bash -c "sleep 20 && /root/deployer/main-linux"
     volumes:
