@@ -29,7 +29,7 @@ services:
 
   eureka-server:
     container_name: eureka-server
-    image: estuaryoss/netflix-eureka:1.9.25
+    image: estuaryoss/netflix-eureka:1.10.5
     hostname: eureka-server
 #    ports:
 #      - "8090:8080"

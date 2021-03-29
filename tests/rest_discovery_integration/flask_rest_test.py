@@ -65,7 +65,10 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('timestamp'))
 
     def test_about_endpoint_discovery_broadcast_to_agents_p(self):
-        response = requests.get(self.server_discovery + f"/{self.compose_id}/agents/about")
+        headers = {
+            'Token': 'None'
+        }
+        response = requests.get(self.server_discovery + f"/{self.compose_id}/agents/about", headers=headers)
 
         print(dump.dump_response(response))
         body = response.json()
