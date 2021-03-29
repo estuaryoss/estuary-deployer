@@ -63,7 +63,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([
-        ("FOO1", "BAR10")
+        ("ENV_TYPE", "DOCKER")
     ])
     @unittest.skipIf(str(os.environ.get('TEST_ENV')) == "centos", "Skip on Centos docker")
     def test_env_load_from_props(self, env_var, expected_value):

@@ -297,6 +297,8 @@ jobs:
         ISOLATED: true
         APP_APPEND_LABEL: LAB_2GB_RAM
       before_script:
+        - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
+        - docker pull alpine:3.9.4
         - pyinstaller --onefile --clean main_flask.py
         - docker build -t estuaryoss/deployer:latest .
       script:
