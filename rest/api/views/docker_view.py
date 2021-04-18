@@ -4,7 +4,7 @@ import shutil
 from secrets import token_hex
 
 import requests
-from flask import request, Response
+from flask import request, Response, render_template, send_from_directory
 from flask_classful import FlaskView, route
 from fluent import sender
 
@@ -13,7 +13,6 @@ from rest.api.constants.api_code import ApiCode
 from rest.api.constants.env_constants import EnvConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.constants.header_constants import HeaderConstants
-from rest.api.docker_swagger import docker_swagger_file_content
 from rest.api.exception.api_exception_docker import ApiExceptionDocker
 from rest.api.jinja2.render import Render
 from rest.api.loghelpers.message_dumper import MessageDumper
@@ -56,7 +55,7 @@ class DockerView(FlaskView):
         app.logger.debug(response)
         if not str(request.headers.get(HeaderConstants.TOKEN)) == str(
                 EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.HTTP_AUTH_TOKEN)):
-            if not ("/api/docs" in request_uri or "/swagger/swagger.yml" in request_uri):  # exclude swagger
+            if not ("/apidocs" in request_uri or "/swagger/swagger.json" in request_uri):  # exclude swagger
                 headers = {
                     HeaderConstants.X_REQUEST_ID: self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
                 }
@@ -75,9 +74,6 @@ class DockerView(FlaskView):
 
         return http_response
 
-    def index(self):
-        return "docker"
-
     @classmethod
     def handle_api_error(cls, e):
         http_response = Response(json.dumps(
@@ -90,9 +86,28 @@ class DockerView(FlaskView):
         app.logger.debug(f"{response}")
         return http_response
 
-    @route('/swagger/swagger.yml')
+    def index(self):
+        return render_template('index.html')
+
+    @route('/apidocs')
+    def send_swagger(self):
+        return render_template('index.html')
+
+    @route('/js/<path:path>')
+    def send_js(self, path):
+        return send_from_directory('swaggerui/js', path)
+
+    @route('/css/<path:path>')
+    def send_css(self, path):
+        return send_from_directory('swaggerui/css', path)
+
+    @route('/img/<path:path>')
+    def send_img(self, path):
+        return send_from_directory('swaggerui/img', path)
+
+    @route('/swagger/swagger.json')
     def swagger(self):
-        return Response(docker_swagger_file_content, 200, mimetype="text/plain;charset=UTF-8")
+        return render_template('swagger.json')
 
     @route('/ping')
     def ping(self):
