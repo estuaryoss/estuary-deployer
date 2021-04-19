@@ -130,6 +130,11 @@ There are two ways to inject user defined environment variables.
 
 *! All environment variables described above can also be set using **environment.properties**.*
 
+## Compilation - pyinstaller
+
+```shell
+pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/*:rest/api/views/swaggerui/" main_flask.py
+```
 ## Output example
 curl http://172.17.0.22:8083/docker/deployments
 ```json

@@ -1,9 +1,10 @@
 import json
 from secrets import token_hex
 
-from flask import request, Response
+from flask import request, Response, render_template, send_from_directory
 from flask_classful import FlaskView, route
 from fluent import sender
+from werkzeug.utils import redirect
 
 from about import properties, about_system
 from rest.api.constants.api_code import ApiCode
@@ -12,7 +13,6 @@ from rest.api.constants.env_init import EnvInit
 from rest.api.constants.header_constants import HeaderConstants
 from rest.api.exception.api_exception_kubectl import ApiExceptionKubectl
 from rest.api.jinja2.render import Render
-from rest.api.kubectl_swagger import kubectl_swagger_file_content
 from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.api.responsehelpers.error_message import ErrorMessage
 from rest.api.responsehelpers.http_response import HttpResponse
@@ -51,7 +51,7 @@ class KubectlView(FlaskView):
         app.logger.debug(f"{response}")
         if not str(request.headers.get(HeaderConstants.TOKEN)) == str(
                 EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.HTTP_AUTH_TOKEN)):
-            if not ("/api/docs" in request_uri or "/swagger/swagger.yml" in request_uri):  # exclude swagger
+            if not ("/apidocs" in request_uri or "/swagger/swagger.json" in request_uri):  # exclude swagger
                 headers = {
                     HeaderConstants.X_REQUEST_ID: self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
                 }
@@ -65,10 +65,10 @@ class KubectlView(FlaskView):
         headers[HeaderConstants.X_REQUEST_ID] = self.message_dumper.get_header(HeaderConstants.X_REQUEST_ID)
         http_response.headers = headers
 
+        http_response.direct_passthrough = False
         response = self.fluentd.emit(tag="api", msg=self.message_dumper.dump(http_response))
         app.logger.debug(f"{response}")
 
-        http_response.direct_passthrough = False
         return http_response
 
     @classmethod
@@ -86,11 +86,19 @@ class KubectlView(FlaskView):
         return http_response
 
     def index(self):
-        return "kubectl"
+        return render_template('index.html')
 
-    @route('/swagger/swagger.yml')
+    @route('/apidocs')
+    def send_swagger(self):
+        return render_template('index.html')
+
+    @route('/resources/<path:path>')
+    def send_js(self, path):
+        return send_from_directory('swaggerui/resources', path)
+
+    @route('/swagger/swagger.json')
     def swagger(self):
-        return Response(kubectl_swagger_file_content, 200, mimetype="text/plain;charset=UTF-8")
+        return render_template('swagger_kubectl.json')
 
     @route('/ping')
     def ping(self):
@@ -130,7 +138,8 @@ class KubectlView(FlaskView):
             env_vars_attempted = json.loads(input_data)
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.INVALID_JSON_PAYLOAD.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.INVALID_JSON_PAYLOAD.value) % str(input_data), e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.INVALID_JSON_PAYLOAD.value) % str(input_data),
+                                      e)
 
         try:
             env_vars_added = EnvironmentSingleton.get_instance().set_env_vars(env_vars_attempted)
@@ -163,7 +172,7 @@ class KubectlView(FlaskView):
                     EnvConstants.VARIABLES)).rend_template()
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.JINJA2_RENDER_FAILURE.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.JINJA2_RENDER_FAILURE.value), e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.JINJA2_RENDER_FAILURE.value), e)
 
         return Response(rendered_content, 200, mimetype="text/plain")
 
@@ -176,8 +185,10 @@ class KubectlView(FlaskView):
         for header_key in header_keys:
             if not request.headers.get(f"{header_key}"):
                 raise ApiExceptionKubectl(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
-                                         ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
-                                         ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
+                                          ErrorMessage.HTTP_CODE.get(
+                                              ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                                          ErrorMessage.HTTP_CODE.get(
+                                              ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
         label_selector = request.headers.get(f"{header_keys[0]}")
         namespace = request.headers.get(f"{header_keys[1]}")
         active_pods = kubectl_utils.get_active_pods(label_selector, namespace)
@@ -206,7 +217,7 @@ class KubectlView(FlaskView):
                 raise Exception(status.get('err'))
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.DEPLOY_START_FAILURE.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value), token)),
@@ -248,7 +259,7 @@ class KubectlView(FlaskView):
             result = str(token)
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.DEPLOY_START_FAILURE.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value), result)),
@@ -264,8 +275,8 @@ class KubectlView(FlaskView):
 
         if not request.headers.get(f"{header_key}"):
             raise ApiExceptionKubectl(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
 
         try:
             namespace = request.headers.get(f"{header_key}")
@@ -276,7 +287,7 @@ class KubectlView(FlaskView):
             result = status.get('out').split("\n")[1:]
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.DEPLOY_STOP_FAILURE.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value), result)),
@@ -292,8 +303,10 @@ class KubectlView(FlaskView):
         for header_key in header_keys:
             if not request.headers.get(f"{header_key}"):
                 raise ApiExceptionKubectl(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
-                                         ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
-                                         ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
+                                          ErrorMessage.HTTP_CODE.get(
+                                              ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                                          ErrorMessage.HTTP_CODE.get(
+                                              ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
 
         try:
             label_selector = request.headers.get(f"{header_keys[0]}")
@@ -301,7 +314,7 @@ class KubectlView(FlaskView):
             deployment = kubectl_utils.get_active_pod(pod, label_selector, namespace)
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.DEPLOY_STATUS_FAILURE.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STATUS_FAILURE.value), e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STATUS_FAILURE.value), e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -316,19 +329,19 @@ class KubectlView(FlaskView):
         file_path = request.headers.get(f"{header_key}")
         if not file_path:
             raise ApiExceptionKubectl(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
 
         if not file_content:
             raise ApiExceptionKubectl(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
 
         try:
             io_utils.write_to_file_binary(file_path, file_content)
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.UPLOAD_FILE_FAILURE.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.UPLOAD_FILE_FAILURE.value), e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.UPLOAD_FILE_FAILURE.value), e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -342,13 +355,13 @@ class KubectlView(FlaskView):
         file_path = request.headers.get(f"{header_key}")
         if not file_path:
             raise ApiExceptionKubectl(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
         try:
             file_content = IOUtils.read_file(file_path)
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.GET_FILE_FAILURE.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.GET_FILE_FAILURE.value), e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.GET_FILE_FAILURE.value), e)
         return Response(file_content, 200, mimetype="text/plain")
 
     @route('/deployments/logs/<deployment>', methods=['GET'])
@@ -360,8 +373,8 @@ class KubectlView(FlaskView):
 
         if not request.headers.get(f"{header_key}"):
             raise ApiExceptionKubectl(ApiCode.HTTP_HEADER_NOT_PROVIDED.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key,
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.HTTP_HEADER_NOT_PROVIDED.value) % header_key)
 
         try:
             if request.headers.get(f"{header_key}"):
@@ -371,7 +384,7 @@ class KubectlView(FlaskView):
                 raise Exception(status)
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.GET_LOGS_FAILED.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.GET_LOGS_FAILED.value) % deployment, e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.GET_LOGS_FAILED.value) % deployment, e)
 
         return Response(
             json.dumps(http.response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -383,8 +396,8 @@ class KubectlView(FlaskView):
 
         if not input_data:
             raise ApiExceptionKubectl(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value),
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.EMPTY_REQUEST_BODY_PROVIDED.value))
         try:
             input_data_list = input_data.split("\n")
             input_data_list = list(map(lambda x: x.strip(), input_data_list))
@@ -392,7 +405,7 @@ class KubectlView(FlaskView):
             response = command_in_memory.run_commands(input_data_list)
         except Exception as e:
             raise ApiExceptionKubectl(ApiCode.COMMAND_EXEC_FAILURE.value,
-                                     ErrorMessage.HTTP_CODE.get(ApiCode.COMMAND_EXEC_FAILURE.value), e)
+                                      ErrorMessage.HTTP_CODE.get(ApiCode.COMMAND_EXEC_FAILURE.value), e)
 
         return Response(
             json.dumps(
