@@ -93,7 +93,7 @@ class KubectlView(FlaskView):
         return render_template('index.html')
 
     @route('/resources/<path:path>')
-    def send_js(self, path):
+    def send_resources(self, path):
         return send_from_directory('swaggerui/resources', path)
 
     @route('/swagger/swagger.json')
