@@ -116,31 +116,31 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertIsNotNone(body.get('timestamp'))
         self.assertEqual(len(headers.get('X-Request-ID')), 16)
 
-    def test_swagger_endpoint(self):
-        response = requests.get(self.server_base + "/apidocs")
-
-        body = response.text
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(body.find("html") >= 0)
-
-    def test_swagger_endpoint_swagger_still_accesible(self):
-        headers = {'Token': 'whateverinvalid'}
-        response = requests.get(self.server_base + "/apidocs", headers=headers)
-
-        body = response.text
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(body.find("html") >= 0)
-
-    def test_swagger_yml_endpoint(self):
-        response = requests.get(self.server + "/swagger/swagger.json")
-
-        self.assertEqual(response.status_code, 200)
-
-    def test_swagger_yml_swagger_still_accesible(self):
-        headers = {'Token': 'whateverinvalid'}
-        response = requests.get(self.server + "/swagger/swagger.json", headers=headers)
-
-        self.assertEqual(response.status_code, 200)
+    # def test_swagger_endpoint(self):
+    #     response = requests.get(self.server_base + "/apidocs")
+    #
+    #     body = response.text
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertTrue(body.find("html") >= 0)
+    #
+    # def test_swagger_endpoint_swagger_still_accesible(self):
+    #     headers = {'Token': 'whateverinvalid'}
+    #     response = requests.get(self.server_base + "/apidocs", headers=headers)
+    #
+    #     body = response.text
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertTrue(body.find("html") >= 0)
+    #
+    # def test_swagger_yml_endpoint(self):
+    #     response = requests.get(self.server + "/swagger/swagger.json")
+    #
+    #     self.assertEqual(response.status_code, 200)
+    #
+    # def test_swagger_yml_swagger_still_accesible(self):
+    #     headers = {'Token': 'whateverinvalid'}
+    #     response = requests.get(self.server + "/swagger/swagger.json", headers=headers)
+    #
+    #     self.assertEqual(response.status_code, 200)
 
     @parameterized.expand([
         ("json.j2", "json.json"),
