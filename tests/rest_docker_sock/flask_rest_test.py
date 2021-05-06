@@ -11,7 +11,7 @@ from rest.api.responsehelpers.error_message import ErrorMessage
 class FlaskServerTestCase(unittest.TestCase):
     server = "http://localhost:8080/docker"
 
-    expected_version = "4.2.1"
+    expected_version = "4.2.2"
 
     @parameterized.expand([
         ("alpine.yml", "variables.yml")

@@ -2,6 +2,7 @@ import py_eureka_client.eureka_client as eureka_client
 
 from about import properties
 from rest.api.constants.env_constants import EnvConstants
+from rest.api.constants.env_init import EnvInit
 from rest.utils.env_startup import EnvStartupSingleton
 
 
@@ -24,7 +25,7 @@ class Eureka:
                            instance_port=app_port,
                            instance_secure_port=app_port,
                            instance_ip=app_ip,
-                           home_page_url=f"{protocol}://{app_ip}:{app_port}/",
-                           health_check_url=f"{protocol}://{app_ip}:{app_port}/api/docs",
-                           status_page_url=f"{protocol}://{app_ip}:{app_port}/api/docs"
+                           home_page_url=f"{protocol}://{app_ip}:{app_port}/{EnvInit.DEPLOY_WITH}/",
+                           health_check_url=f"{protocol}://{app_ip}:{app_port}/{EnvInit.DEPLOY_WITH}/ping",
+                           status_page_url=f"{protocol}://{app_ip}:{app_port}/{EnvInit.DEPLOY_WITH}/about"
                            )

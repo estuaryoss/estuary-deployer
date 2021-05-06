@@ -15,7 +15,7 @@ class FlaskServerTestCase(unittest.TestCase):
     server_base = "http://localhost:8080"
     server = "{}/kubectl".format(server_base)
 
-    expected_version = "4.2.1"
+    expected_version = "4.2.2"
     sleep_before_container_up = 5
 
     def test_env_endpoint(self):

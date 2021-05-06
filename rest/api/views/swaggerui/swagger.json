@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is estuary-deployer with Docker.\n",
-    "version": "4.2.1",
+    "version": "4.2.2",
     "title": "estuary-deployer",
     "termsOfService": "http://swagger.io/terms/",
     "contact": {

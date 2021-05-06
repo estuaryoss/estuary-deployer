@@ -14,6 +14,9 @@ class EnvInit:
     TEMPLATES_PATH = EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
         EnvConstants.TEMPLATES_DIR) if EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
         EnvConstants.TEMPLATES_DIR) else WORKSPACE + "/templates"
+    DEPLOY_WITH = EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
+        EnvConstants.DEPLOY_WITH) if EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
+        EnvConstants.DEPLOY_WITH) else "docker"
     VARIABLES_PATH = EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
         EnvConstants.VARS_DIR) if EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
         EnvConstants.VARS_DIR) else WORKSPACE + "/variables"
