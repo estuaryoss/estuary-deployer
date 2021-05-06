@@ -34,7 +34,7 @@ COPY nginx/nginx.conf /etc/nginx/nginx.conf
 #COPY nginx/certs/www.example.com.cert /etc/ssl/www.example.com.cert
 #COPY nginx/certs/www.example.com.key /etc/ssl/private/www.example.com.key
 
-COPY dist/main_flask $SCRIPTS_DIR/main-linux
+COPY dist/main $SCRIPTS_DIR/main-linux
 COPY start_bin.sh $SCRIPTS_DIR
 ADD https $HTTPS_DIR
 ADD environment.properties $SCRIPTS_DIR

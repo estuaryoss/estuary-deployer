@@ -75,6 +75,7 @@ Start your containers by specifying the full hostname or ip of the host machine 
             -e FLUENTD_IP_PORT="10.13.14.28:24224" -> fluentd log collector agent target ip:port
             -e ENV_EXPIRE_IN=1440 -> [minutes] How long it will take before the env will be deleted. Default is 1440 minutes.
             -e SCHEDULER_POLL_INTERVAL=120 -> [seconds] The env expire scheduler polling interval. Default is 1200 seconds.
+            -e DEPLOY_WITH=kubectl -> [docker/kubectl] The deployment environment. Default is docker.
     Mandatory:
         -p 8081:8080 -> port fwd from docker 8080 to host 8081
         -v /var/run/docker.sock:/var/run/docker.sock -> docker sock mount
@@ -133,7 +134,7 @@ There are two ways to inject user defined environment variables.
 ## Compilation - pyinstaller
 
 ```shell
-pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/*:rest/api/views/swaggerui/" main_flask.py
+pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
 ```
 ## Output example
 curl http://172.17.0.22:8083/docker/deployments

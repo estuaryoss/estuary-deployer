@@ -44,9 +44,9 @@ jobs:
         - docker pull alpine:3.9.4
         - docker pull mysql:5.6
         - pip3 install -r requirements.txt
-        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main_flask.py
+        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
         - ls -lrt dist
-        - cp dist/main_flask main-linux
+        - cp dist/main main-linux
         - chmod +x main-linux
         - sudo chown -R travis:travis inputs
         - ls -lrt
@@ -105,9 +105,9 @@ jobs:
       before_script:
         - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - pip3 install -r requirements.txt
-        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main_flask.py
+        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
         - ls -lrt dist
-        - cp dist/main_flask main-linux
+        - cp dist/main main-linux
         - docker pull centos:8
         - docker pull mysql:5.6
         - docker pull alpine:3.9.4
@@ -138,9 +138,9 @@ jobs:
         - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.10.2
         - pip3 install -r requirements.txt
-        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main_flask.py
+        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
         - ls -lrt dist
-        - cp dist/main_flask main-linux
+        - cp dist/main main-linux
         - chmod +x main-linux
         - sudo chown -R travis:travis inputs
         - ls -lrt
@@ -174,7 +174,7 @@ jobs:
         - docker pull mysql:5.6
         - docker pull estuaryoss/agent-go:latest
         - docker pull estuaryoss/netflix-eureka:1.10.5
-        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main_flask.py
+        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
@@ -224,7 +224,7 @@ jobs:
         - docker pull estuaryoss/agent:latest
         - docker pull estuaryoss/discovery:latest
         - docker pull estuaryoss/netflix-eureka:1.10.5
-        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main_flask.py
+        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
@@ -270,7 +270,7 @@ jobs:
         SCRIPTS_DIR: tests
       before_script:
         - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
-        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main_flask.py
+        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
@@ -299,7 +299,7 @@ jobs:
       before_script:
         - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.9.4
-        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main_flask.py
+        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
         - docker build -t estuaryoss/deployer:latest .
       script:
         - docker network create estuarydeployer_default
@@ -333,9 +333,9 @@ jobs:
       services: docker
       before_deploy:
         - pip3 install -r requirements.txt
-        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main_flask.py
+        - pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
         - ls -lrt dist
-        - cp dist/main_flask main-linux
+        - cp dist/main main-linux
         - ls -lrt
         - rm -rf dist
         - rm -rf build
