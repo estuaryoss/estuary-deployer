@@ -1,3 +1,6 @@
+from rest.environment.deployment_metadata import DeploymentMetadataSingleton
+
+
 class ActiveDeployment:
 
     # docker
@@ -5,6 +8,7 @@ class ActiveDeployment:
     def docker_deployment(id, containers):
         return {
             "id": id,
+            "metadata": DeploymentMetadataSingleton.get_instance().get_metadata_for_deployment(id),
             "containers": containers,
         }
 

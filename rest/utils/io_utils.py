@@ -54,3 +54,7 @@ class IOUtils:
     def remove_file(file):
         file_path = Path(file)
         file_path.unlink()
+
+    @staticmethod
+    def remove_directory(dir):
+        shutil.rmtree(dir)

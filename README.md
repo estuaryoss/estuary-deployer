@@ -68,7 +68,7 @@ Start your containers by specifying the full hostname or ip of the host machine 
     docker network create estuarydeployer_default
     docker run params:
     Optional:
-            -e MAX_DEPLOYMENTS=3 ->  how many deployments to be done. it is an option to deploy a fixed no of docker-compose envs(docker only)
+            -e MAX_DEPLOYMENTS=3 ->  how many deployments to be done (docker only). Default is 10.
             -e EUREKA_SERVER="http://10.13.14.28:8080/eureka/v2" -> eureka server
             -e APP_IP_PORT="10.13.14.28:8081" -> the app hostname/ip:port. Mandatory if EUREKA_SERVER is used
             -e APP_APPEND_LABEL="lab" -> id will be appended to the default app name on service registration. Useful for user mappings service-resources on a VM
@@ -164,9 +164,6 @@ curl http://172.17.0.22:8083/docker/deployments
     
 ## Estuary stack
 [Estuary deployer](https://github.com/estuaryoss/estuary-deployer)  
-[Estuary agent](https://github.com/estuaryoss/estuary-agent)  
+[Estuary agent](https://github.com/estuaryoss/estuary-agent-go)  
 [Estuary discovery](https://github.com/estuaryoss/estuary-discovery)  
-[Estuary viewer](https://github.com/estuaryoss/estuary-viewer)  
-
-## Templating service
-[Jinja2Docker](https://github.com/dinuta/jinja2docker)  
+[Estuary viewer](https://github.com/estuaryoss/estuary-viewer)

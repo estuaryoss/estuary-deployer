@@ -127,9 +127,11 @@ class DockerUtils(EnvCreation):
         active_deployments = [item.get('id') for item in DockerUtils.get_active_deployments()]
 
         for item in active_deployments:
+            directory = f"{path}/{item}"
             if (datetime.datetime.now() - datetime.datetime.fromtimestamp(
-                    os.path.getmtime(f"{path}/{item}"))) > datetime.timedelta(minutes=env_expire_in):
-                result = DockerUtils.down(f"{path}/{item}/docker-compose.yml")
+                    os.path.getmtime(directory))) > datetime.timedelta(minutes=env_expire_in):
+                result = DockerUtils.down(f"{directory}/docker-compose.yml")
+                IOUtils.remove_directory(directory)
                 fluentd_utils.emit(tag=fluentd_tag,
                                    msg=message_dumper.dump_message(
                                        {"action": f"{fluentd_tag}", "out": result.get('out'),

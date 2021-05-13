@@ -20,6 +20,9 @@ class EnvInit:
     VARIABLES_PATH = EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
         EnvConstants.VARS_DIR) if EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
         EnvConstants.VARS_DIR) else WORKSPACE + "/variables"
+    MAX_DEPLOYMENTS = int(EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
+        EnvConstants.MAX_DEPLOYMENTS)) if EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
+        EnvConstants.MAX_DEPLOYMENTS) else 10
     DEPLOY_PATH = WORKSPACE + "/deployments"
 
     if not EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(EnvConstants.VARS_DIR):

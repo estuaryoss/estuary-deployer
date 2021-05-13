@@ -20,7 +20,9 @@ from rest.api.responsehelpers.active_deployments_response import ActiveDeploymen
 from rest.api.responsehelpers.error_message import ErrorMessage
 from rest.api.responsehelpers.http_response import HttpResponse
 from rest.api.views import app
+from rest.environment.deployment_metadata import DeploymentMetadataSingleton
 from rest.environment.environment import EnvironmentSingleton
+from rest.model.deployment_reader import DeploymentReader
 from rest.service.fluentd import Fluentd
 from rest.utils.cmd_utils import CmdUtils
 from rest.utils.command_in_memory import CommandInMemory
@@ -237,20 +239,19 @@ class DockerView(FlaskView):
         eureka_server_header = request.headers.get(f"{header_key}")
         config_env_vars = EnvStartupSingleton.get_instance().get_config_env_vars()
         input_data = request.data.decode('UTF-8').strip()
-        env_vars = EnvironmentSingleton.get_instance().get_env_and_virtual_env()
 
         status = CmdUtils.run_cmd_shell_false(["docker", "ps"])
         if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
             raise ApiExceptionDocker(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value,
                                      ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value),
                                      status.get('err'))
-        if env_vars.get(EnvConstants.MAX_DEPLOYMENTS):
-            active_deployments = docker_utils.get_active_deployments()
-            if len(active_deployments) >= int(env_vars.get(EnvConstants.MAX_DEPLOYMENTS)):
-                raise ApiExceptionDocker(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
-                                         ErrorMessage.HTTP_CODE.get(
-                                             ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(
-                                             EnvConstants.MAX_DEPLOYMENTS), active_deployments)
+
+        active_deployments = docker_utils.get_active_deployments()
+        if len(active_deployments) >= EnvInit.MAX_DEPLOYMENTS:
+            raise ApiExceptionDocker(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
+                                     ErrorMessage.HTTP_CODE.get(
+                                         ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(EnvInit.MAX_DEPLOYMENTS),
+                                     active_deployments)
         try:
             template_file_name = f"deployment_{deployment_id}.yml"
             template_file_path = f"{EnvInit.TEMPLATES_PATH}/{template_file_name}"
@@ -281,6 +282,11 @@ class DockerView(FlaskView):
             app.logger.debug({"msg": docker_utils.down(file)})
             raise ApiExceptionDocker(ApiCode.DEPLOY_START_FAILURE.value,
                                      ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
+
+        DeploymentMetadataSingleton.get_instance() \
+            .delete_metadata_for_inactive_deployments(DockerUtils.get_active_deployments())
+        metadata = DeploymentReader.get_metadata_for_deployment(IOUtils.read_file(file=file))
+        DeploymentMetadataSingleton.get_instance().set_metadata_for_deployment(deployment_id, metadata)
 
         return Response(
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
@@ -314,14 +320,13 @@ class DockerView(FlaskView):
             raise ApiExceptionDocker(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value,
                                      ErrorMessage.HTTP_CODE.get(ApiCode.DOCKER_DAEMON_NOT_RUNNING.value),
                                      status.get('err'))
-        if env_vars.get(EnvConstants.MAX_DEPLOYMENTS):
-            active_deployments = docker_utils.get_active_deployments()
-            if len(active_deployments) >= int(env_vars.get(EnvConstants.MAX_DEPLOYMENTS)):
-                raise ApiExceptionDocker(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
-                                         ErrorMessage.HTTP_CODE.get(
-                                             ApiCode.MAX_DEPLOYMENTS_REACHED.value) % env_vars.get(
-                                             EnvConstants.MAX_DEPLOYMENTS),
-                                         active_deployments)
+
+        active_deployments = docker_utils.get_active_deployments()
+        if len(active_deployments) >= EnvInit.MAX_DEPLOYMENTS:
+            raise ApiExceptionDocker(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
+                                     ErrorMessage.HTTP_CODE.get(
+                                         ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(EnvInit.MAX_DEPLOYMENTS),
+                                     active_deployments)
         try:
             r = Render(env_vars.get(EnvConstants.TEMPLATE),
                        env_vars.get(EnvConstants.VARIABLES))
@@ -331,6 +336,11 @@ class DockerView(FlaskView):
         except Exception as e:
             raise ApiExceptionDocker(ApiCode.DEPLOY_START_FAILURE.value,
                                      ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_START_FAILURE.value), e)
+
+        DeploymentMetadataSingleton.get_instance() \
+            .delete_metadata_for_inactive_deployments(DockerUtils.get_active_deployments())
+        metadata = DeploymentReader.get_metadata_for_deployment(IOUtils.read_file(file=file))
+        DeploymentMetadataSingleton.get_instance().set_metadata_for_deployment(deployment_id, metadata)
 
         return Response(
             json.dumps(
@@ -342,6 +352,7 @@ class DockerView(FlaskView):
         env_id = env_id.lower()
         docker_utils = DockerUtils()
         env_id = env_id.strip()
+
         try:
             status = docker_utils.ps(env_id)
             if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
@@ -357,18 +368,46 @@ class DockerView(FlaskView):
                                                ActiveDeployment.docker_deployment(env_id, result))), 200,
             mimetype="application/json")
 
-    @route('/deployments/<env_id>', methods=['DELETE'])
-    def delete_deployment(self, env_id):
-        env_id = env_id.strip()
+    @route('/deployments/<depl_id>', methods=['DELETE'])
+    def delete_deployment_id(self, depl_id):
+        depl_id = depl_id.strip()
         docker_utils = DockerUtils()
-        file = f"{EnvInit.DEPLOY_PATH}/{env_id}/docker-compose.yml"
+        depl_folder = f"{EnvInit.DEPLOY_PATH}/{depl_id}"
+        file = f"{depl_folder}/docker-compose.yml"
         try:
             status = docker_utils.down(file)
             if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
                 raise Exception(status.get('err'))
             app.logger.debug({"msg": status})
-            status = docker_utils.ps(env_id)
+            status = docker_utils.ps(depl_id)
             result = status.get('out').split("\n")[1:]
+            DeploymentMetadataSingleton.get_instance().delete_metadata_for_deployment(depl_id)
+            IOUtils.remove_directory(f"{depl_folder}")
+        except Exception as e:
+            raise ApiExceptionDocker(ApiCode.DEPLOY_STOP_FAILURE.value,
+                                     ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
+
+        return Response(
+            json.dumps(
+                HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
+                                        result)), 200, mimetype="application/json")
+
+    @route('/deployments', methods=['DELETE'])
+    def delete_all_deployments(self):
+        docker_utils = DockerUtils()
+        try:
+            active_deployments = docker_utils.get_active_deployments()
+            for deployment in active_deployments:
+                depl_id = deployment.get('id')
+                depl_folder = f"{EnvInit.DEPLOY_PATH}/{depl_id}"
+                status = docker_utils.down(f"{depl_folder}/docker-compose.yml")
+                if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
+                    raise Exception(status.get('err'))
+                app.logger.debug({"msg": status})
+                DeploymentMetadataSingleton.get_instance().delete_metadata_for_deployment(depl_id)
+
+            DockerUtils.folder_clean_up()
+            result = docker_utils.get_active_deployments()
         except Exception as e:
             raise ApiExceptionDocker(ApiCode.DEPLOY_STOP_FAILURE.value,
                                      ErrorMessage.HTTP_CODE.get(ApiCode.DEPLOY_STOP_FAILURE.value), e)
