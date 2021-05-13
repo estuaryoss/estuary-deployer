@@ -1,4 +1,5 @@
 import errno
+import json
 import os
 import shutil
 from pathlib import Path
@@ -25,6 +26,11 @@ class IOUtils:
     def write_to_file(file, content=""):
         with open(file, 'w') as f:
             f.write(content)
+
+    @staticmethod
+    def write_to_file_dict(file, content):
+        with open(file, 'w') as f:
+            f.write(json.dumps(content, indent=4))
 
     @staticmethod
     def write_to_file_binary(file, content=""):

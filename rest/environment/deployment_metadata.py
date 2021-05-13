@@ -1,3 +1,8 @@
+import json
+
+from rest.utils.io_utils import IOUtils
+
+
 class DeploymentMetadataSingleton:
     __instance = None
     METADATA_SPACE_MAX_SIZE = 100
@@ -22,6 +27,25 @@ class DeploymentMetadataSingleton:
 
     def set_metadata_for_deployment(self, deployment, metadata):
         """labels is dict"""
+        if not isinstance(metadata, dict):
+            return False
+        if len(self.metadata) < self.METADATA_SPACE_MAX_SIZE and deployment != "":
+            self.metadata[deployment] = metadata
+            return True
+
+        return False
+
+    def set_metadata_for_deployment_from_file(self, deployment, file):
+        """ labels is dict """
+        metadata = {}
+        if self.metadata.get(deployment) is not None:  # jump over, already in memory
+            return False
+
+        try:
+            metadata = json.loads(IOUtils.read_file(file=file))
+        except:
+            pass  # don't care. metadata is optional
+
         if not isinstance(metadata, dict):
             return False
         if len(self.metadata) < self.METADATA_SPACE_MAX_SIZE and deployment != "":

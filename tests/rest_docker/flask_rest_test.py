@@ -372,6 +372,7 @@ class FlaskServerTestCase(unittest.TestCase):
         time.sleep(self.sleep_before_env_up)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertEqual(len(self.get_deployment_info_object()[0].get('metadata')), 0)
         deploystart_body = response.json()
         deployment_id = "dummy"
 
@@ -387,6 +388,19 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         requests.delete(self.server + f"/deployments/{deploystart_body.get('description')}")
+
+    @parameterized.expand([
+        ("alpine_metadata.yml", "variables.yml")
+    ])
+    def test_deploystatus_metadata(self, template, variables):
+        headers = {'Content-type': 'application/json'}
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
+        time.sleep(self.sleep_before_env_up)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertNotEqual(len(self.get_deployment_info_object()[0].get('metadata')), 0)
+        self.assertNotEqual(self.get_deployment_info_object()[0].get('metadata').get('name'), "")
+        requests.delete(self.server + f"/deployments")
 
     def test_getfile_p(self):
         headers = {
@@ -474,6 +488,27 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertEqual(len(self.get_deployment_info_object()[0].get('metadata')), 0)
+        self.assertEqual(body.get('message'),
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
+        self.assertIsNotNone(body.get('timestamp'))
+
+    def test_deploy_start_file_from_client_metadata(self):
+        with open(f"{self.input_path}/alpine_metadata.yml", closefd=True) as f:
+            payload = f.read()
+        headers = {'Content-type': 'text/plain'}
+
+        response = requests.post(self.server + f"/deployments", data=payload,
+                                 headers=headers)
+        time.sleep(self.sleep_before_env_up)
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertNotEqual(len(self.get_deployment_info_object()[0].get('metadata')), 0)
+        self.assertIsInstance(self.get_deployment_info_object()[0].get('metadata'), dict)
+        self.assertNotEqual( self.get_deployment_info_object()[0].get('metadata').get('name'), "")
         self.assertEqual(body.get('message'),
                          ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)
