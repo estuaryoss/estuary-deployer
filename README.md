@@ -141,26 +141,26 @@ pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/v
 The user can put any metadata under **x-metadata** section.   
 The Deployer service does not enforce any metadata standardization.
 However, it's a good practice to have:
--  the deployment name: **name**
--  the labels for the deployment: **labels**
+-   the deployment name: **name**
+-   the labels for the deployment: **labels**
 
 The two fields are used by [seeder](https://github.com/estuaryoss/seeder) in order to organize and orchestrate the deployments.  
    
 Obs: The x-metadata section is supported in compose version >= 3.3.
    
 ```yaml
-version: "3.3"
-x-metadata:
-  name: alpine-test
-  labels:
-    k1: v1
-    k2: v2
-services:
-  alpine:
-    restart: always
-    image: alpine:3.9.4
-    hostname: alpine
-    entrypoint: tail -f /etc/hostname
+    version: "3.3"
+    x-metadata:
+      name: alpine-test
+      labels:
+        k1: v1
+        k2: v2
+    services:
+      alpine:
+        restart: always
+        image: alpine:3.9.4
+        hostname: alpine
+        entrypoint: tail -f /etc/hostname
 ```
 
 ## Output example

@@ -401,7 +401,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(len(self.get_deployment_info()), 1)
         self.assertNotEqual(len(self.get_deployment_info_object()[0].get('metadata')), 0)
         self.assertNotEqual(self.get_deployment_info_object()[0].get('metadata').get('name'), "")
-        requests.delete(self.server + f"/deployments")
+        requests.delete(self.server + "/deployments")
 
     def test_getfile_p(self):
         headers = {

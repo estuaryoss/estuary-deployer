@@ -62,5 +62,5 @@ class IOUtils:
         file_path.unlink()
 
     @staticmethod
-    def remove_directory(dir):
-        shutil.rmtree(dir)
+    def remove_directory(directory):
+        shutil.rmtree(directory)

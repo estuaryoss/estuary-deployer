@@ -26,7 +26,7 @@ class DeploymentMetadataSingleton:
             DeploymentMetadataSingleton.__instance = self
 
     def set_metadata_for_deployment(self, deployment, metadata):
-        """labels is dict"""
+        """labels is dict."""
         if not isinstance(metadata, dict):
             return False
         if len(self.metadata) < self.METADATA_SPACE_MAX_SIZE and deployment != "":
@@ -36,7 +36,7 @@ class DeploymentMetadataSingleton:
         return False
 
     def set_metadata_for_deployment_from_file(self, deployment, file):
-        """ labels is dict """
+        """ labels is dict. """
         metadata = {}
         if self.metadata.get(deployment) is not None:  # jump over, already in memory
             return False
