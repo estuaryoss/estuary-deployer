@@ -392,6 +392,7 @@ class FlaskServerTestCase(unittest.TestCase):
     @parameterized.expand([
         ("alpine_metadata.yml", "variables.yml")
     ])
+    @unittest.skipIf(str(os.environ.get('TEST_ENV')) == "vm", "Skip on compose VM")
     def test_deploystatus_metadata(self, template, variables):
         headers = {'Content-type': 'application/json'}
         response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
@@ -495,6 +496,7 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
+    @unittest.skipIf(str(os.environ.get('TEST_ENV')) == "vm", "Skip on compose VM")
     def test_deploy_start_file_from_client_metadata(self):
         with open(f"{self.input_path}/alpine_metadata.yml", closefd=True) as f:
             payload = f.read()

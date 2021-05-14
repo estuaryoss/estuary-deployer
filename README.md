@@ -146,7 +146,7 @@ However, it's a good practice to have:
 
 The two fields are used by [seeder](https://github.com/estuaryoss/seeder) in order to organize and orchestrate the deployments.  
    
-Obs: The x-metadata section is supported in compose version 3.3 or by removing the version from the docker-compose.
+Obs: The x-metadata section is supported in compose version >= 3.3.
    
 ```yaml
 version: "3.3"

@@ -39,6 +39,7 @@ jobs:
         SCRIPTS_DIR: tests
         MAX_DEPLOYMENTS: 3
         NGROK_TOKEN: 1RER6BUC3QNNwYWY5LcIBjrv3A8_24QccmopTEQJGMErG9uzw
+        TEST_ENV: vm
       before_script:
         - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_TOKEN"
         - docker pull alpine:3.9.4
