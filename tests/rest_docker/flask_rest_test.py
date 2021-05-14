@@ -15,11 +15,11 @@ from rest.api.responsehelpers.error_message import ErrorMessage
 
 class FlaskServerTestCase(unittest.TestCase):
     server_base = "http://localhost:8080"
-    server = "{}/docker".format(server_base)
+    server = f"{server_base}/docker"
     # server = "http://" + os.environ.get('SERVER')
     input_path = f"tests/rest_docker/input"
     # input_path = "input"
-    expected_version = "4.2.2"
+    expected_version = "4.2.3"
     sleep_before_env_up = 6
     sleep_after_env_down = 6
     max_deployments = 3
@@ -372,6 +372,7 @@ class FlaskServerTestCase(unittest.TestCase):
         time.sleep(self.sleep_before_env_up)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertEqual(len(self.get_deployment_info_object()[0].get('metadata')), 0)
         deploystart_body = response.json()
         deployment_id = "dummy"
 
@@ -387,6 +388,20 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
         requests.delete(self.server + f"/deployments/{deploystart_body.get('description')}")
+
+    @parameterized.expand([
+        ("alpine_metadata.yml", "variables.yml")
+    ])
+    @unittest.skipIf(str(os.environ.get('TEST_ENV')) == "vm", "Skip on compose VM")
+    def test_deploystatus_metadata(self, template, variables):
+        headers = {'Content-type': 'application/json'}
+        response = requests.post(self.server + f"/deployments/{template}/{variables}", headers=headers)
+        time.sleep(self.sleep_before_env_up)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertNotEqual(len(self.get_deployment_info_object()[0].get('metadata')), 0)
+        self.assertNotEqual(self.get_deployment_info_object()[0].get('metadata').get('name'), "")
+        requests.delete(self.server + "/deployments")
 
     def test_getfile_p(self):
         headers = {
@@ -474,6 +489,28 @@ class FlaskServerTestCase(unittest.TestCase):
         body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertEqual(len(self.get_deployment_info_object()[0].get('metadata')), 0)
+        self.assertEqual(body.get('message'),
+                         ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
+        self.assertIsNotNone(body.get('timestamp'))
+
+    @unittest.skipIf(str(os.environ.get('TEST_ENV')) == "vm", "Skip on compose VM")
+    def test_deploy_start_file_from_client_metadata(self):
+        with open(f"{self.input_path}/alpine_metadata.yml", closefd=True) as f:
+            payload = f.read()
+        headers = {'Content-type': 'text/plain'}
+
+        response = requests.post(self.server + f"/deployments", data=payload,
+                                 headers=headers)
+        time.sleep(self.sleep_before_env_up)
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(self.get_deployment_info()), 1)
+        self.assertNotEqual(len(self.get_deployment_info_object()[0].get('metadata')), 0)
+        self.assertIsInstance(self.get_deployment_info_object()[0].get('metadata'), dict)
+        self.assertNotEqual( self.get_deployment_info_object()[0].get('metadata').get('name'), "")
         self.assertEqual(body.get('message'),
                          ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
         self.assertEqual(body.get('version'), self.expected_version)

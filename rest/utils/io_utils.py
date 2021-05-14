@@ -1,4 +1,5 @@
 import errno
+import json
 import os
 import shutil
 from pathlib import Path
@@ -25,6 +26,11 @@ class IOUtils:
     def write_to_file(file, content=""):
         with open(file, 'w') as f:
             f.write(content)
+
+    @staticmethod
+    def write_to_file_dict(file, content={}):
+        with open(file, 'w') as f:
+            f.write(json.dumps(content))
 
     @staticmethod
     def write_to_file_binary(file, content=""):
@@ -54,3 +60,7 @@ class IOUtils:
     def remove_file(file):
         file_path = Path(file)
         file_path.unlink()
+
+    @staticmethod
+    def remove_directory(directory):
+        shutil.rmtree(directory)

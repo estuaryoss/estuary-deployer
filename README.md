@@ -68,7 +68,7 @@ Start your containers by specifying the full hostname or ip of the host machine 
     docker network create estuarydeployer_default
     docker run params:
     Optional:
-            -e MAX_DEPLOYMENTS=3 ->  how many deployments to be done. it is an option to deploy a fixed no of docker-compose envs(docker only)
+            -e MAX_DEPLOYMENTS=3 ->  how many deployments to be done (docker only). Default is 10.
             -e EUREKA_SERVER="http://10.13.14.28:8080/eureka/v2" -> eureka server
             -e APP_IP_PORT="10.13.14.28:8081" -> the app hostname/ip:port. Mandatory if EUREKA_SERVER is used
             -e APP_APPEND_LABEL="lab" -> id will be appended to the default app name on service registration. Useful for user mappings service-resources on a VM
@@ -136,6 +136,33 @@ There are two ways to inject user defined environment variables.
 ```shell
 pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
 ```
+
+## docker-compose deployment with metadata
+The user can put any metadata under **x-metadata** section.   
+The Deployer service does not enforce any metadata standardization.
+However, it's a good practice to have:
+-   the deployment name: **name**
+-   the labels for the deployment: **labels**
+
+The two fields are used by [seeder](https://github.com/estuaryoss/seeder) in order to organize and orchestrate the deployments.  
+   
+Obs: The x-metadata section is supported in compose version >= 3.3.
+   
+```yaml
+    version: "3.3"
+    x-metadata:
+      name: alpine-test
+      labels:
+        k1: v1
+        k2: v2
+    services:
+      alpine:
+        restart: always
+        image: alpine:3.9.4
+        hostname: alpine
+        entrypoint: tail -f /etc/hostname
+```
+
 ## Output example
 curl http://172.17.0.22:8083/docker/deployments
 ```json
@@ -164,9 +191,6 @@ curl http://172.17.0.22:8083/docker/deployments
     
 ## Estuary stack
 [Estuary deployer](https://github.com/estuaryoss/estuary-deployer)  
-[Estuary agent](https://github.com/estuaryoss/estuary-agent)  
+[Estuary agent](https://github.com/estuaryoss/estuary-agent-go)  
 [Estuary discovery](https://github.com/estuaryoss/estuary-discovery)  
-[Estuary viewer](https://github.com/estuaryoss/estuary-viewer)  
-
-## Templating service
-[Jinja2Docker](https://github.com/dinuta/jinja2docker)  
+[Estuary viewer](https://github.com/estuaryoss/estuary-viewer)
