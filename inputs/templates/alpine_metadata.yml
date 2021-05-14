@@ -1,4 +1,3 @@
-version: "3.3"
 x-metadata:
   name: alpine-test
   labels:

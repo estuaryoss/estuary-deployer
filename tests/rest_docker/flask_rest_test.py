@@ -15,7 +15,7 @@ from rest.api.responsehelpers.error_message import ErrorMessage
 
 class FlaskServerTestCase(unittest.TestCase):
     server_base = "http://localhost:8080"
-    server = "{}/docker".format(server_base)
+    server = f"{server_base}/docker"
     # server = "http://" + os.environ.get('SERVER')
     input_path = f"tests/rest_docker/input"
     # input_path = "input"
