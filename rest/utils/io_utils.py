@@ -25,12 +25,17 @@ class IOUtils:
     @staticmethod
     def write_to_file(file, content=""):
         with open(file, 'w') as f:
-            f.write(str(content))
+            f.write(content)
+
+    @staticmethod
+    def write_to_file_dict(file, content={}):
+        with open(file, 'w') as f:
+            f.write(json.dumps(content))
 
     @staticmethod
     def write_to_file_binary(file, content=""):
         with open(file, 'wb') as f:
-            f.write(str(content))
+            f.write(content)
 
     @staticmethod
     def read_file(file):

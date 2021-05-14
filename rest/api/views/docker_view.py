@@ -287,7 +287,7 @@ class DockerView(FlaskView):
         DeploymentMetadataSingleton.get_instance() \
             .delete_metadata_for_inactive_deployments(DockerUtils.get_active_deployments())
         metadata = DeploymentReader.get_metadata_for_deployment(IOUtils.read_file(file=file))
-        IOUtils.write_to_file(f"{deploy_dir}/metadata.json", metadata)
+        IOUtils.write_to_file_dict(f"{deploy_dir}/metadata.json", metadata)
         DeploymentMetadataSingleton.get_instance().set_metadata_for_deployment(deployment_id, metadata)
 
         return Response(
@@ -342,7 +342,7 @@ class DockerView(FlaskView):
         DeploymentMetadataSingleton.get_instance() \
             .delete_metadata_for_inactive_deployments(DockerUtils.get_active_deployments())
         metadata = DeploymentReader.get_metadata_for_deployment(IOUtils.read_file(file=file))
-        IOUtils.write_to_file(f"{deploy_dir}/metadata.json", metadata)
+        IOUtils.write_to_file_dict(f"{deploy_dir}/metadata.json", metadata)
         DeploymentMetadataSingleton.get_instance().set_metadata_for_deployment(deployment_id, metadata)
 
         return Response(
