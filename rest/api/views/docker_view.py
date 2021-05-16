@@ -123,7 +123,7 @@ class DockerView(FlaskView):
             200, mimetype="application/json")
 
     @route('/envinit', methods=['GET'])
-    def get_env_vars(self):
+    def get_init_env(self):
         return Response(
             json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
                                                EnvInit.init)),

@@ -51,7 +51,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_env_endpoint(self):
         response = requests.get(self.server + "/env")
 
-        body = json.loads(response.text)
+        body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertGreaterEqual(len(body.get('description')), 7)
         self.assertIn("/variables", body.get('description')["VARS_DIR"])
