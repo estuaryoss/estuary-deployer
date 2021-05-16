@@ -51,7 +51,7 @@ class FlaskServerTestCase(unittest.TestCase):
     def test_env_endpoint(self):
         response = requests.get(self.server + "/env")
 
-        body = json.loads(response.text)
+        body = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertGreaterEqual(len(body.get('description')), 7)
         self.assertIn("/variables", body.get('description')["VARS_DIR"])
@@ -60,6 +60,17 @@ class FlaskServerTestCase(unittest.TestCase):
         self.assertEqual(body.get('version'), self.expected_version)
         self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
+
+    def test_env_init_endpoint(self):
+        response = requests.get(self.server + "/envinit")
+
+        body = response.json()
+        self.assertEqual(response.status_code, 200)
+        self.assertGreaterEqual(len(body.get('description')), 6)
+        self.assertIn("/variables", body.get('description')["VARS_DIR"])
+        self.assertEqual(body.get('message'), ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value))
+        self.assertEqual(body.get('version'), self.expected_version)
+        self.assertEqual(body.get('code'), ApiCode.SUCCESS.value)
         self.assertIsNotNone(body.get('timestamp'))
 
     @parameterized.expand([

@@ -22,7 +22,7 @@ class Render:
         self.template = template
         self.variables = variables
         self.env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(EnvInit.TEMPLATES_PATH),
+            loader=jinja2.FileSystemLoader(EnvInit.init.get(EnvConstants.TEMPLATES_DIR)),
             extensions=['jinja2.ext.autoescape', 'jinja2.ext.do', 'jinja2.ext.loopcontrols', 'jinja2.ext.with_'],
             autoescape=True,
             trim_blocks=True)
@@ -35,7 +35,7 @@ class Render:
     def env_override(value, key):
         return os.getenv(key, value)
 
-    def rend_template(self, vars_dir=EnvInit.VARIABLES_PATH):
+    def rend_template(self, vars_dir=EnvInit.init.get(EnvConstants.VARS_DIR)):
         with open(vars_dir + "/" + self.variables, closefd=True) as f:
             data = yaml.safe_load(f)
 

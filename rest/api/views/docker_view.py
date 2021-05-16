@@ -122,6 +122,13 @@ class DockerView(FlaskView):
                                                EnvironmentSingleton.get_instance().get_env_and_virtual_env())),
             200, mimetype="application/json")
 
+    @route('/envinit', methods=['GET'])
+    def get_init_env(self):
+        return Response(
+            json.dumps(HttpResponse().response(ApiCode.SUCCESS.value, ErrorMessage.HTTP_CODE.get(ApiCode.SUCCESS.value),
+                                               EnvInit.init)),
+            200, mimetype="application/json")
+
     @route('/env/<env_var>', methods=['GET'])
     def get_env_var(self, env_var):
         return Response(json.dumps(
@@ -190,7 +197,7 @@ class DockerView(FlaskView):
         token = token_hex(8)
         io_utils = IOUtils()
         deployment_id = request.headers.get("Deployment-Id").lower() if request.headers.get("Deployment-Id") else token
-        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
+        deploy_dir = f"{EnvInit.init.get(EnvConstants.DEPLOY_PATH)}/{deployment_id}"
         file_path = f"{deploy_dir}/archive.zip"
         file_content = request.get_data()
         # send here the complete env. The deployment template can be overridden at deploy start
@@ -234,7 +241,7 @@ class DockerView(FlaskView):
         docker_utils = DockerUtils()
         token = token_hex(8)
         deployment_id = request.headers.get("Deployment-Id").lower() if request.headers.get("Deployment-Id") else token
-        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
+        deploy_dir = f"{EnvInit.init.get(EnvConstants.DEPLOY_PATH)}/{deployment_id}"
         file = f"{deploy_dir}/docker-compose.yml"
         header_key = 'Eureka-Server'
         eureka_server_header = request.headers.get(f"{header_key}")
@@ -248,14 +255,14 @@ class DockerView(FlaskView):
                                      status.get('err'))
 
         active_deployments = docker_utils.get_active_deployments()
-        if len(active_deployments) >= EnvInit.MAX_DEPLOYMENTS:
+        if len(active_deployments) >= EnvInit.init.get(EnvConstants.MAX_DEPLOYMENTS):
             raise ApiExceptionDocker(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
                                      ErrorMessage.HTTP_CODE.get(
-                                         ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(EnvInit.MAX_DEPLOYMENTS),
+                                         ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(EnvInit.init.get(EnvConstants.MAX_DEPLOYMENTS)),
                                      active_deployments)
         try:
             template_file_name = f"deployment_{deployment_id}.yml"
-            template_file_path = f"{EnvInit.TEMPLATES_PATH}/{template_file_name}"
+            template_file_path = f"{EnvInit.init.get(EnvConstants.TEMPLATES_DIR)}/{template_file_name}"
             app.logger.debug({"msg": {"file": template_file_path, "file_content": f"{input_data}"}})
             IOUtils.write_to_file(template_file_path, input_data)
 
@@ -300,7 +307,7 @@ class DockerView(FlaskView):
         docker_utils = DockerUtils()
         token = token_hex(8)
         deployment_id = request.headers.get("Deployment-Id").lower() if request.headers.get("Deployment-Id") else token
-        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{deployment_id}"
+        deploy_dir = f"{EnvInit.init.get(EnvConstants.DEPLOY_PATH)}/{deployment_id}"
         file = f"{deploy_dir}/docker-compose.yml"
 
         try:
@@ -324,10 +331,10 @@ class DockerView(FlaskView):
                                      status.get('err'))
 
         active_deployments = docker_utils.get_active_deployments()
-        if len(active_deployments) >= EnvInit.MAX_DEPLOYMENTS:
+        if len(active_deployments) >= EnvInit.init.get(EnvConstants.MAX_DEPLOYMENTS):
             raise ApiExceptionDocker(ApiCode.MAX_DEPLOYMENTS_REACHED.value,
                                      ErrorMessage.HTTP_CODE.get(
-                                         ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(EnvInit.MAX_DEPLOYMENTS),
+                                         ApiCode.MAX_DEPLOYMENTS_REACHED.value) % str(EnvInit.init.get(EnvConstants.MAX_DEPLOYMENTS)),
                                      active_deployments)
         try:
             r = Render(env_vars.get(EnvConstants.TEMPLATE),
@@ -375,7 +382,7 @@ class DockerView(FlaskView):
     def delete_deployment_id(self, depl_id):
         depl_id = depl_id.strip()
         docker_utils = DockerUtils()
-        depl_folder = f"{EnvInit.DEPLOY_PATH}/{depl_id}"
+        depl_folder = f"{EnvInit.init.get(EnvConstants.DEPLOY_PATH)}/{depl_id}"
         file = f"{depl_folder}/docker-compose.yml"
         try:
             status = docker_utils.down(file)
@@ -402,7 +409,7 @@ class DockerView(FlaskView):
             active_deployments = docker_utils.get_active_deployments()
             for deployment in active_deployments:
                 depl_id = deployment.get('id')
-                depl_folder = f"{EnvInit.DEPLOY_PATH}/{depl_id}"
+                depl_folder = f"{EnvInit.init.get(EnvConstants.DEPLOY_PATH)}/{depl_id}"
                 status = docker_utils.down(f"{depl_folder}/docker-compose.yml")
                 if "Cannot connect to the Docker daemon".lower() in status.get('err').lower():
                     raise Exception(status.get('err'))
@@ -471,7 +478,7 @@ class DockerView(FlaskView):
         http = HttpResponse()
         docker_utils = DockerUtils()
         env_id = env_id.strip()
-        env_id_dir = EnvInit.DEPLOY_PATH + "/{}".format(env_id)
+        env_id_dir = EnvInit.init.get(EnvConstants.DEPLOY_PATH) + f"/{env_id}"
         file = f"{env_id_dir}/docker-compose.yml"
 
         try:

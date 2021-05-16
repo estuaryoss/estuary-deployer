@@ -42,9 +42,9 @@ if __name__ == "__main__":
             EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.APP_IP_PORT),
             EnvStartupSingleton.get_instance().get_config_env_vars().get(EnvConstants.APP_APPEND_LABEL))
 
-    io_utils.create_dir(Path(EnvInit.DEPLOY_PATH))
-    io_utils.create_dir(Path(EnvInit.TEMPLATES_PATH))
-    io_utils.create_dir(Path(EnvInit.VARIABLES_PATH))
+    io_utils.create_dirs([Path(EnvInit.init.get(EnvConstants.DEPLOY_PATH)),
+                          Path(EnvInit.init.get(EnvConstants.TEMPLATES_DIR)),
+                          Path(EnvInit.init.get(EnvConstants.VARS_DIR))])
 
     DockerEnvExpireScheduler(fluentd_utils=DockerView.fluentd,
                              poll_interval=EnvStartupSingleton.get_instance().get_config_env_vars().get(

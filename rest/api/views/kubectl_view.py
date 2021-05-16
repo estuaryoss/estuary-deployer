@@ -204,7 +204,7 @@ class KubectlView(FlaskView):
         kubectl_utils = KubectlUtils()
         fluentd_tag = "deploy_start"
         token = token_hex(8)
-        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
+        deploy_dir = f"{EnvInit.init.get(EnvConstants.DEPLOY_PATH)}/{token}"
         file = f"{deploy_dir}/k8s-deployment.yml"
 
         try:
@@ -243,7 +243,7 @@ class KubectlView(FlaskView):
         app.logger.debug({"msg": {"variables_file": EnvironmentSingleton.get_instance().get_env_and_virtual_env().get(
             EnvConstants.VARIABLES)}})
         token = token_hex(8)
-        deploy_dir = f"{EnvInit.DEPLOY_PATH}/{token}"
+        deploy_dir = f"{EnvInit.init.get(EnvConstants.DEPLOY_PATH)}/{token}"
         file = f"{deploy_dir}/k8s-deployment.yml"
 
         try:

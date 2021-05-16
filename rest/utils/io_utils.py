@@ -13,6 +13,12 @@ class IOUtils:
             os.makedirs(path, permissions)
 
     @staticmethod
+    def create_dirs(directories):
+        """ list """
+        for directory in directories:
+            IOUtils.create_dir(directory)
+
+    @staticmethod
     def get_list_dir(path):
         dir_list = []
         file_path = Path(path)
