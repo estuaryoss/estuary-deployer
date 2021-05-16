@@ -262,7 +262,7 @@ class DockerView(FlaskView):
                                      active_deployments)
         try:
             template_file_name = f"deployment_{deployment_id}.yml"
-            template_file_path = f"{EnvInit.init.get(EnvConstants.TEMPLATES_PATH)}/{template_file_name}"
+            template_file_path = f"{EnvInit.init.get(EnvConstants.TEMPLATES_DIR)}/{template_file_name}"
             app.logger.debug({"msg": {"file": template_file_path, "file_content": f"{input_data}"}})
             IOUtils.write_to_file(template_file_path, input_data)
 

@@ -46,5 +46,5 @@ class EnvInit:
     app.logger.debug("DEPLOY_PATH : " + init.get(EnvConstants.DEPLOY_PATH))
     app.logger.debug("DEPLOY_WITH : " + init.get(EnvConstants.DEPLOY_WITH))
     app.logger.debug("MAX_DEPLOYMENTS : " + str(init.get(EnvConstants.MAX_DEPLOYMENTS)))
-    app.logger.debug("TEMPLATES_PATH : " + init.get(EnvConstants.TEMPLATES_DIR))
-    app.logger.debug("VARIABLES_PATH : " + init.get(EnvConstants.VARS_DIR))
+    app.logger.debug("TEMPLATES_DIR : " + init.get(EnvConstants.TEMPLATES_DIR))
+    app.logger.debug("VARS_DIR : " + init.get(EnvConstants.VARS_DIR))
