@@ -25,7 +25,7 @@ class Eureka:
                            instance_port=app_port,
                            instance_secure_port=app_port,
                            instance_ip=app_ip,
-                           home_page_url=f"{protocol}://{app_ip}:{app_port}/{EnvInit.DEPLOY_WITH}/",
-                           health_check_url=f"{protocol}://{app_ip}:{app_port}/{EnvInit.DEPLOY_WITH}/ping",
-                           status_page_url=f"{protocol}://{app_ip}:{app_port}/{EnvInit.DEPLOY_WITH}/about"
+                           home_page_url=f"{protocol}://{app_ip}:{app_port}/{EnvInit.init.get(EnvConstants.DEPLOY_WITH)}/",
+                           health_check_url=f"{protocol}://{app_ip}:{app_port}/{EnvInit.init.get(EnvConstants.DEPLOY_WITH)}/ping",
+                           status_page_url=f"{protocol}://{app_ip}:{app_port}/{EnvInit.init.get(EnvConstants.DEPLOY_WITH)}/about"
                            )

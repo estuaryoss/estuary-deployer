@@ -4,6 +4,7 @@ import os
 import shutil
 from pathlib import Path
 
+from rest.api.constants.env_constants import EnvConstants
 from rest.api.constants.env_init import EnvInit
 from rest.api.loghelpers.message_dumper import MessageDumper
 from rest.api.responsehelpers.active_deployments_response import ActiveDeployment
@@ -96,7 +97,7 @@ class DockerUtils(EnvCreation):
     @staticmethod
     def get_active_deployments():
         active_deployments = []
-        env_list = [folder.lower() for folder in IOUtils.get_list_dir(f"{EnvInit.DEPLOY_PATH}")]
+        env_list = [folder.lower() for folder in IOUtils.get_list_dir(f"{EnvInit.init.get(EnvConstants.DEPLOY_PATH)}")]
         for item in env_list:
             container_list = DockerUtils.ps(item).get('out').split("\n")[1:]
             for container in container_list:
@@ -107,7 +108,7 @@ class DockerUtils(EnvCreation):
         return active_deployments
 
     @staticmethod
-    def folder_clean_up(path=EnvInit.DEPLOY_PATH, delete_period=60):
+    def folder_clean_up(path=EnvInit.init.get(EnvConstants.DEPLOY_PATH), delete_period=60):
         deleted_folders = []
         active_deployments = [item.get('id') for item in DockerUtils.get_active_deployments()]
 
@@ -121,7 +122,7 @@ class DockerUtils(EnvCreation):
         return deleted_folders
 
     @staticmethod
-    def env_clean_up(fluentd_utils, path=EnvInit.DEPLOY_PATH, env_expire_in=1440):  # 1 day
+    def env_clean_up(fluentd_utils, path=EnvInit.init.get(EnvConstants.DEPLOY_PATH), env_expire_in=1440):  # 1 day
         fluentd_tag = 'docker_env_clean_up'
         message_dumper = MessageDumper()
         active_deployments = [item.get('id') for item in DockerUtils.get_active_deployments()]
