@@ -126,6 +126,7 @@ jobs:
           estuaryoss/deployer:latest
         - sleep 10
         - python3 -m unittest discover $SCRIPTS_DIR/rest_docker "*_test.py"
+        - docker logs estuary-deployer
 
     #run executable tests - kubectl
     - language: python
