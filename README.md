@@ -134,7 +134,7 @@ There are two ways to inject user defined environment variables.
 ## Compilation - pyinstaller
 
 ```shell
-pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/**:rest/api/views/swaggerui/" main.py
+pyinstaller --onefile --clean --add-data="rest/api/views/swaggerui/:rest/api/views/swaggerui/" main.py
 ```
 
 ## docker-compose deployment with metadata
