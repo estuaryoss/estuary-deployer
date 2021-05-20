@@ -107,10 +107,12 @@ Run example:
 ### Authentication
 For auth set HTTP_AUTH_TOKEN env variable.  
 
+[!!!]() Use this env variable, otherwise you will open a major security hole. The attacker will have access to your system. [!!!]()
+
 Run example:
 
     docker run \
-    -e HTTP_AUTH_TOKEN=mysecret
+    -e HTTP_AUTH_TOKEN=change_this_secret
     -p 8080:8080
     estuaryoss/deployer:<tag>
 
